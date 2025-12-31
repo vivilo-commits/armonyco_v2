@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Armonyco</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'armonyco-gold': '#C5A572',
+              stone: {
+                50: '#F9FAF9',
+                100: '#F0F0EE',
+                200: '#E5E5E4',
+                300: '#D6D6D4',
+                400: '#A8A8A6',
+                500: '#787875',
+                600: '#575756',
+                700: '#40403F',
+                800: '#292928',
+                900: '#151514',
+              },
+              emerald: {
+                50: '#ECFDF5',
+                500: '#10B981'
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              'slide-up': 'slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              'scale-in': 'scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(30px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              scaleIn: {
+                '0%': { opacity: '0', transform: 'scale(0.92)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      body {
+        background-color: #F9FAF9; /* Clean Stone 50 */
+        color: #151514;
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+
+      /* Standard UI Card Classes */
+      .ui-card {
+        background-color: #ffffff;
+        border: 1px solid #E5E5E4;
+        border-radius: 1rem; /* 16px */
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+      }
+      .ui-card:hover {
+        border-color: #D6D6D4;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .ui-card-dark {
+        background-color: #151514;
+        border: 1px solid #292928;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        color: #ffffff;
+      }
+
+      /* Inputs */
+      .ui-input {
+        background-color: #ffffff;
+        border: 1px solid #E5E5E4;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        outline: none;
+        width: 100%;
+      }
+      .ui-input:focus {
+        border-color: #C5A572;
+        box-shadow: 0 0 0 1px #C5A572;
+      }
+
+      /* Modals */
+      .ui-modal-backdrop {
+        background-color: rgba(21, 21, 20, 0.4);
+        backdrop-filter: blur(4px);
+      }
+      
+      /* Buttons */
+      .ui-btn-primary {
+        background-color: #151514;
+        color: white;
+        border: 1px solid #151514;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+      }
+      .ui-btn-primary:hover {
+        background-color: #292928;
+      }
+
+      .ui-btn-secondary {
+        background-color: #ffffff;
+        color: #575756;
+        border: 1px solid #E5E5E4;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+      }
+      .ui-btn-secondary:hover {
+        background-color: #F9FAF9;
+        border-color: #D6D6D4;
+        color: #151514;
+      }
+
+      /* Animated Button (Standardized) */
+      .ui-btn-animated {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 45px;
+        height: 45px;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition-duration: .4s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        background-color: #151514;
+      }
+
+      .ui-btn-animated .sign {
+        width: 100%;
+        transition-duration: .4s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .ui-btn-animated .sign svg {
+        width: 18px;
+        height: 18px;
+        stroke: white;
+        fill: none;
+        stroke-width: 2.5;
+      }
+
+      .ui-btn-animated .text {
+        position: absolute;
+        right: 0%;
+        width: 0%;
+        opacity: 0;
+        color: white;
+        font-size: 0.75em;
+        font-weight: 700;
+        transition-duration: .4s;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .ui-btn-animated:hover {
+        width: var(--hover-width, 140px);
+        border-radius: 40px;
+        transition-duration: .4s;
+        background-color: #C5A572;
+        box-shadow: 0 8px 25px rgba(197, 165, 114, 0.4);
+      }
+
+      .ui-btn-animated:hover .sign {
+        width: 30%;
+        transition-duration: .4s;
+        padding-left: 15px;
+      }
+
+      .ui-btn-animated:hover .text {
+        opacity: 1;
+        width: 70%;
+        transition-duration: .4s;
+        padding-right: 15px;
+      }
+      
+      .ui-btn-animated.expanded {
+        width: var(--hover-width, 140px);
+        border-radius: 40px;
+        background-color: #151514;
+      }
+      .ui-btn-animated.expanded:hover {
+        background-color: #C5A572;
+      }
+      
+      .ui-btn-animated.light {
+        background-color: rgba(255,255,255,0.8);
+        border: 1px solid rgba(255,255,255,0.4);
+        backdrop-filter: blur(4px);
+      }
+      .ui-btn-animated.light .sign svg { stroke: #151514; }
+      .ui-btn-animated.light:hover { background-color: #151514; border-color: #151514; }
+      .ui-btn-animated.light:hover .text { color: white; }
+      .ui-btn-animated.light:hover .sign svg { stroke: white; }
+      
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
+    "react": "https://esm.sh/react@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1?external=react"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
