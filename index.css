@@ -1,0 +1,323 @@
+/* ==========================================================================
+   ARMONYCO DESIGN SYSTEM
+   Version: 3.0 (Strict Foundations)
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   1. DESIGN TOKENS (CSS Custom Properties)
+   ========================================================================== */
+
+:root {
+  /* --- Colors: Brand & Sentiment --- */
+  --color-brand-primary: #050505;
+  /* Deep Mate Grey (No Pure Black) */
+  --color-brand-secondary: #0A0A0A;
+  /* Very dark grey for hover/surfaces */
+  --color-brand-accent: #C5A572;
+  /* Armonyco Gold */
+  --color-brand-accent-hover: #B8965F;
+
+  /* --- Colors: Semantic --- */
+  --color-success: #10B981;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #D1FAE5;
+
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FEF3C7;
+
+  --color-error: #EF4444;
+  --color-error-bg: #FEF2F2;
+  --color-error-border: #FEE2E2;
+
+  --color-info: #3B82F6;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #DBEAFE;
+
+  /* --- Colors: Neutrals & Surfaces --- */
+  --color-background: #F9FAF9;
+  /* App background (off-white) */
+  --color-surface: #ffffff;
+  /* Card/Modal background */
+  --color-surface-hover: #F5F5F4;
+
+  --color-border: #E5E5E4;
+  /* Default borders */
+  --color-border-hover: #D6D6D4;
+  --color-border-active: #A8A8A6;
+
+  /* --- Colors: Text --- */
+  --color-text-main: #545454;
+  /* Primary text */
+  --color-text-muted: #787875;
+  /* Secondary text */
+  --color-text-subtle: #A8A8A6;
+  /* Disabled/Placeholder text */
+  --color-text-inverse: #ffffff;
+  /* Text on dark backgrounds */
+
+  /* --- Typography --- */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  /* Font Sizes (Scale) */
+  --text-xs: 0.625rem;
+  /* 10px - Labels */
+  --text-sm: 0.75rem;
+  /* 12px - Body Small */
+  --text-base: 0.875rem;
+  /* 14px - Body Main */
+  --text-lg: 1rem;
+  /* 16px - Card Titles */
+  --text-xl: 1.25rem;
+  /* 20px - Subtitles */
+  --text-2xl: 1.5rem;
+  /* 24px - Section Titles */
+  --text-3xl: 1.875rem;
+  /* 30px */
+  --text-4xl: 2.25rem;
+  /* 36px - Page Titles */
+
+  /* --- Spacing Scale --- */
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-12: 3rem;
+  /* 48px */
+  --space-16: 4rem;
+  /* 64px */
+  --space-24: 6rem;
+  /* 96px */
+
+  /* --- Radii --- */
+  --radius-sm: 0.5rem;
+  /* 8px */
+  --radius-md: 0.75rem;
+  /* 12px */
+  --radius-lg: 1rem;
+  /* 16px */
+  --radius-full: 9999px;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(197, 165, 114, 0.3);
+
+  /* --- Transitions --- */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+}
+
+/* ==========================================================================
+   2. GLOBAL RESETS & BASE STYLES
+   ========================================================================== */
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+  antialiased: subpixel-antialiased;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(197, 165, 114, 0.2);
+  /* Brand Accent at 20% */
+  color: var(--color-brand-primary);
+}
+
+/* ==========================================================================
+   3. UTILITY CLASSES (To be replaced by Components mostly)
+   ========================================================================== */
+
+/* Typography Utils */
+.text-page-title {
+  font-size: var(--text-4xl);
+  font-weight: 300;
+  color: var(--color-text-main);
+  line-height: 1.1;
+}
+
+.text-section-title {
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  color: var(--color-text-main);
+}
+
+.text-body {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.text-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-subtle);
+}
+
+.font-numbers {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   4. ANIMATIONS
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-gold {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(197, 165, 114, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(197, 165, 114, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-base) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-base) forwards;
+}
+
+/* ==========================================================================
+   5. APP SHELL THEME (Contextual Overrides)
+   ========================================================================== */
+
+.app-shell-theme {
+  /* Translucent "Mate Glass" Cards for Light variants */
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-blur: 24px;
+
+  /* Shell-specific Surface tokens (No Pure Black) */
+  --color-surface: #050505;
+  --color-surface-hover: #0A0A0A;
+  --color-border: rgba(255, 255, 255, 0.1);
+
+  /* Shell-specific Text tokens (Fix Black-on-Black) */
+  --color-text-main: #FFFFFF;
+  --color-text-muted: rgba(255, 255, 255, 0.6);
+  --color-text-subtle: rgba(255, 255, 255, 0.4);
+
+  /* Shell-specific Background */
+  --color-background: #050505;
+}
+
+/* 3. ANIMATIONS: Blinking Green */
+@keyframes blink-emerald {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+    box-shadow: 0 0 8px 2px rgba(16, 185, 129, 0.3);
+  }
+}
+
+.animate-blink-emerald {
+  animation: blink-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Pure White Headings in App Shell */
+.app-shell-theme h1,
+.app-shell-theme h2,
+.app-shell-theme h3,
+.app-shell-theme h4,
+.app-shell-theme .text-page-title,
+.app-shell-theme .text-section-title {
+  color: #FFFFFF !important;
+}
+
+/* Light Gray Subtitles / Muted Text */
+.app-shell-theme .text-body,
+.app-shell-theme p,
+.app-shell-theme .text-zinc-400,
+.app-shell-theme .text-zinc-500,
+.app-shell-theme .text-zinc-600 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 1. FORCE OPAQUE BLACK on all "Grey" shades (zinc 800/900/etc) */
+.app-shell-theme .bg-zinc-800,
+.app-shell-theme .bg-zinc-900,
+.app-shell-theme .bg-zinc-950,
+.app-shell-theme .bg-zinc-900\/50,
+.app-shell-theme .bg-zinc-900\/40,
+.app-shell-theme .bg-\[\#0A0A0A\],
+.app-shell-theme .bg-gradient-to-br.from-zinc-900.to-black {
+  background-color: #050505 !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 2. FORCE MATE GLASS on all "White" shades */
+.app-shell-theme .bg-white,
+.app-shell-theme .bg-zinc-50,
+.app-shell-theme .bg-white\/\[0\.02\],
+.app-shell-theme .bg-white\/\[0\.01\],
+.app-shell-theme .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+}
+
+/* Ensure inputs in shell are glass */
+.app-shell-theme input,
+.app-shell-theme select,
+.app-shell-theme .ui-input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}

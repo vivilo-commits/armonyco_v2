@@ -1,157 +1,182 @@
 import React from 'react';
-import { Shield, FileCheck, Link, Lock, Search, Clock, TrendingUp, CheckCircle } from '../../components/ui/Icons';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Shield, FileCheck, Link, Lock, Search, Clock, TrendingUp, CheckCircle, AlertTriangle } from '../../components/ui/Icons';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { Card } from '../../components/ui/Card';
+import { StatCard } from '../../components/app/StatCard';
+import { Tooltip } from '../../components/ui/Tooltip';
 
 const evidenceData = [
-  { name: 'Photo/Media', value: 35, color: '#151514' },
-  { name: 'System Logs', value: 40, color: '#575756' },
-  { name: 'Documents', value: 15, color: '#A8A8A6' },
-  { name: 'User Auth', value: 10, color: '#C5A572' },
+    { name: 'Photo/Media', value: 35, color: '#FFFFFF' },
+    { name: 'System Logs', value: 40, color: '#C5A572' },
+    { name: 'Documents', value: 15, color: '#575756' },
+    { name: 'User Auth', value: 10, color: '#151514' },
 ];
 
 export const ARSView: React.FC = () => {
-  return (
-    <div className="p-8 animate-fade-in">
-      <header className="mb-8 border-b border-stone-200 pb-6">
-        <div className="flex items-center gap-3 mb-2">
-            <Shield className="text-armonyco-gold w-6 h-6" />
-            <h1 className="text-2xl text-stone-900 font-light">ARS Reliability Standard™</h1>
+    return (
+        <div className="p-8 animate-fade-in flex flex-col min-h-[calc(100vh-64px)] overflow-y-auto">
+            {/* Header: Core Constructs Standard */}
+            <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Shield className="text-[var(--color-brand-accent)] w-6 h-6" />
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Reliability Standard™</h1>
+                    </div>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Evidence Quality & Chain of Custody Registry.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Tooltip text="Compliance standard met">
+                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            Standard v2.1 Active
+                        </span>
+                    </Tooltip>
+                </div>
+            </header>
+
+            {/* Split View Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 min-h-0">
+
+                {/* Left Panel: Health & Metrics (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-2 scrollbar-hide">
+                    {/* Primary System Status */}
+                    <Card variant="dark" padding="lg" className="relative group border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden">
+                        <div className="relative z-10">
+                            <div className="text-white/40 text-[10px] uppercase tracking-[0.2em] mb-4 font-black">Audit Readiness</div>
+                            <div className="text-6xl font-mono text-emerald-500 leading-none pb-2 font-black tracking-tighter italic">READY</div>
+                            <div className="text-emerald-500/60 text-[10px] mt-4 flex items-center gap-2 font-bold uppercase tracking-[0.15em]">
+                                <CheckCircle size={14} className="animate-pulse" /> Verified Trust Engine
+                            </div>
+                        </div>
+                        <img src="/assets/logo-icon.png" alt="" className="absolute right-[-30px] bottom-[-30px] w-40 h-40 opacity-[0.03] transform rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                    </Card>
+
+                    {/* Operational Value */}
+                    <Card padding="md" className="bg-white/[0.01] border-white/5">
+                        <div className="text-white/40 text-[10px] uppercase tracking-[0.2em] mb-3 font-black">Operational Value</div>
+                        <div className="text-3xl font-numbers text-[var(--color-brand-accent)] h-[50px] flex items-center font-bold tracking-tight">12,000 <span className="text-xs ml-2 opacity-60 font-numbers uppercase tracking-widest">€</span></div>
+                        <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-2">
+                            <div className="bg-[var(--color-brand-accent)] w-[75%] h-full rounded-full shadow-[0_0_10px_rgba(212,175,55,0.3)]"></div>
+                        </div>
+                    </Card>
+
+                    {/* Reliability Stats */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <StatCard
+                            label="Chain"
+                            value="100%"
+                            icon={Link}
+                            iconColor="text-[var(--color-brand-accent)]"
+                            subtext={<span className="text-[var(--color-brand-accent)]/80 font-bold uppercase tracking-widest text-[9px]">Zero Breaks</span>}
+                        />
+                        <StatCard
+                            label="Hashes"
+                            value="12.4k"
+                            icon={Lock}
+                            iconColor="text-emerald-500"
+                            subtext={<span className="text-emerald-500/80 font-bold uppercase tracking-widest text-[9px]">Synced to Ledger</span>}
+                        />
+                    </div>
+
+                    {/* Compact Metrics */}
+                    <Card padding="md" className="bg-black/20 border-white/5">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-black">Evidence Density</div>
+                            <FileCheck size={16} className="text-[var(--color-brand-accent)]" />
+                        </div>
+                        <div className="text-4xl font-mono text-white tracking-tighter italic">98.2%</div>
+                        <div className="w-full bg-white/5 h-1 gap-1 rounded-full mt-4 overflow-hidden">
+                            <div className="bg-white/80 w-[98.2%] h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]"></div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Right Panel: Visualization & Logs (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col h-full gap-8">
+                    {/* Top Chart */}
+                    <Card padding="lg" className="min-h-[450px] flex flex-col border-white/5 bg-black/40 backdrop-blur-xl" overflowHidden={false}>
+                        <h3 className="text-white font-medium text-xs uppercase tracking-[0.2em] opacity-80 mb-8">Topology: Evidence Distribution</h3>
+                        <div className="flex-1 min-h-0 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={evidenceData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={80}
+                                        outerRadius={120}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                        stroke="rgba(255,255,255,0.05)"
+                                        strokeWidth={1}
+                                    >
+                                        {evidenceData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                            backdropFilter: 'blur(8px)',
+                                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            fontSize: '10px',
+                                            borderRadius: '12px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    />
+                                    <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', paddingTop: '40px', color: 'rgba(255,255,255,0.4)' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </Card>
+
+                    {/* Bottom Log */}
+                    <Card padding="none" className="flex-1 min-h-[400px] flex flex-col overflow-hidden bg-black/20 border-white/5">
+                        <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/[0.02] shrink-0">
+                            <h3 className="text-white/40 text-[10px] uppercase tracking-[0.2em] font-black flex items-center gap-2">
+                                <Search size={14} /> Verification Stream
+                            </h3>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            <table className="w-full text-left text-[10px]">
+                                <thead className="bg-white/[0.03] text-[var(--color-text-muted)] font-bold border-b border-white/5 uppercase tracking-widest sticky top-0 z-10">
+                                    <tr>
+                                        <th className="px-6 py-4">Event ID</th>
+                                        <th className="px-6 py-4">Type</th>
+                                        <th className="px-6 py-4">Requirement</th>
+                                        <th className="px-6 py-4 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.03] font-mono">
+                                    {[
+                                        { id: 'evt_9921', type: 'Expense > 500', req: 'Receipt + Approval', status: 'VERIFIED' },
+                                        { id: 'evt_9922', type: 'Guest Check-in', req: 'Passport Scan', status: 'VERIFIED' },
+                                        { id: 'evt_9923', type: 'Refund Issue', req: 'Damage Photo', status: 'PENDING' },
+                                        { id: 'evt_9924', type: 'Vendor Payout', req: 'Tax ID Valid', status: 'VERIFIED' },
+                                        { id: 'evt_9925', type: 'Key Grant', req: 'ID Verification', status: 'VERIFIED' },
+                                    ].map((row, i) => (
+                                        <tr key={i} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                                            <td className="px-6 py-4 text-white font-bold opacity-80 group-hover:opacity-100">{row.id}</td>
+                                            <td className="px-6 py-4 text-[var(--color-text-muted)] group-hover:text-white transition-colors">{row.type}</td>
+                                            <td className="px-6 py-4 text-[var(--color-text-muted)] group-hover:text-white transition-colors italic opacity-60">{row.req}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest ${row.status === 'VERIFIED'
+                                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
+                                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-[0_0_8px_rgba(245,158,11,0.1)]'
+                                                    }`}>
+                                                    {row.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            </div>
         </div>
-        <p className="text-stone-500 text-sm">Evidence Quality & Chain of Custody Monitor.</p>
-      </header>
-
-      {/* Impact Cards (Pricing-Free) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="ui-card-dark p-6 flex items-center justify-between relative overflow-hidden group">
-               <div className="relative z-10">
-                   <div className="text-stone-400 text-xs uppercase tracking-wider mb-2 font-bold">Human Time Reduced</div>
-                   <div className="text-4xl font-mono text-armonyco-gold">32h</div>
-               </div>
-               <Clock size={32} className="text-stone-600 group-hover:text-armonyco-gold transition-colors relative z-10" />
-               <div className="absolute top-0 right-0 p-4 opacity-10"><Clock size={64}/></div>
-          </div>
-          <div className="ui-card-dark p-6 flex items-center justify-between relative overflow-hidden group">
-               <div className="relative z-10">
-                   <div className="text-stone-400 text-xs uppercase tracking-wider mb-2 font-bold">Operational Value Saved</div>
-                   <div className="text-4xl font-mono text-emerald-500">€ 1,200</div>
-               </div>
-               <TrendingUp size={32} className="text-stone-600 group-hover:text-emerald-500 transition-colors relative z-10" />
-               <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={64}/></div>
-          </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="ui-card p-6 flex flex-col justify-between">
-             <div className="flex items-center justify-between mb-4">
-                 <div className="text-stone-400 text-xs uppercase tracking-wider font-bold">Evidence Density</div>
-                 <FileCheck size={16} className="text-armonyco-gold" />
-             </div>
-             <div className="text-3xl font-mono text-stone-900">98.2%</div>
-             <div className="w-full bg-stone-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                 <div className="bg-stone-900 w-[98.2%] h-full rounded-full"></div>
-             </div>
-          </div>
-          
-          <div className="ui-card p-6 flex flex-col justify-between">
-             <div className="flex items-center justify-between mb-4">
-                 <div className="text-stone-400 text-xs uppercase tracking-wider font-bold">Chain Completeness</div>
-                 <Link size={16} className="text-armonyco-gold" />
-             </div>
-             <div className="text-3xl font-mono text-stone-900">100%</div>
-             <div className="text-stone-500 text-xs mt-2 flex items-center gap-1"><CheckCircle size={10} className="text-emerald-500"/> Zero Breaks</div>
-          </div>
-
-          <div className="ui-card p-6 flex flex-col justify-between">
-             <div className="flex items-center justify-between mb-4">
-                 <div className="text-stone-400 text-xs uppercase tracking-wider font-bold">Immutable Hashes</div>
-                 <Lock size={16} className="text-armonyco-gold" />
-             </div>
-             <div className="text-3xl font-mono text-stone-900">12.4k</div>
-             <div className="text-stone-500 text-xs mt-2">Synced to Ledger</div>
-          </div>
-
-           <div className="ui-card p-6 flex flex-col justify-between">
-             <div className="flex items-center justify-between mb-4">
-                 <div className="text-stone-400 text-xs uppercase tracking-wider font-bold">Audit Readiness</div>
-                 <Shield size={16} className="text-emerald-500" />
-             </div>
-             <div className="text-3xl font-mono text-emerald-500">READY</div>
-             <div className="text-stone-500 text-xs mt-2">Last Check: 1m ago</div>
-          </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Evidence Distribution */}
-          <div className="ui-card p-6 h-96">
-              <h3 className="text-stone-900 font-medium mb-6">Evidence Type Distribution</h3>
-              <ResponsiveContainer width="100%" height="85%">
-                  <PieChart>
-                      <Pie 
-                        data={evidenceData} 
-                        innerRadius={60} 
-                        outerRadius={90} 
-                        paddingAngle={5} 
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {evidenceData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e5e4', color: '#151514', fontSize: '12px', borderRadius: '8px' }}/>
-                      <Legend verticalAlign="bottom" layout="horizontal" iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
-                  </PieChart>
-              </ResponsiveContainer>
-          </div>
-
-          {/* Verification Log */}
-          <div className="lg:col-span-2 ui-card p-0 overflow-hidden h-96 flex flex-col">
-              <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
-                  <h3 className="text-stone-900 font-medium text-sm flex items-center gap-2">
-                     <Shield size={14} className="text-emerald-500"/> Recent Evidence Verifications
-                  </h3>
-              </div>
-              <div className="overflow-y-auto flex-1">
-                  <table className="w-full text-left text-xs">
-                      <thead className="bg-white text-stone-500 font-medium border-b border-stone-100 sticky top-0 text-xs uppercase tracking-wider">
-                          <tr>
-                              <th className="px-6 py-3">Event ID</th>
-                              <th className="px-6 py-3">Type</th>
-                              <th className="px-6 py-3">Requirement</th>
-                              <th className="px-6 py-3">Status</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-100 font-mono text-[11px]">
-                          <tr className="hover:bg-stone-50 transition-colors">
-                              <td className="px-6 py-4 text-stone-900">evt_9921</td>
-                              <td className="px-6 py-4 text-stone-500">Expense &gt; 500</td>
-                              <td className="px-6 py-4 text-stone-500">Receipt + Manager Approval</td>
-                              <td className="px-6 py-4"><span className="text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded font-bold">VERIFIED</span></td>
-                          </tr>
-                          <tr className="hover:bg-stone-50 transition-colors">
-                              <td className="px-6 py-4 text-stone-900">evt_9922</td>
-                              <td className="px-6 py-4 text-stone-500">Guest Check-in</td>
-                              <td className="px-6 py-4 text-stone-500">Passport Scan</td>
-                              <td className="px-6 py-4"><span className="text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded font-bold">VERIFIED</span></td>
-                          </tr>
-                          <tr className="hover:bg-stone-50 transition-colors">
-                              <td className="px-6 py-4 text-stone-900">evt_9923</td>
-                              <td className="px-6 py-4 text-stone-500">Refund Issue</td>
-                              <td className="px-6 py-4 text-stone-500">Damage Photo</td>
-                              <td className="px-6 py-4"><span className="text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded font-bold">PENDING</span></td>
-                          </tr>
-                          <tr className="hover:bg-stone-50 transition-colors">
-                              <td className="px-6 py-4 text-stone-900">evt_9924</td>
-                              <td className="px-6 py-4 text-stone-500">Vendor Payout</td>
-                              <td className="px-6 py-4 text-stone-500">Tax ID Valid</td>
-                              <td className="px-6 py-4"><span className="text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded font-bold">VERIFIED</span></td>
-                          </tr>
-                      </tbody>
-                  </table>
-              </div>
-          </div>
-      </div>
-    </div>
-  );
+    );
 };

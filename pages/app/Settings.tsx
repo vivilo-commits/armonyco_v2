@@ -1,782 +1,655 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Bell, Layers, Database, Smartphone, Key, User, Building, CreditCard, BookOpen, HelpCircle, CheckCircle, ChevronRight, AlertTriangle, Calendar, Plus, RefreshCw, X, ArrowRight, Activity, FileText, Camera, LogOut, Moon, Sun, Monitor, Laptop, Shield, Lock, Clock, UploadCloud, Download, AlertCircle, Copy, Check, XCircle, Save, Link } from '../../components/ui/Icons';
+import { Settings, Bell, Layers, Database, Smartphone, Key, User, Building, CreditCard, BookOpen, HelpCircle, CheckCircle, ChevronRight, AlertTriangle, Calendar, Plus, RefreshCw, X, ArrowRight, Activity, FileText, Camera, LogOut, Moon, Sun, Monitor, Laptop, Shield, Lock, Clock, UploadCloud, Download, AlertCircle, Copy, Check, XCircle, Save, Link, IconSizes, Zap } from '../../components/ui/Icons';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
-import { AnimatedButton } from '../../components/ui/AnimatedButton';
+import { Button } from '../../components/ui/Button';
 import { FloatingInput } from '../../components/ui/FloatingInput';
+import { Modal } from '../../components/ui/Modal';
+import { Card } from '../../components/ui/Card';
+import { UserProfile, Organization, BillingDetails } from '../../src/types';
 
 interface SettingsViewProps {
-  activeView?: string;
-  userProfile: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    photo?: string | null;
-  };
-  onUpdateProfile: (data: any) => void;
-  organization: {
-    name: string;
-    billingEmail: string;
-    language: string;
-    timezone: string;
-  };
-  onUpdateOrganization: (data: any) => void;
-  
-  // Lifted state for billing & credits
-  billingDetails: {
-      legalName: string;
-      vatNumber: string;
-      fiscalCode: string;
-      address: string;
-      city: string;
-      zip: string;
-      country: string;
-      sdiCode: string;
-      pecEmail: string;
-  };
-  onUpdateBillingDetails: (data: any) => void;
-  currentCredits: number;
-  onUpdateCredits: (amount: number) => void;
+    activeView?: string;
+    userProfile: UserProfile;
+    onUpdateProfile: (data: Partial<UserProfile>) => void;
+    organization: Organization;
+    onUpdateOrganization: (data: Partial<Organization>) => void;
+    billingDetails: BillingDetails;
+    onUpdateBillingDetails: (data: Partial<BillingDetails>) => void;
+    currentCredits: number;
+    onUpdateCredits: (amount: number) => void;
 }
 
-type SettingsTab = 'PROFILE' | 'ORG' | 'ACTIVATION' | 'NOTIFICATIONS' | 'BILLING';
+type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING';
 
 // --- Helper for Cost ---
-const COST_PER_CREDIT = 0.0010;
+const COST_PER_CREDIT = 0.10; // Keeping for logic, but UI will not show Euros
 
-// --- Modal Component ---
-const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; footer?: React.ReactNode }> = ({ isOpen, onClose, title, children, footer }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-scale-in border border-stone-200">
-                <div className="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
-                    <h3 className="font-medium text-stone-900">{title}</h3>
-                    <button onClick={onClose} className="text-stone-400 hover:text-stone-900"><X size={20} /></button>
-                </div>
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
-                    {children}
-                </div>
-                {footer && (
-                    <div className="px-6 py-4 border-t border-stone-100 bg-stone-50 flex justify-end gap-3 items-center">
-                        {footer}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-export const SettingsView: React.FC<SettingsViewProps> = ({ 
-    activeView, 
-    userProfile, 
-    onUpdateProfile, 
-    organization, 
+export const SettingsView: React.FC<SettingsViewProps> = ({
+    activeView,
+    userProfile,
+    onUpdateProfile,
+    organization,
     onUpdateOrganization,
     billingDetails,
     onUpdateBillingDetails,
     currentCredits,
     onUpdateCredits
 }) => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
-  
-  // Effect to sync prop activeView with internal state
-  useEffect(() => {
-    if (activeView) {
-      if (activeView === 'settings-profile') setActiveTab('PROFILE');
-      if (activeView === 'settings-org') setActiveTab('ORG');
-      if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
-      if (activeView === 'settings-notifications') setActiveTab('NOTIFICATIONS');
-      if (activeView === 'settings-billing') setActiveTab('BILLING');
+    const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
+
+    // Effect to sync prop activeView with internal state
+    useEffect(() => {
+        if (activeView) {
+            if (activeView === 'settings-profile') setActiveTab('PROFILE');
+            if (activeView === 'settings-company') setActiveTab('ORG');
+            if (activeView === 'settings-billing') setActiveTab('BILLING');
+        }
+    }, [activeView]);
+
+    // -- Profile Local State (Synced with Props) --
+    const [localProfile, setLocalProfile] = useState(userProfile);
+    useEffect(() => setLocalProfile(userProfile), [userProfile]);
+
+    const [emailVerified, setEmailVerified] = useState(true);
+    const [phoneVerified, setPhoneVerified] = useState(false);
+
+    // -- Org Local State (Synced with Props) --
+    const [localOrg, setLocalOrg] = useState(organization);
+    useEffect(() => setLocalOrg(organization), [organization]);
+
+    // -- Billing Details Local State --
+    const [localBillingDetails, setLocalBillingDetails] = useState(billingDetails);
+    useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
+
+    // -- Security State --
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+
+    // -- Preferences State --
+    const [timeFormat, setTimeFormat] = useState('24h');
+    const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
+    const [theme, setTheme] = useState('system');
+
+    // -- Legal State --
+    const [marketingConsent, setMarketingConsent] = useState(false);
+
+    // -- Org Billing Details State --
+    const [showBillingModal, setShowBillingModal] = useState(false);
+
+    // -- Top Up State --
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
+    const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+    // -- Auto Top Up State --
+    const [autoTopUpEnabled, setAutoTopUpEnabled] = useState(false);
+    const [showAutoTopUpModal, setShowAutoTopUpModal] = useState(false);
+    const [isAcceptingTerms, setIsAcceptingTerms] = useState(false);
+    const AUTO_TOPUP_THRESHOLD = 10000;
+    const AUTO_TOPUP_AMOUNT = 10000;
+
+    const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
+
+    // -- Activation State --
+    const [activationSteps, setActivationSteps] = useState([
+        { id: 1, label: 'Connect WhatsApp Business API', status: 'Pending' },
+        { id: 2, label: 'Connect PMS', status: 'Pending' },
+        { id: 3, label: 'Knowledge Base', status: 'Pending' }
+    ]);
+    const [activeStepModal, setActiveStepModal] = useState<number | null>(null);
+    const [isValidating, setIsValidating] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
+
+    // Activation Forms State
+    const [waForm, setWaForm] = useState({
+        accessToken: '', businessId: '', phoneId: '', clientId: '', clientSecret: ''
+    });
+    const [pmsForm, setPmsForm] = useState({
+        provider: 'Kross Booking', username: '', password: '', pmsId: ''
+    });
+    const [kbFiles, setKbFiles] = useState<string[]>([]);
+
+    // -- Notification State --
+    const [notifConfig, setNotifConfig] = useState({
+        systemIncidents: true,
+        integrationFailures: true,
+        slaRisk: true,
+        complianceAlerts: false,
+        budgetWarnings: true,
+        emailChannel: true,
+        appChannel: true,
+    });
+
+    // -- Billing State --
+    const [budgetLimit, setBudgetLimit] = useState<string>('500');
+    const [budgetEnabled, setBudgetEnabled] = useState(false);
+
+    const handleValidation = (stepId: number) => {
+        setValidationError(null);
+        setIsValidating(true);
+
+        setTimeout(() => {
+            let success = true;
+            let errorMsg = '';
+
+            if (stepId === 1) {
+                if (!waForm.accessToken || !waForm.businessId || !waForm.clientId || !waForm.clientSecret) {
+                    success = false;
+                    errorMsg = 'Please fill in all required fields marked with *';
+                }
+            } else if (stepId === 2) {
+                if (!pmsForm.username || !pmsForm.password) {
+                    success = false;
+                    errorMsg = 'Invalid credentials or unreachable endpoint.';
+                }
+            }
+
+            setIsValidating(false);
+
+            if (success) {
+                setActivationSteps(steps => steps.map(s => s.id === stepId ? { ...s, status: 'Completed' } : s));
+                setActiveStepModal(null);
+            } else {
+                setValidationError(errorMsg);
+                setActivationSteps(steps => steps.map(s => s.id === stepId ? { ...s, status: 'Error' } : s));
+            }
+        }, 2000);
+    };
+
+    const handleSaveBillingDetails = () => {
+        onUpdateBillingDetails(localBillingDetails);
+        setShowBillingModal(false);
+    };
+
+    const handleProcessTopUp = () => {
+        setIsProcessingPayment(true);
+        setTimeout(() => {
+            onUpdateCredits(currentCredits + selectedPack);
+            setIsProcessingPayment(false);
+            setShowTopUpModal(false);
+        }, 2000);
+    };
+
+    const handleEnableAutoTopUp = () => {
+        setIsAcceptingTerms(true);
+        setTimeout(() => {
+            setAutoTopUpEnabled(true);
+            setIsAcceptingTerms(false);
+            setShowAutoTopUpModal(false);
+            // Check instantly if recharge needed (mock logic)
+            if (currentCredits < AUTO_TOPUP_THRESHOLD) {
+                onUpdateCredits(currentCredits + AUTO_TOPUP_AMOUNT);
+            }
+        }, 1500);
+    };
+
+    const handleToggleAutoTopUp = () => {
+        if (!autoTopUpEnabled) {
+            setShowAutoTopUpModal(true);
+        } else {
+            setAutoTopUpEnabled(false);
+        }
+    };
+
+    const renderProfile = () => {
+        return (
+            <div className="space-y-6 animate-fade-in w-full">
+                {/* Personal Information */}
+                <Card padding="lg">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 className="text-lg font-medium text-[var(--color-text-main)]">Personal Information</h3>
+                            <p className="text-sm text-[var(--color-text-muted)]">Manage your identity and contact details.</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FloatingInput label="First Name" value={localProfile.firstName} onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} />
+                        <FloatingInput label="Last Name" value={localProfile.lastName} onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} />
+                        <FloatingInput label="Email Address" value={localProfile.email} onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })} />
+                        <FloatingInput label="Phone Number" value={localProfile.phone} onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} />
+                    </div>
+                </Card>
+
+                {/* Preferences */}
+                <Card padding="lg">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-medium text-[var(--color-text-main)]">Preferences</h3>
+                        <p className="text-sm text-[var(--color-text-muted)]">Regional and display settings.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="relative">
+                            <label className="text-xs text-[var(--color-text-muted)] absolute top-2 left-3">Language</label>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                <option>English (US)</option>
+                                <option>Italiano</option>
+                                <option>Español</option>
+                            </select>
+                        </div>
+                        <div className="relative">
+                            <label className="text-xs text-[var(--color-text-muted)] absolute top-2 left-3">Timezone</label>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                <option>UTC (Coordinated Universal Time)</option>
+                                <option>EST (Eastern Standard Time)</option>
+                                <option>CET (Central European Time)</option>
+                            </select>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Security Placeholder */}
+                <Card padding="lg">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h3 className="text-lg font-medium text-[var(--color-text-main)]">Security</h3>
+                            <p className="text-sm text-[var(--color-text-muted)]">Password and authentication methods.</p>
+                        </div>
+                        <Button variant="secondary" size="sm">Change Password</Button>
+                    </div>
+                </Card>
+
+                <div className="flex justify-end pt-4">
+                    <Button size="lg" leftIcon={<Save size={18} />} onClick={() => onUpdateProfile(localProfile)}>Save All Changes</Button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderOrg = () => {
+        return (
+            <div className="w-full animate-fade-in">
+                <Card padding="lg" className="mb-8">
+                    <h3 className="text-lg font-medium mb-4">Organization Settings</h3>
+                    <div className="grid grid-cols-1 gap-6">
+                        <FloatingInput label="Organization Name" value={localOrg.name} onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} />
+                        <FloatingInput label="Billing Email" value={localOrg.billingEmail} onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} />
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <Button leftIcon={<Save size={18} />} onClick={() => onUpdateOrganization(localOrg)}>Save Changes</Button>
+                    </div>
+                </Card>
+
+                {/* Billing Details Re-implementation within Org Tab if needed, but keeping primarily in Billing Tab */}
+                <div className="border-t border-[var(--color-border)] pt-8">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Billing Information</h3>
+                        <Button variant="secondary" size="sm" onClick={() => setShowBillingModal(true)}>Edit Details</Button>
+                    </div>
+                    <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)]">
+                        <p className="font-medium">{localBillingDetails.legalName || 'Not Set'}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">{localBillingDetails.address || 'Address not set'}</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">VAT: {localBillingDetails.vatNumber || 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+        )
     }
-  }, [activeView]);
 
-  // -- Profile Local State (Synced with Props) --
-  const [localProfile, setLocalProfile] = useState(userProfile);
-  useEffect(() => setLocalProfile(userProfile), [userProfile]);
+    const renderActivation = () => (
+        <div className="w-full animate-fade-in">
+            <div className="border-b border-[var(--color-border)] pb-6 mb-6">
+                <h2 className="text-xl font-light">System Activation</h2>
+            </div>
+            <div className="space-y-4">
+                {activationSteps.map((step) => (
+                    <Card key={step.id} padding="md" className="flex items-center justify-between bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all group rounded-2xl">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs border shadow-lg transition-transform group-hover:scale-110 ${step.status === 'Completed'
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
+                                : step.status === 'Error'
+                                    ? 'bg-red-500/10 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                                    : 'bg-white/5 text-white/40 border-white/10'
+                                }`}>
+                                {step.status === 'Completed' ? <CheckCircle size={18} /> : <span>0{step.id}</span>}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white uppercase tracking-widest text-xs">{step.label}</h3>
+                                <p className="text-[10px] text-white/30 uppercase tracking-[0.1em] font-black mt-1">
+                                    {step.status === 'Completed' ? 'Identity Verified & Secure' : 'Authorization Required'}
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            leftIcon={step.status === 'Completed' ? <Settings size={18} /> : <Link size={18} />}
+                            onClick={() => setActiveStepModal(step.id)}
+                            variant={step.status === 'Completed' ? 'secondary' : 'primary'}
+                            className="rounded-xl font-black uppercase tracking-widest text-[10px]"
+                        >
+                            {step.status === 'Completed' ? 'Configure' : 'Establish Link'}
+                        </Button>
+                    </Card>
+                ))}
+            </div>
+            {/* Note: Modals for activation are simplified/omitted for brevity but logic is there */}
+        </div>
+    );
 
-  const [emailVerified, setEmailVerified] = useState(true);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  
-  // -- Org Local State (Synced with Props) --
-  const [localOrg, setLocalOrg] = useState(organization);
-  useEffect(() => setLocalOrg(organization), [organization]);
+    const renderNotifications = () => (
+        <div className="w-full animate-fade-in">
+            <div className="border-b border-[var(--color-border)] pb-6 mb-6">
+                <h2 className="text-xl font-light">Notification Preferences</h2>
+            </div>
+            <Card padding="none" className="overflow-hidden mb-8">
+                {/* ... Simplified Notification UI ... */}
+                <div className="p-6 text-[var(--color-text-muted)] text-sm italic">Notification settings are managed via Control Tower defaults.</div>
+            </Card>
+        </div>
+    );
 
-  // -- Billing Details Local State --
-  const [localBillingDetails, setLocalBillingDetails] = useState(billingDetails);
-  useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
+    const renderBilling = () => {
+        const consumptionStats = [
+            { label: 'Credits Used (30d)', value: '3,420' },
+            { label: 'Network Sessions', value: '128' },
+            { label: 'Avg Consumption', value: '26.7' }
+        ];
 
-  // -- Security State --
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  
-  // -- Preferences State --
-  const [timeFormat, setTimeFormat] = useState('24h');
-  const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
-  const [theme, setTheme] = useState('system');
-  
-  // -- Legal State --
-  const [marketingConsent, setMarketingConsent] = useState(false);
-  
-  // -- Org Billing Details State --
-  const [showBillingModal, setShowBillingModal] = useState(false);
-  
-  const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
+        const history = [
+            { id: 1, date: '02 May 2024, 14:20', module: 'Neural Chat (AEM)', credits: 450, status: 'Settled' },
+            { id: 2, date: '01 May 2024, 09:15', module: 'Control Tower Sync', credits: 120, status: 'Settled' },
+            { id: 3, date: '30 Apr 2024, 18:45', module: 'ARS Reliability Check', credits: 850, status: 'Settled' },
+            { id: 4, date: '29 Apr 2024, 11:30', module: 'AOS Core Migration', credits: 5000, status: 'Settled' },
+            { id: 5, date: '28 Apr 2024, 23:10', module: 'Agent "Amelia" Task', credits: 240, status: 'Settled' },
+        ];
 
-  // -- Activation State --
-  const [activationSteps, setActivationSteps] = useState([
-      { id: 1, label: 'Connect WhatsApp Business API', status: 'Pending' },
-      { id: 2, label: 'Connect PMS', status: 'Pending' },
-      { id: 3, label: 'Knowledge Base', status: 'Pending' }
-  ]);
-  const [activeStepModal, setActiveStepModal] = useState<number | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+        return (
+            <div className="w-full animate-fade-in space-y-10 pb-20">
+                {/* Header Section */}
+                <div className="border-b border-white/10 pb-8">
+                    <h2 className="text-3xl font-light text-white mb-2">Pricing & Billing</h2>
+                    <p className="text-zinc-500 text-sm">Governance engine resource allocation and ledger.</p>
+                </div>
 
-  // Activation Forms State
-  const [waForm, setWaForm] = useState({
-      accessToken: '', businessId: '', phoneId: '', clientId: '', clientSecret: ''
-  });
-  const [pmsForm, setPmsForm] = useState({
-      provider: 'Kross Booking', username: '', password: '', pmsId: ''
-  });
-  const [kbFiles, setKbFiles] = useState<string[]>([]);
+                {/* 4 CARDS GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-  // -- Notification State --
-  const [notifConfig, setNotifConfig] = useState({
-    systemIncidents: true,
-    integrationFailures: true,
-    slaRisk: true,
-    complianceAlerts: false,
-    budgetWarnings: true,
-    emailChannel: true,
-    appChannel: true,
-  });
+                    {/* 1. BALANCE */}
+                    <Card variant="dark" className="shadow-2xl relative overflow-hidden h-full flex flex-col justify-between" padding="lg">
+                        <div className="relative z-10">
+                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Current Balance</div>
+                            <div className="text-4xl font-numbers font-bold text-white tracking-tight">
+                                {Math.floor(currentCredits).toLocaleString()}
+                                <span className="text-xs text-zinc-600 block mt-1 font-numbers uppercase tracking-widest italic">AC</span>
+                            </div>
+                        </div>
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={40} /></div>
+                    </Card>
 
-  // -- Billing State --
-  const [budgetLimit, setBudgetLimit] = useState<string>('500');
-  const [budgetEnabled, setBudgetEnabled] = useState(false);
-  
-  const currentMonthSpend = 521.4020;
-  
-  const transactions = [
-      { date: 'Oct 24, 2023', type: 'Usage', ops: 1420, credits: 1850, amount: 1.8500, balance: 124.5000, ref: 'Daily Agg' },
-      { date: 'Oct 23, 2023', type: 'Usage', ops: 1210, credits: 1600, amount: 1.6000, balance: 126.3500, ref: 'Daily Agg' },
-      { date: 'Oct 22, 2023', type: 'Top-up', ops: '-', credits: '-', amount: 100.0000, balance: 127.9500, ref: 'INV-9921' },
-      { date: 'Oct 21, 2023', type: 'Usage', ops: 1105, credits: 1450, amount: 1.4500, balance: 27.9500, ref: 'Daily Agg' },
-  ];
+                    {/* 2. AUTO TOP-UP */}
+                    <Card variant="dark" className="border-zinc-800/50 flex flex-col justify-between" padding="lg">
+                        <div>
+                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Auto Top-Up</div>
+                            <div className="flex items-center justify-between">
+                                <span className={`text-sm font-medium ${autoTopUpEnabled ? 'text-[var(--color-success)]' : 'text-zinc-500'}`}>
+                                    {autoTopUpEnabled ? 'ACTIVE' : 'DISABLED'}
+                                </span>
+                                <button
+                                    onClick={handleToggleAutoTopUp}
+                                    className={`w-12 h-6 rounded-full relative transition-all duration-300 ${autoTopUpEnabled ? 'bg-[var(--color-success)]' : 'bg-zinc-700'}`}
+                                >
+                                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${autoTopUpEnabled ? 'left-7 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
+                            {autoTopUpEnabled
+                                ? "If balance < 10,000 credits, trigger +10,000 AC top-up."
+                                : "No automatic reloads configured. Services may pause on zero balance."
+                            }
+                        </p>
+                    </Card>
 
-  const handleValidation = (stepId: number) => {
-      setValidationError(null);
-      setIsValidating(true);
+                    {/* 3. MANUAL TOP-UP */}
+                    <Card variant="dark" className="border-white/5 flex flex-col justify-between" padding="lg">
+                        <div>
+                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Top-Up Engine</div>
+                            <Button
+                                variant="primary"
+                                className="w-full justify-center !bg-white !text-black hover:!bg-zinc-200 border-0 font-black h-12"
+                                onClick={() => setShowTopUpModal(true)}
+                            >
+                                <Plus size={18} className="mr-2" /> RECHARGE
+                            </Button>
+                        </div>
+                        <div className="flex gap-1 mt-4">
+                            {[1, 2, 3].map(i => <div key={i} className="flex-1 h-1 bg-white/10 rounded-full" />)}
+                        </div>
+                    </Card>
 
-      // Simulate network request
-      setTimeout(() => {
-          let success = true;
-          let errorMsg = '';
+                    {/* 4. USAGE SUMMARY */}
+                    <Card variant="dark" className="border-zinc-800/80 flex flex-col justify-between" padding="lg">
+                        <div className="space-y-4">
+                            {consumptionStats.map((stat, i) => (
+                                <div key={i} className="flex justify-between items-center border-b border-white/5 pb-2 last:border-0">
+                                    <span className="text-[10px] text-zinc-500 uppercase">{stat.label}</span>
+                                    <span className="text-xs font-mono text-white">{stat.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
 
-          if (stepId === 1) {
-              if (!waForm.accessToken || !waForm.businessId || !waForm.clientId || !waForm.clientSecret) {
-                  success = false;
-                  errorMsg = 'Please fill in all required fields marked with *';
-              }
-          } else if (stepId === 2) {
-              if (!pmsForm.username || !pmsForm.password) {
-                  success = false;
-                  errorMsg = 'Invalid credentials or unreachable endpoint.';
-              }
-          } else if (stepId === 3) {
-              if (kbFiles.length === 0) {
-                  // Optional validation
-              }
-          }
+                </div>
 
-          setIsValidating(false);
+                {/* CONSUMPTION TABLE */}
+                <div className="pt-4">
+                    <Card variant="default" padding="none" className="overflow-hidden border-white/5">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                            <h3 className="text-lg font-light text-white">Execution Ledger (Real-Time)</h3>
+                            <Button variant="ghost" size="sm" className="text-zinc-500"><Download size={16} /> Export</Button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-white/5 bg-white/[0.01]">
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date & Time</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Module / Task</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Consumption</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {history.map((item) => (
+                                        <tr key={item.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                                            <td className="px-6 py-5 text-[10px] font-mono text-white/40 group-hover:text-white/60 transition-colors uppercase tracking-widest">{item.date}</td>
+                                            <td className="px-6 py-5 text-sm text-white font-bold tracking-tight opacity-80 group-hover:opacity-100">{item.module}</td>
+                                            <td className="px-6 py-5 text-xs font-numbers text-[var(--color-brand-accent)] font-black">
+                                                {item.credits.toLocaleString()}
+                                                <span className="text-[9px] opacity-40 ml-1.5 font-numbers uppercase tracking-widest italic">AC</span>
+                                            </td>
+                                            <td className="px-6 py-5 text-right">
+                                                <span className="text-[9px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-black tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                                                    Settled
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
 
-          if (success) {
-              setActivationSteps(steps => steps.map(s => s.id === stepId ? { ...s, status: 'Completed' } : s));
-              setActiveStepModal(null);
-          } else {
-              setValidationError(errorMsg);
-              setActivationSteps(steps => steps.map(s => s.id === stepId ? { ...s, status: 'Error' } : s));
-          }
-      }, 2000);
-  };
+                {/* CHART PLACEHOLDER */}
+                <div className="pt-2">
+                    <Card variant="default" padding="lg" className="border-white/5">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-light text-white">Consumption Over Time</h3>
+                            <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">Resource allocation trend (7d)</p>
+                        </div>
+                        <div className="h-[240px] w-full flex items-center justify-center border border-white/5 bg-black/40 rounded-3xl relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-brand-accent)]/5 to-transparent opacity-50"></div>
+                            <div className="absolute inset-0 flex items-end justify-between px-10 pb-6 opacity-40 pointer-events-none gap-2">
+                                {[40, 70, 45, 90, 65, 80, 50, 60, 45, 75, 55, 95].map((h, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex-1 bg-white/10 rounded-t-lg transition-all duration-700 group-hover:bg-[var(--color-brand-accent)]/20 group-hover:scale-y-110 origin-bottom"
+                                        style={{ height: `${h}%`, transitionDelay: `${i * 30}ms` }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex flex-col items-center gap-4 relative z-10">
+                                <Activity className="text-[var(--color-brand-accent)] opacity-40 animate-pulse" size={32} />
+                                <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.4em] px-6 py-2 border border-white/5 rounded-full backdrop-blur-md">
+                                    Ledger Topology Active
+                                </span>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
 
-  const handleSaveBillingDetails = () => {
-      onUpdateBillingDetails(localBillingDetails);
-      setShowBillingModal(false);
-  };
 
-  const renderProfile = () => {
-    const initials = `${localProfile.firstName[0] || ''}${localProfile.lastName[0] || ''}`.toUpperCase();
+                {/* Modals */}
+                <Modal isOpen={showTopUpModal} onClose={() => setShowTopUpModal(false)} title="Top Up ArmoCredits©">
+                    <div className="p-6">
+                        <p className="text-sm text-[var(--color-text-muted)] mb-6">Select a credit pack to add to your balance. Funds are available immediately.</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                            {[10000, 20000, 50000, 100000].map(amount => (
+                                <button
+                                    key={amount}
+                                    onClick={() => setSelectedPack(amount)}
+                                    className={`
+                                        p-4 rounded-xl border flex flex-col items-center justify-center transition-all bg-[var(--color-surface)]
+                                        ${selectedPack === amount
+                                            ? 'border-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)] shadow-md bg-[var(--color-brand-primary)]/5'
+                                            : 'border-[var(--color-border)] hover:border-[var(--color-text-muted)]'
+                                        }
+                                    `}
+                                >
+                                    <span className={`text-lg font-mono font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
+                                        {amount.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mt-1">ArmoCredits©</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="border-t border-[var(--color-border)] pt-6 flex justify-end">
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                className="w-full md:w-auto"
+                                onClick={handleProcessTopUp}
+                                disabled={isProcessingPayment}
+                                leftIcon={isProcessingPayment ? <RefreshCw className="animate-spin" /> : <CreditCard />}
+                            >
+                                {isProcessingPayment ? 'Processing...' : 'Confirm Recharge'}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                <Modal isOpen={showAutoTopUpModal} onClose={() => setShowAutoTopUpModal(false)} title="Enable Auto Top-up">
+                    <div className="p-6 max-w-md mx-auto">
+                        <div className="flex justify-center mb-6">
+                            <div className="w-16 h-16 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary)]">
+                                <RefreshCw size={32} />
+                            </div>
+                        </div>
+
+                        <h3 className="text-center font-medium text-lg mb-2">Never Run Out of Credits</h3>
+                        <p className="text-center text-sm text-[var(--color-text-muted)] mb-6">
+                            When your balance falls below <strong className="text-[var(--color-text-main)]">10,000 ArmoCredits©</strong>,
+                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">10,000 ArmoCredits©</strong>.
+                        </p>
+
+                        <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
+                            <div className="flex gap-3 items-start">
+                                <InfoIcon />
+                                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                                    By enabling this, you authorize Armonyco to recharge your credits whenever the threshold is reached. Charges will appear on your statement as "Armonyco Refill".
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mb-6 flex justify-center">
+                            <div className="text-center">
+                                <span className="text-xs text-[var(--color-text-muted)] uppercase font-bold">Top-up Amount</span>
+                                <div className="text-lg font-bold">10,000 ArmoCredits©</div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <Button variant="ghost" className="flex-1 justify-center" onClick={() => setShowAutoTopUpModal(false)}>Cancel</Button>
+                            <Button
+                                variant="primary"
+                                className="flex-1 justify-center"
+                                onClick={handleEnableAutoTopUp}
+                                disabled={isAcceptingTerms}
+                            >
+                                {isAcceptingTerms ? 'Enabling...' : 'I Agree, Enable Auto-Topup'}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                <Modal
+                    isOpen={showBillingModal}
+                    onClose={() => setShowBillingModal(false)}
+                    title="Edit Billing Details"
+                >
+                    <div className="p-6 space-y-5">
+                        {/* Billing Form Inputs */}
+                        <div className="space-y-4">
+                            <FloatingInput label="Legal Entity Name" value={localBillingDetails.legalName} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })} />
+                            <FloatingInput label="VAT Number" value={localBillingDetails.vatNumber} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })} />
+                            <FloatingInput label="Address" value={localBillingDetails.address} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })} />
+                        </div>
+                        <div className="flex justify-end pt-4">
+                            <Button onClick={handleSaveBillingDetails}>Save Details</Button>
+                        </div>
+                    </div>
+                </Modal>
+            </div>
+        );
+    };
+
+
 
     return (
-    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
-         {/* Identity Section */}
-         <div className="ui-card p-8">
-             <div className="flex justify-between items-start mb-6">
+        <div className="w-full p-8 animate-fade-in flex flex-col h-full bg-black text-white">
+            <header className="mb-10 border-b border-white/5 pb-8 flex flex-col md:flex-row justify-between md:items-center gap-6 shrink-0">
                 <div>
-                    <h2 className="text-xl font-light text-stone-900">Identity</h2>
-                    <p className="text-stone-500 text-sm mt-1">Personal details and contact verification.</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Settings className="text-[var(--color-brand-accent)] w-6 h-6" />
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">System Settings</h1>
+                    </div>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Configure your personal identity and organization protocols.</p>
                 </div>
-                <span className="px-2 py-1 bg-stone-100 text-stone-500 text-[10px] font-bold uppercase tracking-wider rounded border border-stone-200">
-                    ID: USR-9921
-                </span>
-             </div>
 
-             <div className="flex flex-col md:flex-row gap-8">
-                 {/* Avatar */}
-                 <div className="flex flex-col items-center gap-3">
-                     <div className="w-24 h-24 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 text-2xl font-bold border border-stone-200 relative overflow-hidden group shadow-inner">
-                         {initials}
-                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                             <Camera className="text-white" size={24} />
-                         </div>
-                     </div>
-                     <button className="text-xs text-stone-500 hover:text-stone-900 underline">Remove photo</button>
-                 </div>
+                <nav className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-md">
+                    {[
+                        { id: 'PROFILE', label: 'Identity', icon: User },
+                        { id: 'ORG', label: 'Organization', icon: Building },
+                        { id: 'BILLING', label: 'Billing & AC', icon: CreditCard }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as SettingsTab)}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === tab.id
+                                ? 'bg-[var(--color-brand-accent)] text-black shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+                                : 'text-white/40 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <tab.icon size={14} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+            </header>
 
-                 {/* Fields */}
-                 <div className="flex-1 space-y-6 pt-2">
-                     <div className="grid grid-cols-2 gap-4">
-                        <FloatingInput 
-                            label="First Name" 
-                            value={localProfile.firstName} 
-                            onChange={(e) => setLocalProfile({...localProfile, firstName: e.target.value})} 
-                        />
-                        <FloatingInput 
-                            label="Last Name" 
-                            value={localProfile.lastName} 
-                            onChange={(e) => setLocalProfile({...localProfile, lastName: e.target.value})} 
-                        />
-                     </div>
-
-                     <div>
-                        <div className="flex gap-2 items-center">
-                            <FloatingInput 
-                                label="Email Address" 
-                                type="email"
-                                value={localProfile.email} 
-                                onChange={(e) => setLocalProfile({...localProfile, email: e.target.value})} 
-                            />
-                            {emailVerified ? (
-                                <div className="h-12 flex items-center gap-1 px-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 text-xs font-medium">
-                                    <CheckCircle size={14} /> Verified
-                                </div>
-                            ) : (
-                                <button className="h-12 px-3 bg-stone-100 border border-stone-200 rounded-lg text-stone-600 text-xs font-medium hover:bg-stone-200 ui-btn-secondary">
-                                    Verify
-                                </button>
-                            )}
-                        </div>
-                     </div>
-
-                     <div>
-                        <div className="flex gap-2 items-center">
-                            <FloatingInput 
-                                label="Phone Number" 
-                                value={localProfile.phone} 
-                                onChange={(e) => setLocalProfile({...localProfile, phone: e.target.value})} 
-                            />
-                            {phoneVerified ? (
-                                <div className="h-12 flex items-center gap-1 px-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 text-xs font-medium">
-                                    <CheckCircle size={14} /> Verified
-                                </div>
-                            ) : (
-                                <button className="h-12 px-3 bg-stone-100 border border-stone-200 rounded-lg text-stone-600 text-xs font-medium hover:bg-stone-200 whitespace-nowrap ui-btn-secondary">
-                                    Send Code
-                                </button>
-                            )}
-                        </div>
-                     </div>
-                 </div>
-             </div>
-         </div>
-
-         {/* Security Section */}
-         <div className="ui-card p-8">
-             <div className="flex justify-between items-start mb-6">
-                <div>
-                    <h2 className="text-xl font-light text-stone-900">Security</h2>
-                    <p className="text-stone-500 text-sm mt-1">Password, 2FA, and active sessions.</p>
-                </div>
-             </div>
-
-             <div className="divide-y divide-stone-100">
-                 {/* Password */}
-                 <div className="py-4 flex justify-between items-center">
-                     <div>
-                         <div className="text-sm font-medium text-stone-900">Password</div>
-                         <div className="text-xs text-stone-500">Last changed 3 months ago</div>
-                     </div>
-                     <button onClick={() => setShowPasswordModal(true)} className="ui-btn-secondary px-3 py-1.5 text-xs">
-                         Change Password
-                     </button>
-                 </div>
-
-                 {/* 2FA */}
-                 <div className="py-4 flex justify-between items-center">
-                     <div>
-                         <div className="text-sm font-medium text-stone-900">Two-Factor Authentication</div>
-                         <div className="text-xs text-stone-500">Secure your account with an authenticator app.</div>
-                     </div>
-                     <button onClick={() => setTwoFactorEnabled(!twoFactorEnabled)} className={`w-10 h-5 rounded-full transition-colors relative ${twoFactorEnabled ? 'bg-emerald-500' : 'bg-stone-300'}`}>
-                        <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${twoFactorEnabled ? 'left-6' : 'left-1'}`} />
-                     </button>
-                 </div>
-             </div>
-         </div>
-
-         {/* Save Action */}
-         <div className="flex justify-end pt-4 pb-12">
-             <AnimatedButton 
-                text="Save Changes"
-                icon={<Save size={18} />}
-                onClick={() => onUpdateProfile(localProfile)}
-                width="140px"
-             />
-         </div>
-
-         {/* Password Modal */}
-         <Modal 
-            isOpen={showPasswordModal} 
-            onClose={() => setShowPasswordModal(false)} 
-            title="Change Password"
-            footer={
-                <>
-                    <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-500 hover:text-stone-900 mr-2">Cancel</button>
-                    <AnimatedButton 
-                        text="Update"
-                        icon={<CheckCircle size={18} />}
-                        onClick={() => setShowPasswordModal(false)}
-                        width="110px"
-                    />
-                </>
-            }
-         >
-             <div className="space-y-5 pt-2">
-                 <FloatingInput 
-                    label="Current Password" 
-                    type="password"
-                 />
-                 <FloatingInput 
-                    label="New Password" 
-                    type="password"
-                 />
-                 <FloatingInput 
-                    label="Confirm New Password" 
-                    type="password"
-                 />
-             </div>
-         </Modal>
-    </div>
-  )};
-
-  const renderOrg = () => (
-    <div className="ui-card p-8 space-y-8 animate-fade-in max-w-4xl mx-auto">
-        <div className="border-b border-stone-100 pb-6 mb-6">
-            <h2 className="text-xl font-light text-stone-900">Organization Settings</h2>
-            <p className="text-stone-500 text-sm mt-1">Manage company identity and global preferences.</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <div>
-                <FloatingInput 
-                    label="Organization Name" 
-                    value={localOrg.name} 
-                    readOnly 
-                    className="bg-stone-50 text-stone-500 cursor-not-allowed"
-                    bgClass="bg-stone-50"
-                />
-            </div>
-            <div>
-                <FloatingInput 
-                    label="Billing Email" 
-                    type="email"
-                    value={localOrg.billingEmail} 
-                    onChange={e => setLocalOrg({...localOrg, billingEmail: e.target.value})} 
-                />
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+                {activeTab === 'PROFILE' && renderProfile()}
+                {activeTab === 'ORG' && renderOrg()}
+                {activeTab === 'BILLING' && renderBilling()}
             </div>
         </div>
-
-        {/* Billing Details Card */}
-        <div className="mt-8 border-t border-stone-100 pt-8">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-stone-900">Billing Details</h3>
-                {isBillingDetailsComplete ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
-                        <CheckCircle size={12} /> Completed
-                    </span>
-                ) : (
-                    <span className="flex items-center gap-1 text-xs text-stone-400 font-bold uppercase tracking-wider bg-stone-100 px-2 py-1 rounded border border-stone-200">
-                        Incomplete
-                    </span>
-                )}
-            </div>
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 flex justify-between items-center">
-                <div className="text-sm text-stone-600">
-                    <div className="font-medium text-stone-900">{localBillingDetails.legalName || 'Legal Entity Name'}</div>
-                    <div className="text-xs text-stone-500 mt-1">{localBillingDetails.vatNumber ? `VAT: ${localBillingDetails.vatNumber}` : 'VAT ID not set'}</div>
-                </div>
-                <button onClick={() => setShowBillingModal(true)} className="ui-btn-secondary px-4 py-2 text-xs">
-                    Edit Details
-                </button>
-            </div>
-        </div>
-
-        <div className="pt-6 border-t border-stone-100 flex justify-end">
-             <AnimatedButton 
-                text="Save Changes"
-                icon={<Save size={18} />}
-                onClick={() => onUpdateOrganization(localOrg)}
-                width="140px"
-             />
-         </div>
-
-         {/* Billing Details Modal */}
-         <Modal 
-            isOpen={showBillingModal} 
-            onClose={() => setShowBillingModal(false)} 
-            title="Edit Billing Details"
-            footer={
-                <>
-                    <button onClick={() => setShowBillingModal(false)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-500 hover:text-stone-900 mr-2">Cancel</button>
-                    <AnimatedButton 
-                        text="Save"
-                        icon={<Save size={18} />}
-                        onClick={handleSaveBillingDetails}
-                        width="100px"
-                    />
-                </>
-            }
-         >
-             <div className="space-y-5 pt-2">
-                 <FloatingInput 
-                    label="Legal Entity Name" 
-                    value={localBillingDetails.legalName} 
-                    onChange={e => setLocalBillingDetails({...localBillingDetails, legalName: e.target.value})} 
-                    placeholder="e.g. Acme Corp S.r.l." 
-                 />
-                 <div className="grid grid-cols-2 gap-4">
-                     <FloatingInput 
-                        label="VAT Number" 
-                        value={localBillingDetails.vatNumber} 
-                        onChange={e => setLocalBillingDetails({...localBillingDetails, vatNumber: e.target.value})} 
-                     />
-                     <FloatingInput 
-                        label="Fiscal Code" 
-                        value={localBillingDetails.fiscalCode} 
-                        onChange={e => setLocalBillingDetails({...localBillingDetails, fiscalCode: e.target.value})} 
-                     />
-                 </div>
-                 <FloatingInput 
-                    label="Address" 
-                    value={localBillingDetails.address} 
-                    onChange={e => setLocalBillingDetails({...localBillingDetails, address: e.target.value})} 
-                 />
-                 <div className="grid grid-cols-3 gap-4">
-                     <div className="col-span-1">
-                         <FloatingInput 
-                            label="City" 
-                            value={localBillingDetails.city} 
-                            onChange={e => setLocalBillingDetails({...localBillingDetails, city: e.target.value})} 
-                         />
-                     </div>
-                     <div className="col-span-1">
-                         <FloatingInput 
-                            label="ZIP" 
-                            value={localBillingDetails.zip} 
-                            onChange={e => setLocalBillingDetails({...localBillingDetails, zip: e.target.value})} 
-                         />
-                     </div>
-                     <div className="col-span-1">
-                         <FloatingInput 
-                            label="Country" 
-                            value={localBillingDetails.country} 
-                            onChange={e => setLocalBillingDetails({...localBillingDetails, country: e.target.value})} 
-                         />
-                     </div>
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                     <FloatingInput 
-                        label="SDI Code" 
-                        value={localBillingDetails.sdiCode} 
-                        onChange={e => setLocalBillingDetails({...localBillingDetails, sdiCode: e.target.value})} 
-                     />
-                     <FloatingInput 
-                        label="PEC Email" 
-                        type="email"
-                        value={localBillingDetails.pecEmail} 
-                        onChange={e => setLocalBillingDetails({...localBillingDetails, pecEmail: e.target.value})} 
-                     />
-                 </div>
-             </div>
-         </Modal>
-    </div>
-  );
-
-  const renderActivation = () => (
-    <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
-      <div className="border-b border-stone-100 pb-6 mb-6">
-        <h2 className="text-xl font-light text-stone-900">System Activation</h2>
-        <p className="text-stone-500 text-sm mt-1">Connect your infrastructure to enable Armonyco.</p>
-      </div>
-
-      <div className="space-y-4">
-        {activationSteps.map((step) => (
-          <div key={step.id} className="ui-card p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border ${
-                step.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                step.status === 'Error' ? 'bg-red-50 text-red-600 border-red-100' :
-                'bg-stone-50 text-stone-400 border-stone-200'
-              }`}>
-                {step.status === 'Completed' ? <CheckCircle size={16} /> : step.id}
-              </div>
-              <div>
-                <h3 className="font-medium text-stone-900">{step.label}</h3>
-                <p className="text-xs text-stone-400">
-                  {step.status === 'Completed' ? 'Connected & Verified' : 'Configuration Required'}
-                </p>
-              </div>
-            </div>
-            <AnimatedButton 
-                text={step.status === 'Completed' ? 'Configure' : 'Connect'}
-                icon={step.status === 'Completed' ? <Settings size={18}/> : <Link size={18}/>}
-                onClick={() => setActiveStepModal(step.id)}
-                width="120px"
-                variant={step.status === 'Completed' ? 'light' : 'dark'}
-            />
-          </div>
-        ))}
-      </div>
-      
-      {/* Example Modal for Step 1 */}
-      <Modal
-        isOpen={activeStepModal === 1}
-        onClose={() => setActiveStepModal(null)}
-        title="Connect WhatsApp Business API"
-        footer={
-           <>
-              <button onClick={() => setActiveStepModal(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-stone-500 hover:text-stone-900 mr-2">Cancel</button>
-              <AnimatedButton 
-                  text={isValidating ? "Verifying..." : "Connect"}
-                  icon={isValidating ? <RefreshCw size={18} className="animate-spin"/> : <Link size={18}/>}
-                  onClick={() => handleValidation(1)}
-                  width="125px"
-                  disabled={isValidating}
-              />
-           </>
-        }
-      >
-          <div className="space-y-5 pt-2">
-              <p className="text-sm text-stone-500 mb-2">Provide your Meta Developer credentials to enable Amelia.</p>
-              <FloatingInput 
-                  label="Access Token" 
-                  type="password"
-                  value={waForm.accessToken} 
-                  onChange={e => setWaForm({...waForm, accessToken: e.target.value})} 
-                  className="font-mono"
-              />
-              <FloatingInput 
-                  label="Business Account ID" 
-                  value={waForm.businessId} 
-                  onChange={e => setWaForm({...waForm, businessId: e.target.value})} 
-                  className="font-mono"
-              />
-          </div>
-      </Modal>
-    </div>
-  );
-
-  const renderNotifications = () => (
-      <div className="max-w-4xl mx-auto animate-fade-in">
-          <div className="border-b border-stone-100 pb-6 mb-6">
-            <h2 className="text-xl font-light text-stone-900">Notification Preferences</h2>
-            <p className="text-stone-500 text-sm mt-1">Control when and how you are alerted.</p>
-          </div>
-
-          <div className="ui-card p-0 overflow-hidden mb-8">
-              <div className="bg-stone-50 px-6 py-3 border-b border-stone-100">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">System Alerts</h3>
-              </div>
-              <div className="divide-y divide-stone-100">
-                  {[
-                      { id: 'systemIncidents', label: 'System Incidents', desc: 'Critical failures in core constructs (AEM/AOS).' },
-                      { id: 'integrationFailures', label: 'Integration Failures', desc: 'Connectivity loss with PMS or WhatsApp.' },
-                      { id: 'budgetWarnings', label: 'Budget Warnings', desc: 'When credit usage exceeds 80% of limit.' },
-                  ].map(item => (
-                      <div key={item.id} className="p-6 flex items-center justify-between hover:bg-stone-50/50 transition-colors">
-                          <div>
-                              <div className="font-medium text-stone-900 text-sm">{item.label}</div>
-                              <div className="text-xs text-stone-500 mt-0.5">{item.desc}</div>
-                          </div>
-                          <button 
-                              onClick={() => setNotifConfig({...notifConfig, [item.id]: !notifConfig[item.id as keyof typeof notifConfig]})}
-                              className={`w-10 h-5 rounded-full transition-colors relative ${notifConfig[item.id as keyof typeof notifConfig] ? 'bg-stone-900' : 'bg-stone-200'}`}
-                          >
-                              <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${notifConfig[item.id as keyof typeof notifConfig] ? 'left-6' : 'left-1'}`} />
-                          </button>
-                      </div>
-                  ))}
-              </div>
-          </div>
-
-          <div className="ui-card p-0 overflow-hidden">
-              <div className="bg-stone-50 px-6 py-3 border-b border-stone-100">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">Channels</h3>
-              </div>
-              <div className="divide-y divide-stone-100">
-                  <div className="p-6 flex items-center justify-between">
-                      <div>
-                          <div className="font-medium text-stone-900 text-sm">Email Notifications</div>
-                          <div className="text-xs text-stone-500 mt-0.5">Send alerts to {userProfile.email}</div>
-                      </div>
-                      <button 
-                          onClick={() => setNotifConfig({...notifConfig, emailChannel: !notifConfig.emailChannel})}
-                          className={`w-10 h-5 rounded-full transition-colors relative ${notifConfig.emailChannel ? 'bg-stone-900' : 'bg-stone-200'}`}
-                      >
-                          <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${notifConfig.emailChannel ? 'left-6' : 'left-1'}`} />
-                      </button>
-                  </div>
-                  <div className="p-6 flex items-center justify-between">
-                      <div>
-                          <div className="font-medium text-stone-900 text-sm">In-App Notifications</div>
-                          <div className="text-xs text-stone-500 mt-0.5">Show badge and dropdown in dashboard</div>
-                      </div>
-                      <button 
-                          onClick={() => setNotifConfig({...notifConfig, appChannel: !notifConfig.appChannel})}
-                          className={`w-10 h-5 rounded-full transition-colors relative ${notifConfig.appChannel ? 'bg-stone-900' : 'bg-stone-200'}`}
-                      >
-                          <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${notifConfig.appChannel ? 'left-6' : 'left-1'}`} />
-                      </button>
-                  </div>
-              </div>
-          </div>
-      </div>
-  );
-
-  const renderBilling = () => (
-      <div className="max-w-4xl mx-auto animate-fade-in">
-          <div className="border-b border-stone-100 pb-6 mb-6">
-            <h2 className="text-xl font-light text-stone-900">Pricing & Billing</h2>
-            <p className="text-stone-500 text-sm mt-1">Manage credits and payment methods.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Credit Balance */}
-              <div className="ui-card-dark p-8 relative overflow-hidden">
-                  <div className="relative z-10">
-                      <div className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-4">Current Balance</div>
-                      <div className="text-5xl font-mono text-white mb-2">{currentCredits.toFixed(4)}</div>
-                      <div className="text-emerald-400 text-sm font-medium flex items-center gap-1">
-                          <CheckCircle size={14} /> Active
-                      </div>
-                  </div>
-                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                      <CreditCard size={120} />
-                  </div>
-              </div>
-
-              {/* Top Up / Plan */}
-              <div className="ui-card p-8 flex flex-col justify-between">
-                  <div>
-                      <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-stone-900 font-medium">Commercial Plan</h3>
-                          <span className="bg-stone-100 text-stone-600 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Standard</span>
-                      </div>
-                      <div className="text-3xl font-mono text-stone-900 mb-1">€0.0010 <span className="text-sm text-stone-500 font-sans">/ credit</span></div>
-                      <p className="text-xs text-stone-500">Pay as you go. No fixed fees.</p>
-                  </div>
-                  <div className="mt-6">
-                      <AnimatedButton 
-                          text="Top Up Credits"
-                          icon={<Plus size={18} />}
-                          width="170px"
-                          onClick={() => onUpdateCredits(currentCredits + 100)} // Mock top up
-                      />
-                  </div>
-              </div>
-          </div>
-
-          {/* Budget Control */}
-          <div className="ui-card p-6 mb-8 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                  <div className="p-3 bg-stone-100 rounded-lg text-stone-600">
-                      <AlertTriangle size={20} />
-                  </div>
-                  <div>
-                      <h3 className="text-stone-900 font-medium text-sm">Monthly Budget Limit</h3>
-                      <p className="text-stone-500 text-xs mt-0.5">Stop automation when spend exceeds limit</p>
-                  </div>
-              </div>
-              <div className="flex items-center gap-4">
-                  <div className="relative">
-                      <span className="absolute left-3 top-2 text-stone-400 text-xs">€</span>
-                      <input 
-                          type="number" 
-                          value={budgetLimit} 
-                          onChange={(e) => setBudgetLimit(e.target.value)}
-                          className="w-24 py-1.5 pl-6 pr-2 bg-stone-50 border border-stone-200 rounded text-sm text-stone-900 focus:outline-none focus:border-stone-400 text-right"
-                          disabled={!budgetEnabled}
-                      />
-                  </div>
-                  <button 
-                      onClick={() => setBudgetEnabled(!budgetEnabled)}
-                      className={`w-10 h-5 rounded-full transition-colors relative ${budgetEnabled ? 'bg-stone-900' : 'bg-stone-200'}`}
-                  >
-                      <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${budgetEnabled ? 'left-6' : 'left-1'}`} />
-                  </button>
-              </div>
-          </div>
-
-          {/* Transaction History */}
-          <div className="ui-card p-0 overflow-hidden">
-              <div className="bg-stone-50 px-6 py-4 border-b border-stone-100">
-                  <h3 className="text-sm font-medium text-stone-900 uppercase tracking-wider">Transaction History</h3>
-              </div>
-              <table className="w-full text-left text-sm">
-                  <thead className="bg-white text-stone-500 font-medium border-b border-stone-100 text-xs uppercase tracking-wider">
-                      <tr>
-                          <th className="px-6 py-4">Date</th>
-                          <th className="px-6 py-4">Type</th>
-                          <th className="px-6 py-4">Reference</th>
-                          <th className="px-6 py-4 text-right">Amount (€)</th>
-                          <th className="px-6 py-4 text-right">Balance</th>
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-100 text-xs font-mono">
-                      {transactions.map((tx, i) => (
-                          <tr key={i} className="hover:bg-stone-50 transition-colors">
-                              <td className="px-6 py-4 text-stone-500">{tx.date}</td>
-                              <td className="px-6 py-4">
-                                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                                      tx.type === 'Top-up' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-stone-100 text-stone-600 border border-stone-200'
-                                  }`}>
-                                      {tx.type}
-                                  </span>
-                              </td>
-                              <td className="px-6 py-4 text-stone-900">{tx.ref}</td>
-                              <td className="px-6 py-4 text-right text-stone-900 font-bold">
-                                  {tx.type === 'Top-up' ? '+' : '-'}{Number(tx.amount).toFixed(4)}
-                              </td>
-                              <td className="px-6 py-4 text-right text-stone-500">{Number(tx.balance).toFixed(4)}</td>
-                          </tr>
-                      ))}
-                  </tbody>
-              </table>
-          </div>
-      </div>
-  );
-
-  return (
-    <div className="p-8 max-w-6xl mx-auto">
-      {activeTab === 'PROFILE' && renderProfile()}
-      {activeTab === 'ORG' && renderOrg()}
-      {activeTab === 'ACTIVATION' && renderActivation()}
-      {activeTab === 'NOTIFICATIONS' && renderNotifications()}
-      {activeTab === 'BILLING' && renderBilling()}
-    </div>
-  );
+    );
 };
+
+// Helper Icon Component for Auto Top Up Modal
+const InfoIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-subtle)] shrink-0">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+);
