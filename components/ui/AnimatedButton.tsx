@@ -2,34 +2,38 @@ import React from 'react';
 
 interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   text: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   width?: string;
   variant?: 'dark' | 'light' | 'danger';
   expanded?: boolean;
 }
 
-export const AnimatedButton: React.FC<AnimatedButtonProps> = ({ 
-  text, 
-  icon, 
-  width = '140px', 
+export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+  text,
+  icon,
+  width = '140px',
   variant = 'dark',
   expanded = false,
-  className = '', 
-  ...props 
+  className = '',
+  ...props
 }) => {
   const variantClass = variant === 'light' ? 'light' : variant === 'danger' ? 'danger' : '';
   const expandedClass = expanded ? 'expanded' : '';
-  
+
   return (
-    <button 
-      className={`ui-btn-animated ${variantClass} ${expandedClass} ${className}`} 
-      style={{ '--hover-width': width } as React.CSSProperties} 
+    <button
+      className={`ui-btn-animated ${variantClass} ${expandedClass} ${className}`}
+      style={{ '--hover-width': width } as React.CSSProperties}
       {...props}
     >
-      <div className="sign">
-        {icon}
+      {icon && (
+        <div className="sign">
+          {icon}
+        </div>
+      )}
+      <div className={`text ${!icon ? '!w-full !right-auto !text-center !px-4' : ''}`}>
+        {text}
       </div>
-      <div className="text">{text}</div>
     </button>
   );
 };

@@ -3,18 +3,20 @@ import { Download, Power } from 'lucide-react';
 
 interface ActionToggleProps {
   type: 'download' | 'toggle';
-  labelIdle?: string; 
+  labelIdle?: string;
   labelActive?: string;
   isActive?: boolean;
   onToggle?: () => void;
+  className?: string; // Allow external positioning
 }
 
-export const ActionToggle: React.FC<ActionToggleProps> = ({ 
-  type, 
-  labelIdle, 
-  labelActive, 
-  isActive = false, 
-  onToggle
+export const ActionToggle: React.FC<ActionToggleProps> = ({
+  type,
+  labelIdle,
+  labelActive,
+  isActive = false,
+  onToggle,
+  className = ''
 }) => {
   const [internalState, setInternalState] = useState(isActive);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -23,86 +25,96 @@ export const ActionToggle: React.FC<ActionToggleProps> = ({
     setInternalState(isActive);
   }, [isActive]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = () => {
     if (isAnimating) return;
-    
-    const checked = e.target.checked;
+
     setIsAnimating(true);
-    
     if (onToggle) onToggle();
 
     if (type === 'download') {
-        setInternalState(true);
-        setTimeout(() => {
-            setInternalState(false);
-            setIsAnimating(false);
-        }, 4000);
+      setInternalState(true);
+      setTimeout(() => {
+        setInternalState(false);
+        setIsAnimating(false);
+      }, 4000); // Simulate download time
     } else {
-        // Toggle logic: wait for animation
-        setTimeout(() => {
-            setInternalState(checked);
-            setIsAnimating(false);
-        }, 3000); 
+      // Toggle logic: wait 'fake' API time
+      setTimeout(() => {
+        // State update is handled by prop usually, but for local demo:
+        // setInternalState(!internalState); // Actually, we should rely on props or just stop animating
+        setIsAnimating(false);
+      }, 1500);
     }
   };
 
   const isDownload = type === 'download';
-  
-  // Colors
-  const activeColor = '#10B981'; // Emerald 500 (Green) - WHEN ACTIVE/RUNNING
-  const pausedColor = '#C5A572'; // Gold - WHEN PAUSED
-  const downloadColor = '#6366f1'; // Indigo
 
-  // If internalState is true -> Active -> Green
-  // If internalState is false -> Paused -> Gold
-  const currentColor = isDownload 
-    ? downloadColor 
-    : internalState ? activeColor : pausedColor;
+  // CSS Variables for dynamic colors logic (handled via inline style for the circle fill if needed, or classes)
+  // Logic: 
+  // Active -> Success Green
+  // Paused (Idle) -> Brand Gold
+  // Download -> Indigo (Special case)
 
-  // Labels
+  const getStatusColor = () => {
+    if (isDownload) return 'var(--color-info)'; // Indigo-ish mapped to info
+    if (internalState) return 'var(--color-success)';
+    return 'var(--color-brand-accent)';
+  };
+
+  const currentColor = getStatusColor();
+
+  // Labels logic
   const getHoverLabel = () => {
-      if (isDownload) return labelIdle || "Download";
-      // If currently Active (Green), user wants to PAUSE
-      if (internalState) return "Pause"; 
-      // If currently Paused (Gold), user wants to ENABLE
-      return "Enable";
+    if (isDownload) return labelIdle || "Download";
+    if (internalState) return "Pause";
+    return "Enable";
   };
 
   const getActiveLabel = () => {
-      if (isDownload) return labelActive || "Done";
-      if (internalState) return "Active";
-      return "Paused";
+    if (isDownload) return labelActive || "Done";
+    if (internalState) return "Active";
+    return "Paused";
   };
 
   return (
-    <div className="action-toggle-wrapper">
-      <label className={`label ${internalState ? 'active-state' : 'paused-state'} ${isAnimating ? 'animating' : ''}`}>
-        <input 
-            type="checkbox" 
-            className="input" 
-            checked={internalState} 
-            onChange={handleChange}
-            disabled={isAnimating} 
-        />
-        
-        {/* The Circle Container */}
-        <span className="circle">
-          <div className="icon-box">
-             {type === 'download' ? (
-                <Download size={18} strokeWidth={2.5} />
-             ) : (
-                <Power size={18} strokeWidth={2.5} />
-             )}
+    <div className={`action-toggle-wrapper ${className}`}>
+      <label
+        className={`
+          label-container 
+          ${internalState ? 'active' : 'paused'} 
+          ${isAnimating ? 'animating' : ''}
+        `}
+        onClick={(e) => {
+          e.preventDefault();
+          handleChange();
+        }}
+      >
+
+        {/* The Circle Indicator */}
+        <span
+          className="circle-indicator"
+          style={{ backgroundColor: isAnimating ? 'transparent' : currentColor, borderColor: currentColor }}
+        >
+          <div className={`icon-box ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+            {type === 'download' ? (
+              <Download size={18} strokeWidth={2.5} />
+            ) : (
+              <Power size={18} strokeWidth={2.5} />
+            )}
           </div>
         </span>
-        
+
         {/* Hover Text (The Action) */}
-        <p className="title action-text">{getHoverLabel()}</p>
-        
-        {/* Active/Status Text (Hidden generally) */}
-        <p className="title status-text">{getActiveLabel()}</p>
+        <p
+          className="label-text action-text"
+          style={{ color: currentColor }}
+        >
+          {getHoverLabel()}
+        </p>
+
       </label>
 
+      {/* Internal Styles for this complex component animation that is hard to do with strict Tailwind utilities only without polluting global CSS */}
       <style>{`
         .action-toggle-wrapper {
           display: flex;
@@ -110,119 +122,76 @@ export const ActionToggle: React.FC<ActionToggleProps> = ({
           align-items: center;
         }
 
-        .label {
-          background-color: transparent;
-          border: 2px solid ${currentColor};
+        .label-container {
+          position: relative;
           display: flex;
           align-items: center;
-          border-radius: 50px;
-          width: 45px; /* Default Circle Width */
+          border-radius: 9999px; /* Pill */
+          width: 45px;
           height: 45px;
           cursor: pointer;
-          transition: all 0.4s ease;
-          padding: 0;
-          position: relative;
+          transition: width 0.4s ease;
+          border: 2px solid ${currentColor};
           overflow: hidden;
+          background: transparent;
         }
 
-        /* Hover: Expand to Pill */
-        .label:not(.animating):hover {
-          width: 130px; /* Expand */
+        .label-container:hover:not(.animating) {
+          width: 130px;
         }
 
-        /* Text Styling */
-        .label .title {
+        .circle-indicator {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 41px; /* border is 2px, so 45 - 4 = 41 */
+          width: 41px;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transition: all 0.4s ease;
+          color: white;
+          border: 2px solid transparent; /* default */
+        }
+
+        .label-text {
+          position: absolute;
+          right: 22px;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          transition: all 0.4s ease;
-          position: absolute;
-          right: 22px;
-          text-align: center;
           white-space: nowrap;
-          opacity: 0; 
+          opacity: 0;
           visibility: hidden;
-          color: ${currentColor};
+          transition: all 0.4s ease;
         }
 
-        /* Show Action text on hover */
-        .label:not(.animating):hover .action-text {
+        .label-container:hover:not(.animating) .action-text {
           opacity: 1;
           visibility: visible;
         }
-        
-        .label .status-text {
-            display: none;
+
+        /* Loading State */
+        .label-container.animating {
+            width: 45px !important;
+            border-color: var(--color-border);
+            cursor: default;
         }
 
-        /* The Circle Holder */
-        .label .circle {
-          height: 41px; 
-          width: 41px;
-          border-radius: 50%;
-          background-color: ${currentColor};
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          transition: all 0.4s ease;
-          position: absolute;
-          left: 0;
-          top: 0;
-          z-index: 5;
-        }
-
-        .label .circle .icon-box {
-          color: #fff;
-          width: 18px;
-          height: 18px;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          transition: all 0.4s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        /* Loading Spinner Logic */
-        .label.animating {
-           width: 45px !important;
-           border-color: #e5e5e4; 
-        }
-        
-        .label.animating .title {
-            opacity: 0 !important;
-        }
-
-        /* Create the spinner ring effect */
-        .label.animating .circle {
-           animation: pulse 1s forwards, circleDelete 0.2s ease 3.5s forwards;
-           rotate: 180deg;
-           background-color: transparent; 
-           border: 2px solid ${currentColor}; 
-           border-top-color: transparent; 
-           animation: spin 1s linear infinite; 
-        }
-        
-        .label.animating .circle .icon-box {
-            opacity: 0; 
+        .label-container.animating .circle-indicator {
+            background-color: transparent !important;
+            border-top-color: transparent !important;
+            border-right-color: ${currentColor} !important;
+            border-bottom-color: ${currentColor} !important;
+            border-left-color: ${currentColor} !important;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-        }
-        
-        @keyframes circleDelete {
-          100% { opacity: 0.8; } /* Keep slight visibility for spinner */
         }
       `}</style>
     </div>

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Calendar, AlertTriangle, CheckCircle, Activity, Shield, User, XCircle, Search, Filter } from '../../components/ui/Icons';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Calendar, AlertTriangle, CheckCircle, Activity, Shield, User, XCircle, Search, Filter, TrendingUp, Zap } from '../../components/ui/Icons';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { FloatingInput } from '../../components/ui/FloatingInput';
 
 interface RiskComplianceProps {
     view?: 'overview' | 'compliance' | 'human-risk' | 'residual-risk';
@@ -7,322 +11,341 @@ interface RiskComplianceProps {
 
 const calculateCost = (credits: number) => credits * 0.0010;
 
+// Shared Filter Bar Component
+const FilterBar = ({ title }: { title: string }) => (
+    <Card padding="md" className="mb-6 flex flex-wrap gap-4 items-center flex-shrink-0">
+        <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl w-auto h-[50px]">
+            <span className="text-[var(--color-text-muted)] text-xs font-mono font-bold">RANGE</span>
+            <select className="bg-transparent border-none outline-none text-sm text-[var(--color-text-main)] appearance-none cursor-pointer pr-4 font-medium">
+                <option>24H</option>
+                <option>7D</option>
+                <option>30D</option>
+                <option>90D</option>
+                <option>YTD</option>
+            </select>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl flex-1 h-[50px]">
+            <Calendar size={14} className="text-[var(--color-text-muted)]" />
+            <span className="text-[var(--color-text-main)] text-sm font-medium">2024 Fiscal Year</span>
+        </div>
+    </Card>
+);
+
 export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'overview' }) => {
-    const [timeRange, setTimeRange] = useState('30D');
 
-    // --- SUB-VIEWS ---
-
+    // --- COMPLIANCE VIEW ---
     const renderCompliance = () => (
-        <div className="space-y-8 animate-slide-up">
-            {/* Main Metric */}
-            <div className="ui-card p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        <div className="flex flex-col h-full">
+            <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
                 <div>
-                    <h3 className="text-stone-500 mb-2 text-xs uppercase tracking-wider font-bold">Autonomous Compliance Rate™</h3>
-                    <div className="flex items-baseline gap-3">
-                        <span className="text-6xl font-mono text-stone-900 tracking-tighter">96.8%</span>
-                        <span className="text-emerald-500 text-sm font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-100">↑ 1.2%</span>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Shield className="text-[var(--color-brand-accent)] w-6 h-6" />
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Compliance Rate™</h1>
                     </div>
-                    <p className="text-stone-500 text-sm mt-4 leading-relaxed">
-                        Percentage of governed events resolved within policy, without human intervention.
-                    </p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Automated Compliance & Risk Exposure.</p>
                 </div>
-                <div className="md:col-span-2 h-32 flex items-end justify-between gap-1">
-                    {[92, 93, 91, 94, 95, 96, 96.8, 97, 96.5, 97.2, 96.8].map((val, i) => (
-                        <div key={i} className="w-full bg-stone-50 rounded-t hover:bg-stone-100 transition-colors relative group h-full flex items-end">
-                            <div 
-                                className="w-full bg-stone-900 rounded-t transition-all mx-0.5 shadow-lg group-hover:bg-armonyco-gold" 
-                                style={{ height: `${(val - 80) * 4}%` }} 
-                            ></div>
-                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded whitespace-nowrap z-10 font-mono">
-                                {val}%
-                            </div>
-                        </div>
-                    ))}
+                <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20 rounded-full text-[10px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse"></div>
+                        Monitoring Active
+                    </span>
                 </div>
-            </div>
+            </header>
 
-            {/* Compliance Log Table */}
-            <div className="ui-card p-0">
-                <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                    <h3 className="text-stone-900 font-medium flex items-center gap-2">
-                        <Shield size={16} className="text-emerald-500" /> Recent Autonomous Decisions
-                    </h3>
-                    <div className="flex gap-2 text-xs">
-                        <button className="ui-btn-secondary py-1.5 px-3 text-xs">Export Log</button>
-                    </div>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white text-stone-500 font-medium border-b border-stone-100 text-xs uppercase tracking-wider">
-                            <tr>
-                                <th className="px-6 py-4">Event ID</th>
-                                <th className="px-6 py-4">Timestamp</th>
-                                <th className="px-6 py-4">Policy Applied</th>
-                                <th className="px-6 py-4">Agent</th>
-                                <th className="px-6 py-4">Verdict</th>
-                                <th className="px-6 py-4 text-right">Credits</th>
-                                <th className="px-6 py-4 text-right">Cost (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100 font-mono text-xs">
-                            {[
-                                { id: 'EVT-90021', time: '10:42:05', policy: 'POL-INV-MATCH', agent: 'LARA', verdict: 'ALLOW', conf: '99.9%', credits: 0.420 },
-                                { id: 'EVT-90022', time: '10:41:55', policy: 'POL-GUEST-ID', agent: 'JAMES', verdict: 'DENY', conf: '100%', credits: 1.100 },
-                                { id: 'EVT-90023', time: '10:41:12', policy: 'POL-RATE-LIMIT', agent: 'ELON', verdict: 'ALLOW', conf: '98.5%', credits: 0.230 },
-                                { id: 'EVT-90024', time: '10:40:48', policy: 'POL-CHECKOUT-TIME', agent: 'JAMES', verdict: 'MODIFY', conf: '95.0%', credits: 0.890 },
-                                { id: 'EVT-90025', time: '10:38:22', policy: 'POL-MAINT-COST', agent: 'ELON', verdict: 'ALLOW', conf: '99.2%', credits: 1.200 },
-                            ].map((row, i) => (
-                                <tr key={i} className="hover:bg-stone-50 transition-colors">
-                                    <td className="px-6 py-4 text-stone-900 font-medium">{row.id}</td>
-                                    <td className="px-6 py-4 text-stone-500">{row.time}</td>
-                                    <td className="px-6 py-4 text-stone-600 font-sans">{row.policy}</td>
-                                    <td className="px-6 py-4 text-stone-500">{row.agent}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold border ${
-                                            row.verdict === 'ALLOW' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                                            row.verdict === 'DENY' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                                        }`}>{row.verdict}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right text-stone-500">{row.credits.toFixed(3)}</td>
-                                    <td className="px-6 py-4 text-right text-stone-900 font-bold">€{calculateCost(row.credits).toFixed(4)}</td>
-                                </tr>
+            <FilterBar title="Compliance" />
+
+            <div className="flex-1 min-h-0 flex flex-col gap-6">
+                {/* Main KPI Card */}
+                <Card padding="lg" className="w-full relative shrink-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                        <div>
+                            <h3 className="text-[var(--color-text-muted)] text-xs uppercase font-bold tracking-wider mb-2">COMPLIANCE RATE™</h3>
+                            <div className="flex items-baseline gap-3">
+                                <span className="text-6xl font-numbers text-[var(--color-text-main)] tracking-tighter">96.8%</span>
+                                <span className="text-[var(--color-success)] text-sm font-bold bg-[var(--color-success)]/10 px-2 py-1 rounded border border-[var(--color-success)]/20 font-numbers ml-2">↑ 1.2%</span>
+                            </div>
+                            <p className="text-[var(--color-text-muted)] text-sm mt-4 leading-relaxed">
+                                Percentage of governed events resolved within policy, without human intervention.
+                            </p>
+                        </div>
+                        <div className="md:col-span-2 h-32 flex items-end justify-between gap-1">
+                            {[92, 93, 91, 94, 95, 96, 96.8, 97, 96.5, 97.2, 96.8].map((val, i) => (
+                                <div key={i} className="w-full bg-[var(--color-surface-hover)] rounded-t hover:bg-[var(--color-border)] transition-colors relative group h-full flex items-end">
+                                    <div
+                                        className="w-full bg-[var(--color-text-main)] rounded-t transition-all mx-0.5 shadow-lg group-hover:bg-[var(--color-brand-accent)]"
+                                        style={{ height: `${(val - 80) * 4}%` }}
+                                    ></div>
+                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[var(--color-surface-active)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded whitespace-nowrap z-10 font-mono shadow-sm">
+                                        {val}%
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Table Card */}
+                <Card padding="none" className="overflow-hidden">
+                    <div className="p-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-surface-hover)]">
+                        <h3 className="text-[var(--color-text-main)] font-medium flex items-center gap-2">
+                            <Shield size={16} className="text-[var(--color-success)]" /> Recent Autonomous Decisions
+                        </h3>
+                        <Button variant="secondary" size="sm">Export Log</Button>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white/[0.02] text-[var(--color-text-muted)] font-bold border-b border-white/5 text-[9px] uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="px-6 py-4">Event ID</th>
+                                    <th className="px-6 py-4">Timestamp</th>
+                                    <th className="px-6 py-4">Policy Applied</th>
+                                    <th className="px-6 py-4">Agent</th>
+                                    <th className="px-6 py-4">Verdict</th>
+                                    <th className="px-6 py-4 text-right">Value (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 font-mono text-xs">
+                                {[
+                                    { id: 'EVT-90021', time: '10:42:05', policy: 'POL-INV-MATCH', agent: 'LARA', verdict: 'ALLOW', conf: '99.9%', credits: 1 },
+                                    { id: 'EVT-90022', time: '10:41:55', policy: 'POL-GUEST-ID', agent: 'JAMES', verdict: 'DENY', conf: '100%', credits: 2 },
+                                    { id: 'EVT-90023', time: '10:41:12', policy: 'POL-RATE-LIMIT', agent: 'ELON', verdict: 'ALLOW', conf: '98.5%', credits: 1 },
+                                    { id: 'EVT-90024', time: '10:40:48', policy: 'POL-CHECKOUT-TIME', agent: 'JAMES', verdict: 'MODIFY', conf: '95.0%', credits: 1 },
+                                    { id: 'EVT-90025', time: '10:38:22', policy: 'POL-MAINT-COST', agent: 'ELON', verdict: 'ALLOW', conf: '99.2%', credits: 2 },
+                                ].map((row, i) => (
+                                    <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
+                                        <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.time}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-secondary)] font-sans">{row.policy}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.agent}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border ${row.verdict === 'ALLOW' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20' :
+                                                row.verdict === 'DENY' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/20' : 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20'
+                                                }`}>{row.verdict}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits} €</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
             </div>
         </div>
     );
 
+    // --- HUMAN RISK VIEW ---
     const renderHumanRisk = () => (
-        <div className="space-y-8 animate-slide-up">
-            {/* Header Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="ui-card p-8 relative overflow-hidden group border-red-100">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                        <AlertTriangle className="w-32 h-32 text-red-500" />
+        <div className="flex flex-col h-full">
+            <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <AlertTriangle className="text-[var(--color-brand-accent)] w-6 h-6" />
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Human Risk</h1>
                     </div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="p-2 bg-red-50 rounded-lg text-red-500"><AlertTriangle size={20} /></div>
-                        <h3 className="text-stone-900 font-medium">Human Risk Exposure</h3>
-                    </div>
-                    <div className="text-5xl font-mono text-red-600 mb-2">3.2%</div>
-                    <p className="text-stone-500 text-sm mt-4">The fraction of critical operations still dependent on human judgment.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Automated Compliance & Risk Exposure.</p>
+                </div>
+                <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-[var(--color-warning)]/10 text-[var(--color-warning)] border border-[var(--color-warning)]/20 rounded-full text-[10px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)] animate-pulse"></div>
+                        Risk Detected
+                    </span>
+                </div>
+            </header>
+
+            <FilterBar title="Human Risk" />
+
+            <div className="flex-1 min-h-0 flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+                    <Card padding="lg" className="relative overflow-hidden group border-[var(--color-danger)]/30">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                            <AlertTriangle className="w-32 h-32 text-[var(--color-danger)]" />
+                        </div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-[var(--color-danger)]/10 rounded-lg text-[var(--color-danger)]"><AlertTriangle size={20} /></div>
+                            <h3 className="text-[var(--color-text-main)] font-medium">Human Risk Exposure</h3>
+                        </div>
+                        <div className="text-5xl font-numbers text-[var(--color-danger)] mb-2">3.2%</div>
+                        <p className="text-[var(--color-text-muted)] text-sm mt-4">The fraction of critical operations still dependent on human judgment.</p>
+                    </Card>
+
+                    <Card padding="lg" className="flex flex-col justify-center">
+                        <h3 className="text-[var(--color-text-muted)] text-xs uppercase tracking-wider mb-6 font-bold">Top Intervention Reasons</h3>
+                        <div className="space-y-6">
+                            {[
+                                { label: 'Manual Price Override', val: '42%', color: 'bg-[var(--color-danger)]' },
+                                { label: 'Unstructured PO Entry', val: '28%', color: 'bg-[var(--color-warning)]' },
+                                { label: 'Guest Refund Exception', val: '15%', color: 'bg-[var(--color-text-muted)]' }
+                            ].map((item, i) => (
+                                <div key={i} className="space-y-2">
+                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] font-medium">
+                                        <span>{item.label}</span>
+                                        <span>{item.val}</span>
+                                    </div>
+                                    <div className="w-full bg-[var(--color-surface-hover)] h-2 rounded-full overflow-hidden">
+                                        <div className={`${item.color} h-full rounded-full shadow-sm`} style={{ width: item.val }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
 
-                <div className="ui-card p-8 flex flex-col justify-center">
-                    <h3 className="text-stone-500 text-xs uppercase tracking-wider mb-6 font-bold">Top Intervention Reasons</h3>
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-stone-600 font-medium">
-                                <span>Manual Price Override</span>
-                                <span>42%</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
-                                <div className="bg-red-500 w-[42%] h-full rounded-full shadow-sm"></div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-stone-600 font-medium">
-                                <span>Unstructured PO Entry</span>
-                                <span>28%</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
-                                <div className="bg-amber-500 w-[28%] h-full rounded-full shadow-sm"></div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-stone-600 font-medium">
-                                <span>Guest Refund Exception</span>
-                                <span>15%</span>
-                            </div>
-                            <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
-                                <div className="bg-stone-400 w-[15%] h-full rounded-full shadow-sm"></div>
-                            </div>
-                        </div>
+                {/* Table Card */}
+                <Card padding="none" className="overflow-hidden">
+                    <div className="p-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-surface-hover)]">
+                        <h3 className="text-[var(--color-text-main)] font-medium flex items-center gap-2">
+                            <User size={16} className="text-[var(--color-text-muted)]" /> Human Intervention Log
+                        </h3>
+                        <Button variant="secondary" size="sm">Export Log</Button>
                     </div>
-                </div>
-            </div>
-            
-            {/* Intervention Log */}
-            <div className="ui-card p-0">
-                <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                    <h3 className="text-stone-900 font-medium flex items-center gap-2">
-                        <User size={16} className="text-stone-400" /> Human Intervention Log
-                    </h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white text-stone-500 font-medium border-b border-stone-100 text-xs uppercase tracking-wider">
-                            <tr>
-                                <th className="px-6 py-4">Event ID</th>
-                                <th className="px-6 py-4">Time</th>
-                                <th className="px-6 py-4">Actor</th>
-                                <th className="px-6 py-4">Reason Code</th>
-                                <th className="px-6 py-4">Action</th>
-                                <th className="px-6 py-4">Risk Level</th>
-                                <th className="px-6 py-4 text-right">Credits</th>
-                                <th className="px-6 py-4 text-right">Cost (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100 font-mono text-xs">
-                             {[
-                                { id: 'EVT-90018', time: '10:15:00', actor: 'Marco Verratti', reason: 'PRICE_OVERRIDE', action: 'Modified Quote', risk: 'HIGH', credits: 1.500 },
-                                { id: 'EVT-90012', time: '09:42:10', actor: 'Sarah Chen', reason: 'REFUND_EXCEPTION', action: 'Approved Refund', risk: 'MEDIUM', credits: 0.800 },
-                                { id: 'EVT-90005', time: '09:10:33', actor: 'Marco Verratti', reason: 'DOC_MISSING', action: 'Bypassed Check', risk: 'HIGH', credits: 0.450 },
-                                { id: 'EVT-89998', time: '08:55:00', actor: 'David Miller', reason: 'MAINT_SCHED', action: 'Manual Dispatch', risk: 'LOW', credits: 0.200 },
-                            ].map((row, i) => (
-                                <tr key={i} className="hover:bg-stone-50 transition-colors">
-                                    <td className="px-6 py-4 text-stone-900">{row.id}</td>
-                                    <td className="px-6 py-4 text-stone-500">{row.time}</td>
-                                    <td className="px-6 py-4 font-sans text-stone-700">{row.actor}</td>
-                                    <td className="px-6 py-4 text-stone-500">{row.reason}</td>
-                                    <td className="px-6 py-4 text-stone-600">{row.action}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${
-                                            row.risk === 'HIGH' ? 'bg-red-50 text-red-600 border border-red-100' : 
-                                            row.risk === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-stone-100 text-stone-500'
-                                        }`}>{row.risk}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right text-stone-500">{row.credits.toFixed(3)}</td>
-                                    <td className="px-6 py-4 text-right text-stone-900 font-bold">€{calculateCost(row.credits).toFixed(4)}</td>
+                    {/* Reuse table structure with different data/headers if needed, simplified here */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white/[0.02] text-[var(--color-text-muted)] font-bold border-b border-white/5 text-[9px] uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="px-6 py-4">Event ID</th>
+                                    <th className="px-6 py-4">Time</th>
+                                    <th className="px-6 py-4">Actor</th>
+                                    <th className="px-6 py-4">Reason Code</th>
+                                    <th className="px-6 py-4">Action</th>
+                                    <th className="px-6 py-4">Risk Level</th>
+                                    <th className="px-6 py-4 text-right">Value (€)</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 font-mono text-xs">
+                                {[
+                                    { id: 'EVT-90018', time: '10:15:00', actor: 'Marco Verratti', reason: 'PRICE_OVERRIDE', action: 'Modified Quote', risk: 'HIGH', credits: 2 },
+                                    { id: 'EVT-90015', time: '09:45:22', actor: 'Sarah Jenkins', reason: 'PO_ENTRY_ERR', action: 'Corrected Field', risk: 'MED', credits: 1 },
+                                    { id: 'EVT-89940', time: '09:12:05', actor: 'System Admin', reason: 'CONFIG_CHANGE', action: 'Updated Policy', risk: 'LOW', credits: 1 },
+                                ].map((row, i) => (
+                                    <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
+                                        <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.time}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-main)]">{row.actor}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-secondary)]">{row.reason}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.action}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border ${row.risk === 'HIGH' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/20' :
+                                                row.risk === 'MED' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20' : 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20'
+                                                }`}>{row.risk}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits} €</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
             </div>
         </div>
     );
 
+    // --- RESIDUAL RISK VIEW ---
     const renderResidualRisk = () => (
-         <div className="space-y-8 animate-slide-up">
-            {/* Header Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="ui-card p-8 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                        <Activity className="w-32 h-32 text-amber-500" />
+        <div className="flex flex-col h-full">
+            <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <Activity className="text-[var(--color-brand-accent)] w-6 h-6" />
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Residual Risk</h1>
                     </div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Activity size={20} /></div>
-                        <h3 className="text-stone-900 font-medium">Residual Risk Rate</h3>
-                    </div>
-                    <div className="text-5xl font-mono text-amber-500 mb-2">1.8%</div>
-                    <p className="text-stone-500 text-sm mt-4">Events and communications happening outside the governance perimeter.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Automated Compliance & Risk Exposure.</p>
+                </div>
+                <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/20 rounded-full text-[10px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)] animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.3)]"></div>
+                        Critical Exposure
+                    </span>
+                </div>
+            </header>
+
+            <FilterBar title="Residual Risk" />
+
+            <div className="flex-1 min-h-0 flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+                    <Card padding="lg" className="relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                            <Activity className="w-32 h-32 text-[var(--color-brand-accent)]" />
+                        </div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-[var(--color-surface-hover)] rounded-lg text-[var(--color-brand-accent)]"><Activity size={20} /></div>
+                            <h3 className="text-[var(--color-text-main)] font-medium">Residual Risk Rate</h3>
+                        </div>
+                        <div className="text-5xl font-numbers text-[var(--color-warning)] mb-2">1.8%</div>
+                        <p className="text-[var(--color-text-muted)] text-sm mt-4">Events and communications happening outside the governance perimeter.</p>
+                    </Card>
+
+                    <Card padding="lg" className="flex flex-col justify-center">
+                        <div className="border-l-4 border-[var(--color-brand-accent)] pl-6 py-2 mb-8 italic text-[var(--color-text-secondary)]">
+                            "Residual Risk is the metric that tells the truth about maturity—because it measures what you cannot yet control."
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg text-center border border-[var(--color-border)]">
+                                <div className="text-2xl font-bold text-[var(--color-text-main)] mb-1">421</div>
+                                <div className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">Ungoverned Signals</div>
+                            </div>
+                            <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg text-center border border-[var(--color-border)]">
+                                <div className="text-2xl font-bold text-[var(--color-text-main)] mb-1">12</div>
+                                <div className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">Shadow Channels</div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
 
-                <div className="ui-card p-8 flex flex-col justify-center">
-                    <p className="text-stone-600 italic text-lg leading-relaxed mb-6 border-l-2 border-armonyco-gold pl-4">
-                        "Residual Risk is the metric that tells the truth about maturity—because it measures what you cannot yet control."
-                    </p>
-                    <div className="flex gap-4">
-                        <div className="text-center p-3 bg-stone-50 rounded border border-stone-100 flex-1">
-                            <span className="block text-2xl font-mono text-stone-900">421</span>
-                            <span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Ungoverned Signals</span>
-                        </div>
-                        <div className="text-center p-3 bg-stone-50 rounded border border-stone-100 flex-1">
-                            <span className="block text-2xl font-mono text-stone-900">12</span>
-                            <span className="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Shadow Channels</span>
-                        </div>
+                {/* Table Card */}
+                <Card padding="none" className="overflow-hidden">
+                    <div className="p-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-surface-hover)]">
+                        <h3 className="text-[var(--color-text-main)] font-medium flex items-center gap-2">
+                            <XCircle size={16} className="text-[var(--color-warning)]" /> Ungoverned Signal Discovery
+                        </h3>
+                        <Button variant="secondary" size="sm">Export Log</Button>
                     </div>
-                </div>
-            </div>
-
-            {/* Ungoverned Stream */}
-            <div className="ui-card p-0">
-                <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                    <h3 className="text-stone-900 font-medium flex items-center gap-2">
-                        <XCircle size={16} className="text-amber-500" /> Ungoverned Signal Discovery
-                    </h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white text-stone-500 font-medium border-b border-stone-100 text-xs uppercase tracking-wider">
-                            <tr>
-                                <th className="px-6 py-4">Trace ID</th>
-                                <th className="px-6 py-4">Detected Via</th>
-                                <th className="px-6 py-4">Content Snippet</th>
-                                <th className="px-6 py-4">Likely Category</th>
-                                <th className="px-6 py-4">Action</th>
-                                <th className="px-6 py-4 text-right">Credits</th>
-                                <th className="px-6 py-4 text-right">Cost (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100 font-mono text-xs">
-                             {[
-                                { id: 'TRC-10293', source: 'WhatsApp (Personal)', content: '"Can I pay cash upon arrival?"', category: 'Shadow Revenue', action: 'Flagged', credits: 0.150 },
-                                { id: 'TRC-10294', source: 'Direct Email', content: '"Attached is the invoice for plumbing"', category: 'Shadow Procurement', action: 'Flagged', credits: 0.400 },
-                                { id: 'TRC-10295', source: 'SMS', content: '"Code is 1234, door is stuck"', category: 'Unlogged Maint.', action: 'Flagged', credits: 0.100 },
-                                { id: 'TRC-10296', source: 'Gmail', content: '"Refund processed manually"', category: 'Fin. Compliance', action: 'Flagged', credits: 0.250 },
-                            ].map((row, i) => (
-                                <tr key={i} className="hover:bg-stone-50 transition-colors">
-                                    <td className="px-6 py-4 text-stone-400">{row.id}</td>
-                                    <td className="px-6 py-4 text-stone-500">{row.source}</td>
-                                    <td className="px-6 py-4 text-stone-900 italic font-serif">"{row.content.replace(/"/g, '')}"</td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded text-[10px] font-bold uppercase">{row.category}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button className="text-stone-400 hover:text-stone-900 underline">Investigate</button>
-                                    </td>
-                                    <td className="px-6 py-4 text-right text-stone-500">{row.credits.toFixed(3)}</td>
-                                    <td className="px-6 py-4 text-right text-stone-900 font-bold">€{calculateCost(row.credits).toFixed(4)}</td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white/[0.02] text-[var(--color-text-muted)] font-bold border-b border-white/5 text-[9px] uppercase tracking-[0.2em]">
+                                <tr>
+                                    <th className="px-6 py-4">Trace ID</th>
+                                    <th className="px-6 py-4">Detected Via</th>
+                                    <th className="px-6 py-4">Content Snippet</th>
+                                    <th className="px-6 py-4">Likely Category</th>
+                                    <th className="px-6 py-4">Action</th>
+                                    <th className="px-6 py-4 text-right">Value (€)</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 font-mono text-xs">
+                                {[
+                                    { id: 'TRC-10082', source: 'Slack Connector (Private)', content: '"Can we approve this manually?"', cat: 'SHADOW_REVIEW', action: 'Alert Sent', credits: 0.150 },
+                                    { id: 'TRC-10083', source: 'Email Gateway (External)', content: 'Attached invoice_final_v2.pdf', cat: 'UNGOVERNED_INV', action: 'Ingested', credits: 0.150 },
+                                    { id: 'TRC-10084', source: 'API Traffic (Unknown IP)', content: 'POST /v1/supplier/create', cat: 'SHADOW_IT', action: 'Blocked', credits: 0.050 },
+                                ].map((row, i) => (
+                                    <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
+                                        <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.source}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-secondary)] italic">"{row.content}"</td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2 py-1 rounded text-[10px] font-bold border bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20">
+                                                {row.cat}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.action}</td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{Math.ceil(row.credits)} €</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
             </div>
-        </div>
+        </div >
     );
 
-    const getHeader = () => {
-        switch(view) {
-            case 'compliance': return 'Autonomous Compliance Rate™';
-            case 'human-risk': return 'Human Risk Exposure';
-            case 'residual-risk': return 'Residual Risk Rate';
-            default: return 'Risk & Compliance';
-        }
-    };
-
+    // --- MAIN RENDER ---
     return (
-     <div className="p-8 animate-fade-in">
-        <header className="mb-8">
-            <h1 className="text-2xl text-stone-900 font-light">{getHeader()}</h1>
-            <p className="text-stone-500 text-sm">Automated Compliance & Risk Exposure</p>
-        </header>
-
-        {/* Filter Bar */}
-        <div className="flex gap-2 mb-8">
-            {['24H', '7D', '30D', '90D', 'YTD'].map(range => (
-                <button
-                    key={range}
-                    onClick={() => setTimeRange(range)}
-                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded transition-all transform hover:-translate-y-0.5 ${
-                        timeRange === range 
-                        ? 'ui-btn-primary' 
-                        : 'ui-btn-secondary'
-                    }`}
-                >
-                    {range}
-                </button>
-            ))}
+        <div className="p-8 animate-fade-in min-h-[calc(100vh-64px)] overflow-y-auto bg-black text-white">
+            {(view === 'overview' || !view) && renderCompliance()}
+            {view === 'compliance' && renderCompliance()}
+            {view === 'human-risk' && renderHumanRisk()}
+            {view === 'residual-risk' && renderResidualRisk()}
         </div>
-
-        {/* View Switcher for Overview Mode (Optional if Overview is used as a dashboard) */}
-        {view === 'overview' && (
-             <div className="grid grid-cols-1 gap-12">
-                {renderCompliance()}
-                {renderHumanRisk()}
-                {renderResidualRisk()}
-             </div>
-        )}
-
-        {/* Dedicated Views */}
-        {view === 'compliance' && renderCompliance()}
-        {view === 'human-risk' && renderHumanRisk()}
-        {view === 'residual-risk' && renderResidualRisk()}
-
-     </div>
     );
-}
+};

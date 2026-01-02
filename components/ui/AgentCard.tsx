@@ -1,112 +1,105 @@
 import React from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Card } from './Card';
+import { Button } from './Button';
+import { Settings, Shield, Activity, Zap } from './Icons';
 
 interface AgentCardProps {
   name: string;
   role: string;
-  metricLabel: string;
-  metricValue: string;
-  status: string;
-  initial: string;
-  icon: React.ElementType; 
-  colorClass: string; 
-  bgClass?: string; 
-  hoverBorderClass?: string;
-  borderClass?: string; 
+  description: string;
+  status: 'active' | 'learning' | 'idle';
+  metrics: {
+    label: string;
+    value: string;
+    trend?: number;
+  }[];
+  icon: any;
+  hideAction?: boolean;
 }
 
 export const AgentCard: React.FC<AgentCardProps> = ({
   name,
   role,
-  metricLabel,
-  metricValue,
+  description,
   status,
-  initial,
+  metrics,
   icon: Icon,
-  colorClass,
-  borderClass = 'border-stone-100'
+  hideAction = false
 }) => {
   return (
-    <div className="
-        relative 
-        flex-1 
-        h-[340px] 
-        bg-white
-        rounded-[24px] 
-        border border-stone-200 
-        shadow-sm 
-        hover:shadow-xl 
-        hover:border-armonyco-gold/50
-        transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] 
-        group 
-        overflow-hidden
-        cursor-default
-        hover:flex-[3] 
-        min-w-[100px]
-    ">
-      
-      {/* 
-         IDLE STATE CONTENT 
-      */}
-      <div className="absolute inset-0 flex flex-col items-center justify-start pt-10 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-4">
-         
-         {/* Icon Container */}
-         <div className={`p-4 rounded-full bg-stone-50 border border-stone-100 shadow-sm mb-6 group-hover:scale-90 transition-transform`}>
-            <Icon size={24} className={`${colorClass}`} />
-         </div>
-         
-         {/* Name - HORIZONTAL & CENTERED */}
-         <div className="flex flex-col items-center gap-1 px-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-stone-900 text-center leading-tight">
-                {name.split(' ')[0]}
-            </span>
-            <span className="text-[9px] font-mono text-stone-400 text-center">
-                {role.split(' ')[0]}
-            </span>
-         </div>
-         
-         {/* Status Dot at Bottom */}
-         <div className="mt-auto mb-8 flex flex-col items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${colorClass.replace('text-', 'bg-')} opacity-50`}></div>
-         </div>
-      </div>
+    <Card
+      noPadding
+      className="group relative flex flex-col h-full min-h-[500px] w-full bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand-accent)] transition-all duration-500 shadow-sm hover:shadow-glow overflow-visible"
+    >
+      <div className="p-8 flex flex-col h-full relative z-10">
 
-      {/* 
-         EXPANDED STATE CONTENT
-      */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100 flex flex-col p-8 bg-stone-900 translate-y-4 group-hover:translate-y-0">
-          
-          {/* Top Header */}
-          <div className="flex justify-between items-start mb-auto">
-              <div className={`p-3 rounded-full bg-white/10 text-white`}>
-                  <Icon size={32} className={`${colorClass.replace('text-', 'text-')}`} />
-              </div>
-              <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-2 h-2 rounded-full ${colorClass.replace('text-', 'bg-')} animate-pulse`}></span>
-                    <span className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{status}</span>
-                  </div>
-              </div>
+        {/* HEADER SECTION - Fixed height for stability */}
+        <div className="flex flex-col gap-4 mb-8 shrink-0">
+          <div className="flex justify-between items-start w-full">
+            {/* Icon Box */}
+            <div className="w-16 h-16 shrink-0 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-brand-accent)] group-hover:scale-110 transition-transform duration-500 shadow-sm">
+              {typeof Icon === 'string' ? (
+                <img src={Icon} alt={name} className="w-10 h-10 object-contain" />
+              ) : (
+                <Icon size={32} />
+              )}
+            </div>
+
+            {/* Status Badge */}
+            <div className="flex items-center gap-2 pt-1 shrink-0">
+              <div className={`w-2 h-2 rounded-full ${status === 'active' ? 'bg-emerald-500 animate-pulse' : status === 'learning' ? 'bg-amber-500' : 'bg-stone-400'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] lg:hidden xl:block">
+                {status}
+              </span>
+            </div>
           </div>
 
-          {/* Main Info */}
-          <div className="mt-8">
-              <h3 className="text-3xl font-light text-white mb-1 leading-tight">{name}</h3>
-              <p className="text-xs text-armonyco-gold font-mono uppercase tracking-wider mb-6">{role}</p>
-              
-              {/* Metric Box */}
-              <div className="bg-white/5 rounded-xl p-5 border border-white/10 flex justify-between items-end">
-                  <div>
-                    <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold block mb-1">{metricLabel}</span>
-                    <span className="text-3xl font-mono text-white tracking-tighter">{metricValue}</span>
-                  </div>
-                  <MoreHorizontal size={20} className="text-stone-600" />
-              </div>
+          {/* Name & Role Wrapper */}
+          <div className="min-w-0">
+            <h3 className="text-xl font-bold text-[var(--color-text-main)] mb-1 leading-tight line-clamp-1" title={name}>
+              {name}
+            </h3>
+            <span className="text-[11px] font-black text-[var(--color-brand-accent)] uppercase tracking-[0.2em] opacity-80">
+              {role}
+            </span>
           </div>
+        </div>
 
-          {/* Decorative Elements */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-armonyco-gold/10 to-transparent rounded-bl-full pointer-events-none"></div>
+        {/* DESCRIPTION - Flexible but with minimum lines for alignment */}
+        <div className="flex-1 mb-8 overflow-visible">
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed font-light line-clamp-5">
+            {description}
+          </p>
+        </div>
+
+        {/* DIVIDER */}
+        <div className="h-px w-full bg-[var(--color-border)] mb-8 shrink-0 opacity-40" />
+
+        {/* METRICS FOOTER */}
+        <div className="grid grid-cols-2 gap-8 mt-auto shrink-0">
+          {metrics.slice(0, 2).map((metric, idx) => (
+            <div key={idx} className="group/metric">
+              <div className="text-[9px] text-[var(--color-text-subtle)] uppercase font-black tracking-[0.15em] mb-2 transition-colors group-hover/metric:text-[var(--color-brand-accent)]">
+                {metric.label}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-numbers font-bold text-[var(--color-text-main)] leading-none">
+                  {metric.value}
+                </span>
+                {metric.trend && (
+                  <span className={`text-[10px] font-bold ${metric.trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {metric.trend > 0 ? '↑' : '↓'}{Math.abs(metric.trend)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
-    </div>
+
+      {/* Subtle Premium Details */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--color-brand-accent)]/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+    </Card>
   );
 };
