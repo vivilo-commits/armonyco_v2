@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Calendar, AlertTriangle, CheckCircle, Activity, Shield, User, XCircle, Search, Filter, TrendingUp, Zap } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { FloatingInput } from '../../components/ui/FloatingInput';
+import { logService, usageService } from '../../src/services';
+import { DecisionRecord, UsageMetrics } from '../../src/types';
 
 interface RiskComplianceProps {
     view?: 'overview' | 'compliance' | 'human-risk' | 'residual-risk';
@@ -32,6 +34,31 @@ const FilterBar = ({ title }: { title: string }) => (
 );
 
 export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'overview' }) => {
+    const [logs, setLogs] = useState<DecisionRecord[]>([]);
+    const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAllData = async () => {
+            try {
+                const [fetchedLogs, fetchedMetrics] = await Promise.all([
+                    logService.getLogs(),
+                    usageService.getMetrics()
+                ]);
+                setLogs(fetchedLogs);
+                setMetrics(fetchedMetrics);
+            } catch (error) {
+                console.error('Failed to fetch risk compliance data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAllData();
+    }, []);
+
+    if (isLoading) {
+        return <div className="p-8 text-white opacity-50 uppercase tracking-widest animate-pulse">Analyzing Compliance Core...</div>;
+    }
 
     // --- COMPLIANCE VIEW ---
     const renderCompliance = () => (
@@ -61,7 +88,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                         <div>
                             <h3 className="text-[var(--color-text-muted)] text-xs uppercase font-bold tracking-wider mb-2">COMPLIANCE RATE™</h3>
                             <div className="flex items-baseline gap-3">
-                                <span className="text-6xl font-numbers text-[var(--color-text-main)] tracking-tighter">96.8%</span>
+                                <span className="text-6xl font-numbers text-[var(--color-text-main)] tracking-tighter">{metrics?.complianceRate || 0}%</span>
                                 <span className="text-[var(--color-success)] text-sm font-bold bg-[var(--color-success)]/10 px-2 py-1 rounded border border-[var(--color-success)]/20 font-numbers ml-2">↑ 1.2%</span>
                             </div>
                             <p className="text-[var(--color-text-muted)] text-sm mt-4 leading-relaxed">
@@ -69,15 +96,12 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                             </p>
                         </div>
                         <div className="md:col-span-2 h-32 flex items-end justify-between gap-1">
-                            {[92, 93, 91, 94, 95, 96, 96.8, 97, 96.5, 97.2, 96.8].map((val, i) => (
+                            {(metrics?.trends || []).map((t, i) => (
                                 <div key={i} className="w-full bg-[var(--color-surface-hover)] rounded-t hover:bg-[var(--color-border)] transition-colors relative group h-full flex items-end">
                                     <div
                                         className="w-full bg-[var(--color-text-main)] rounded-t transition-all mx-0.5 shadow-lg group-hover:bg-[var(--color-brand-accent)]"
-                                        style={{ height: `${(val - 80) * 4}%` }}
+                                        style={{ height: `${(t.value / 100000) * 100}%` }}
                                     ></div>
-                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[var(--color-surface-active)] text-[var(--color-text-main)] border border-[var(--color-border)] text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded whitespace-nowrap z-10 font-mono shadow-sm">
-                                        {val}%
-                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -312,23 +336,24 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                     <th className="px-6 py-4 text-right">Value (€)</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5 font-mono text-xs">
-                                {[
-                                    { id: 'TRC-10082', source: 'Slack Connector (Private)', content: '"Can we approve this manually?"', cat: 'SHADOW_REVIEW', action: 'Alert Sent', credits: 0.150 },
-                                    { id: 'TRC-10083', source: 'Email Gateway (External)', content: 'Attached invoice_final_v2.pdf', cat: 'UNGOVERNED_INV', action: 'Ingested', credits: 0.150 },
-                                    { id: 'TRC-10084', source: 'API Traffic (Unknown IP)', content: 'POST /v1/supplier/create', cat: 'SHADOW_IT', action: 'Blocked', credits: 0.050 },
-                                ].map((row, i) => (
-                                    <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
-                                        <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
-                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.source}</td>
-                                        <td className="px-6 py-4 text-[var(--color-text-secondary)] italic">"{row.content}"</td>
+                            <tbody className="divide-y divide-white/[0.03] font-numbers text-[10px]">
+                                {logs.slice(0, 10).map((log, i) => (
+                                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group cursor-default">
+                                        <td className="px-6 py-4 font-mono text-[var(--color-text-muted)] group-hover:text-white">{log.id}</td>
+                                        <td className="px-6 py-4 text-[var(--color-text-muted)] group-hover:text-white">{log.timestamp}</td>
+                                        <td className="px-6 py-4 font-mono font-bold tracking-tighter">{log.policy}</td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2 py-1 rounded text-[10px] font-bold border bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20">
-                                                {row.cat}
+                                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold tracking-widest ${log.verdict === 'ALLOW' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
+                                                }`}>
+                                                {log.verdict}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.action}</td>
-                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{Math.ceil(row.credits)} €</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-[var(--color-text-main)] font-bold">{log.credits} AC</span>
+                                            <span className="text-[var(--color-text-muted)] text-[9px] ml-2 font-light">
+                                                ({calculateCost(log.credits || 0).toLocaleString('en-US', { style: 'currency', currency: 'EUR' })})
+                                            </span>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

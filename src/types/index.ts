@@ -68,6 +68,44 @@ export interface DecisionRecord {
     credits?: number;
 }
 
+export interface Agent {
+    id: string;
+    name: string;
+    role: string;
+    status: 'ONLINE' | 'OFFLINE' | 'BUSY';
+    productivity: string;
+    uptime: string;
+    decisions: number;
+}
+
+export interface Invoice {
+    id: string;
+    date: string;
+    amount: number;
+    status: 'PAID' | 'PENDING' | 'OVERDUE';
+    url: string;
+}
+
+export interface PaymentMethod {
+    id: string;
+    type: 'CARD' | 'PAYPAL';
+    last4?: string;
+    brand?: string;
+    isDefault: boolean;
+}
+
+export interface UsageMetrics {
+    complianceRate: number;
+    governedValue: number;
+    autonomyRate: number;
+    activeAlerts: number;
+    humanInterventionRate: number;
+    trends: {
+        time: string;
+        value: number;
+    }[];
+}
+
 /**
  * API RESPONSE WRAPPER
  */
