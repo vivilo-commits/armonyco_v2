@@ -1,56 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Search, Filter, Calendar, ChevronDown, Activity, MessageCircle,
-    TrendingUp, Shield, Zap, AlertTriangle, FileText, CheckCircle
-} from '../../components/ui/Icons';
+import React, { useState } from 'react';
+import { Search, Filter, Calendar, ChevronDown, Activity, MessageCircle, TrendingUp, Shield, Zap, AlertTriangle, FileText, CheckCircle } from '../../components/ui/Icons';
 import { AgentCard } from '../../components/ui/AgentCard';
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/app/StatCard';
 import { Button } from '../../components/ui/Button';
 import { Tooltip } from '../../components/ui/Tooltip';
-import { logService, agentService, usageService } from '../../src/services';
-import { DecisionRecord, Agent, UsageMetrics } from '../../src/types';
+import { useLogs, useAgents } from '../../src/hooks/useLogs';
+import { DecisionRecord } from '../../src/types';
 
 export const DecisionLog: React.FC = () => {
+    const { data: logsData } = useLogs();
+    const { data: agentsData } = useAgents();
+
     const [filterPolicy, setFilterPolicy] = useState('');
     const [filterVerdict, setFilterVerdict] = useState('ALL');
     const [filterEntity, setFilterEntity] = useState('');
 
-    const [logs, setLogs] = useState<DecisionRecord[]>([]);
-    const [agents, setAgents] = useState<Agent[]>([]);
-    const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchAllData = async () => {
-            try {
-                const [fetchedLogs, fetchedAgents, fetchedMetrics] = await Promise.all([
-                    logService.getLogs(),
-                    agentService.getAgents(),
-                    usageService.getMetrics()
-                ]);
-                setLogs(fetchedLogs);
-                setAgents(fetchedAgents);
-                setMetrics(fetchedMetrics);
-            } catch (error) {
-                console.error('Failed to fetch decision log data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchAllData();
-    }, []);
+    const logs = logsData || [];
+    const agents = agentsData || [];
 
     const filteredLogs = logs.filter(log => {
-        const matchesPolicy = log.policy.toLowerCase().includes(filterPolicy.toLowerCase());
-        const matchesVerdict = filterVerdict === 'ALL' || log.verdict === filterVerdict;
-        const matchesEntity = (log.responsible || '').toLowerCase().includes(filterEntity.toLowerCase());
+        if (!log) return false;
+        const policy = (log.policy || '').toLowerCase();
+        const verdict = (log.verdict || '').toUpperCase();
+        const responsible = (log.responsible || '').toLowerCase();
+
+        const matchesPolicy = policy.includes(filterPolicy.toLowerCase());
+        const matchesVerdict = filterVerdict === 'ALL' || verdict === filterVerdict.toUpperCase();
+        const matchesEntity = responsible.includes(filterEntity.toLowerCase());
+
         return matchesPolicy && matchesVerdict && matchesEntity;
     });
-
-    if (isLoading) {
-        return <div className="p-8 text-white opacity-50 uppercase tracking-widest animate-pulse">Syncing Ledger...</div>;
-    }
 
     return (
         <div className="p-8 animate-fade-in pb-20 overflow-x-hidden bg-black text-white">
@@ -77,20 +57,20 @@ export const DecisionLog: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <StatCard
                     label="Decisions (24h)"
-                    value={metrics?.governedValue.toLocaleString() || '0'}
+                    value="1,492"
                     icon={Zap}
                     trend={{ value: "+12%", isPositive: true, label: "load" }}
                 />
                 <StatCard
                     label="Autonomy Rate"
-                    value={`${metrics?.autonomyRate || 0}%`}
+                    value="98.2%"
                     icon={Activity}
                     iconColor="text-[var(--color-brand-accent)]"
                     subtext="Autonomous execution"
                 />
                 <StatCard
                     label="Active Alerts"
-                    value={metrics?.activeAlerts.toString() || '0'}
+                    value="3"
                     icon={AlertTriangle}
                     iconColor="text-amber-500"
                     subtext="Signals requiring review"
@@ -118,13 +98,7 @@ export const DecisionLog: React.FC = () => {
                     {agents.map((agent) => (
                         <div key={agent.id} className="transition-all duration-300 hover:scale-[1.02]">
                             <AgentCard
-                                id={agent.id}
-                                name={agent.name}
-                                role={agent.role}
-                                status={agent.status}
-                                productivity={agent.productivity}
-                                uptime={agent.uptime}
-                                decisions={agent.decisions}
+                                {...agent}
                                 hideAction={true}
                             />
                         </div>

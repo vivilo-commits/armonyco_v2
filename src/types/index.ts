@@ -39,13 +39,17 @@ export interface ProductModule {
     code: string;
     name: string;
     description: string;
-    category: 'GUEST' | 'REVENUE' | 'OPS' | 'RESPONSE';
-    cost: number;
-    creditCost?: number; // Compatibility with legacy data
-    isPurchased: boolean;
-    isPaused: boolean;
-    isActive?: boolean; // Compatibility with legacy data
+    category: 'GUEST' | 'REVENUE' | 'OPS' | 'RESPONSE' | 'PLAYBOOK';
+    cost?: number;
+    creditCost?: number;
+    isPurchased?: boolean;
+    isPaused?: boolean;
+    isActive?: boolean;
     status?: 'ACTIVE' | 'PAUSED' | 'INACTIVE';
+    what?: string;
+    why?: string[];
+    how?: string;
+    requiresExternal?: boolean;
 }
 
 export interface UsageRecord {
@@ -68,47 +72,41 @@ export interface DecisionRecord {
     credits?: number;
 }
 
-export interface Agent {
-    id: string;
-    name: string;
-    role: string;
-    status: 'ONLINE' | 'OFFLINE' | 'BUSY';
-    productivity: string;
-    uptime: string;
-    decisions: number;
+export enum UserRole {
+    EXECUTIVE = 'Executive',
+    AUDITOR = 'Auditor',
+    OPERATOR = 'Operator'
 }
 
-export interface Invoice {
+export interface Notification {
     id: string;
-    date: string;
-    amount: number;
-    status: 'PAID' | 'PENDING' | 'OVERDUE';
-    url: string;
-}
-
-export interface PaymentMethod {
-    id: string;
-    type: 'CARD' | 'PAYPAL';
-    last4?: string;
-    brand?: string;
-    isDefault: boolean;
-}
-
-export interface UsageMetrics {
-    complianceRate: number;
-    governedValue: number;
-    autonomyRate: number;
-    activeAlerts: number;
-    humanInterventionRate: number;
-    trends: {
-        time: string;
-        value: number;
-    }[];
+    type: 'ALERT' | 'WARNING' | 'INFO';
+    message: string;
+    timestamp: string;
+    read: boolean;
+    metric?: string;
 }
 
 /**
  * API RESPONSE WRAPPER
  */
+export interface Agent {
+    id: string;
+    name: string;
+    role: string;
+    description?: string;
+    status: 'active' | 'learning' | 'inactive' | 'idle';
+    decisionCount: number;
+    accuracy: string;
+    avatar?: string;
+    icon?: any;
+    metrics?: {
+        label: string;
+        value: string;
+        trend?: number;
+    }[];
+}
+
 export interface ApiResponse<T> {
     data: T;
     error?: {

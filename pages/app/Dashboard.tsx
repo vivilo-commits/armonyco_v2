@@ -31,72 +31,29 @@ interface DashboardProps {
     onNavigate?: (view: string) => void;
 }
 
-const valueData = [
-    { time: '08:00', value: 45000 },
-    { time: '10:00', value: 46200 },
-    { time: '12:00', value: 46800 },
-    { time: '14:00', value: 47100 },
-    { time: '16:00', value: 47500 },
-    { time: '18:00', value: 47832 },
-    { time: '20:00', value: 48100 },
-];
-
-const productMetrics = [
-    {
-        id: 'products-guest',
-        label: 'Guest Experience',
-        metric: 'Identity Verification',
-        value: '100%',
-        trend: '0% Manual Review',
-        icon: Users,
-        color: 'text-white'
-    },
-    {
-        id: 'products-revenue',
-        label: 'Revenue Generation',
-        metric: 'Gap Monetization',
-        value: '12,450 AC',
-        trend: '+18% vs Target',
-        icon: TrendingUp,
-        color: 'text-[var(--color-brand-accent)]'
-    },
-    {
-        id: 'products-ops',
-        label: 'Operational Efficiency',
-        metric: 'Auto-Triage Rate',
-        value: '94.2%',
-        trend: '420h Human Time Saved',
-        icon: Activity,
-        color: 'text-emerald-500' // Using consistent success/operational color
-    },
-    {
-        id: 'products-response',
-        label: 'Incident Response',
-        metric: 'SLA Adherence',
-        value: '99.9%',
-        trend: '< 2m Avg Response',
-        icon: Shield,
-        color: 'text-emerald-500'
-    },
-];
-
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
     const [modules, setModules] = React.useState<ProductModule[]>([]);
     const [activities, setActivities] = React.useState<DecisionRecord[]>([]);
+    const [valueVelocity, setValueVelocity] = React.useState<any[]>([]);
+    const [performance, setPerformance] = React.useState<any[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const [profile, allModules, logs] = await Promise.all([
+                const [profile, allModules, logs, velocity, perf] = await Promise.all([
                     authService.getUserProfile(),
                     productService.getModules(),
-                    logService.getLogs()
+                    logService.getLogs(),
+                    logService.getValueVelocity(),
+                    logService.getDomainPerformance()
                 ]);
                 setUserProfile(profile);
                 setModules(allModules);
                 setActivities(logs);
+                setValueVelocity(velocity);
+                setPerformance(perf);
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
             } finally {
@@ -197,7 +154,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     </div>
                     <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={valueData}>
+                            <AreaChart data={valueVelocity}>
                                 <defs>
                                     <linearGradient id="colorValueMain" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#d4af37" stopOpacity={0.1} />
@@ -245,7 +202,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         <Package size={20} className="text-[var(--color-text-muted)]" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between gap-3">
-                        {productMetrics.map((product) => (
+                        {performance.map((product) => (
                             <div
                                 key={product.id}
                                 onClick={() => onNavigate?.(product.id)}

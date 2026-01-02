@@ -20,86 +20,70 @@ interface AgentCardProps {
 export const AgentCard: React.FC<AgentCardProps> = ({
   name,
   role,
-  description,
   status,
   metrics,
-  icon: Icon,
-  hideAction = false
+  icon: Icon
 }) => {
   return (
     <Card
       noPadding
-      className="group relative flex flex-col h-full min-h-[500px] w-full bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand-accent)] transition-all duration-500 shadow-sm hover:shadow-glow overflow-visible"
+      className="group relative h-full bg-[#080808] border border-white/5 hover:border-[var(--color-brand-accent)]/30 transition-all duration-500 rounded-[2rem] overflow-hidden flex flex-col items-center"
     >
-      <div className="p-8 flex flex-col h-full relative z-10">
+      {/* Dynamic Background Glow */}
+      <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[var(--color-brand-accent)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-        {/* HEADER SECTION - Fixed height for stability */}
-        <div className="flex flex-col gap-4 mb-8 shrink-0">
-          <div className="flex justify-between items-start w-full">
-            {/* Icon Box */}
-            <div className="w-16 h-16 shrink-0 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-brand-accent)] group-hover:scale-110 transition-transform duration-500 shadow-sm">
-              {typeof Icon === 'string' ? (
-                <img src={Icon} alt={name} className="w-10 h-10 object-contain" />
-              ) : (
-                <Icon size={32} />
-              )}
-            </div>
+      <div className="p-8 flex flex-col items-center w-full relative z-10">
+        {/* IDENTITY SECTION - Centered */}
+        <div className="flex flex-col items-center gap-4 mb-6">
+          <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-[var(--color-brand-accent)] shadow-[0_15px_30px_rgba(0,0,0,0.4)] group-hover:scale-105 group-hover:border-[var(--color-brand-accent)]/30 transition-all duration-700 relative">
+            {/* Inner Glow */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-[var(--color-brand-accent)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-3xl" />
 
-            {/* Status Badge */}
-            <div className="flex items-center gap-2 pt-1 shrink-0">
-              <div className={`w-2 h-2 rounded-full ${status === 'active' ? 'bg-emerald-500 animate-pulse' : status === 'learning' ? 'bg-amber-500' : 'bg-stone-400'}`} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] lg:hidden xl:block">
-                {status}
-              </span>
+            {typeof Icon === 'string' ? (
+              <img src={Icon} alt={name} className="w-10 h-10 object-contain relative z-10" />
+            ) : Icon ? (
+              <Icon size={32} strokeWidth={1} className="relative z-10" />
+            ) : (
+              <Shield size={32} strokeWidth={1} className="relative z-10" />
+            )}
+
+            {/* Status Indicator - Integrated and stable */}
+            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[4px] border-[#080808] z-20`}>
+              <div className={`w-full h-full rounded-full ${status === 'active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : status === 'learning' ? 'bg-amber-500' : 'bg-zinc-600'}`} />
             </div>
           </div>
 
-          {/* Name & Role Wrapper */}
-          <div className="min-w-0">
-            <h3 className="text-xl font-bold text-[var(--color-text-main)] mb-1 leading-tight line-clamp-1" title={name}>
+          <div className="flex flex-col items-center text-center px-2">
+            <h3 className="text-xl font-bold text-white tracking-tight leading-tight mb-1 group-hover:text-[var(--color-brand-accent)] transition-colors duration-500">
               {name}
             </h3>
-            <span className="text-[11px] font-black text-[var(--color-brand-accent)] uppercase tracking-[0.2em] opacity-80">
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] leading-none mb-4">
               {role}
             </span>
+            <div className="h-px w-8 bg-white/10" />
           </div>
         </div>
 
-        {/* DESCRIPTION - Flexible but with minimum lines for alignment */}
-        <div className="flex-1 mb-8 overflow-visible">
-          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed font-light line-clamp-5">
-            {description}
-          </p>
-        </div>
-
-        {/* DIVIDER */}
-        <div className="h-px w-full bg-[var(--color-border)] mb-8 shrink-0 opacity-40" />
-
-        {/* METRICS FOOTER */}
-        <div className="grid grid-cols-2 gap-8 mt-auto shrink-0">
-          {metrics.slice(0, 2).map((metric, idx) => (
-            <div key={idx} className="group/metric">
-              <div className="text-[9px] text-[var(--color-text-subtle)] uppercase font-black tracking-[0.15em] mb-2 transition-colors group-hover/metric:text-[var(--color-brand-accent)]">
-                {metric.label}
+        {/* METRICS - Full width, Justified (Overlap Proof) */}
+        <div className="w-full space-y-4 pt-2">
+          {(metrics || []).slice(0, 2).map((metric, idx) => (
+            <div key={idx} className="flex justify-between items-center w-full px-1">
+              <div className="flex flex-col items-start gap-1">
+                <span className="text-[8px] text-white/20 uppercase font-bold tracking-[0.2em]">{metric.label}</span>
+                <span className="text-xl font-numbers font-bold text-white tracking-tighter leading-none">{metric.value}</span>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-numbers font-bold text-[var(--color-text-main)] leading-none">
-                  {metric.value}
-                </span>
-                {metric.trend && (
-                  <span className={`text-[10px] font-bold ${metric.trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {metric.trend > 0 ? '↑' : '↓'}{Math.abs(metric.trend)}%
-                  </span>
-                )}
-              </div>
+              {metric.trend !== undefined && (
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black border transition-all ${metric.trend > 0
+                    ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
+                    : 'bg-red-500/5 text-red-500 border-red-500/10'
+                  }`}>
+                  {metric.trend > 0 ? '↑' : '↓'}{Math.abs(metric.trend)}%
+                </div>
+              )}
             </div>
           ))}
         </div>
-
       </div>
-
-      {/* Subtle Premium Details */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--color-brand-accent)]/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
     </Card>
   );
 };

@@ -1,4 +1,4 @@
-import { ProductModule } from '../types';
+import { ProductModule } from '../src/types';
 
 export const productModules: ProductModule[] = [
   // --- CORE COVERAGE: GUEST ---
