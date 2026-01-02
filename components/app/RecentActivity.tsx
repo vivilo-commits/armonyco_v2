@@ -49,13 +49,16 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.03] font-mono text-[10px]">
-                        {(activities.length > 0 ? activities : []).slice(0, 10).map((item, i) => {
+                        {(activities || []).slice(0, 10).map((item, i) => {
+                            if (!item) return null;
                             const isDeny = item.verdict === 'DENY' || item.verdict === 'REJECTED';
+                            const timestamp = item.timestamp || '';
+                            const timeOnly = timestamp.includes(' ') ? timestamp.split(' ')[1] : timestamp;
 
                             return (
                                 <tr key={item.id || i} className="hover:bg-white/[0.03] transition-all duration-200 group cursor-default">
                                     <td className="px-6 py-4 text-[var(--color-text-muted)] group-hover:text-white transition-colors">
-                                        {item.timestamp.split(' ')[1] || item.timestamp}
+                                        {timeOnly || '--:--'}
                                     </td>
                                     <td className="px-6 py-4 text-[var(--color-text-subtle)] group-hover:text-[var(--color-brand-accent)]/80 transition-colors">
                                         {item.id || `EVT_${i}`}
@@ -71,12 +74,12 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [] 
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-[var(--color-text-muted)] italic">
-                                        {item.policy}
+                                        {item.policy || 'N/A'}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold tracking-widest ${getStatusStyle(item.verdict)}`}>
-                                                {item.verdict.toUpperCase()}
+                                            <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold tracking-widest ${getStatusStyle(item.verdict || 'N/A')}`}>
+                                                {(item.verdict || 'N/A').toUpperCase()}
                                             </span>
                                         </div>
                                     </td>

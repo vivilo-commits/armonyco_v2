@@ -5,8 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { FloatingInput } from '../../components/ui/FloatingInput';
 import { Modal } from '../../components/ui/Modal';
 import { Card } from '../../components/ui/Card';
-import { authService, billingService, usageService } from '../../src/services';
-import { UserProfile, Organization, BillingDetails, Invoice, PaymentMethod, UsageMetrics } from '../../src/types';
+import { UserProfile, Organization, BillingDetails } from '../../src/types';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -74,39 +73,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     // -- Legal State --
     const [marketingConsent, setMarketingConsent] = useState(false);
 
-    // -- Billing & Metrics State --
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-    const [usageMetrics, setUsageMetrics] = useState<UsageMetrics | null>(null);
+    // -- Org Billing Details State --
+    const [showBillingModal, setShowBillingModal] = useState(false);
 
-    useEffect(() => {
-        const fetchBillingData = async () => {
-            try {
-                const [inv, pm, um] = await Promise.all([
-                    billingService.getInvoices(),
-                    billingService.getPaymentMethods(),
-                    usageService.getMetrics()
-                ]);
-                setInvoices(inv);
-                setPaymentMethods(pm);
-                setUsageMetrics(um);
-            } catch (error) {
-                console.error('Failed to fetch billing data:', error);
-            }
-        };
-        fetchBillingData();
-    }, []);
-
-    // State for Profile Modal
-    const [showProfileModal, setShowProfileModal] = useState(false);
     // -- Top Up State --
     const [showTopUpModal, setShowTopUpModal] = useState(false);
     const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-    const [topUpSuccess, setTopUpSuccess] = useState(false);
-
-    // -- Org Billing Details State --
-    const [showBillingModal, setShowBillingModal] = useState(false);
 
     // -- Auto Top Up State --
     const [autoTopUpEnabled, setAutoTopUpEnabled] = useState(false);
@@ -364,12 +337,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     const renderBilling = () => {
         const consumptionStats = [
-            { label: 'Credits Used (30d)', value: usageMetrics?.governedValue ? (usageMetrics.governedValue * 0.1).toLocaleString() : '0' },
+            { label: 'Credits Used (30d)', value: '3,420' },
             { label: 'Network Sessions', value: '128' },
-            { label: 'Compliance Rate', value: `${usageMetrics?.complianceRate || 0}%` }
+            { label: 'Avg Consumption', value: '26.7' }
         ];
 
-        const history = invoices;
+        const history = [
+            { id: 1, date: '02 May 2024, 14:20', module: 'Neural Chat (AEM)', credits: 450, status: 'Settled' },
+            { id: 2, date: '01 May 2024, 09:15', module: 'Control Tower Sync', credits: 120, status: 'Settled' },
+            { id: 3, date: '30 Apr 2024, 18:45', module: 'ARS Reliability Check', credits: 850, status: 'Settled' },
+            { id: 4, date: '29 Apr 2024, 11:30', module: 'AOS Core Migration', credits: 5000, status: 'Settled' },
+            { id: 5, date: '28 Apr 2024, 23:10', module: 'Agent "Amelia" Task', credits: 240, status: 'Settled' },
+        ];
 
         return (
             <div className="w-full animate-fade-in space-y-10 pb-20">
@@ -460,25 +439,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-white/5 bg-white/[0.01]">
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Invoice ID</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Amount</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date & Time</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Module / Task</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Consumption</th>
                                         <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-right">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {history.map((item) => (
                                         <tr key={item.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
-                                            <td className="px-6 py-5 text-[10px] font-mono text-white/40 group-hover:text-white/60 transition-colors uppercase tracking-widest">{item.id}</td>
                                             <td className="px-6 py-5 text-[10px] font-mono text-white/40 group-hover:text-white/60 transition-colors uppercase tracking-widest">{item.date}</td>
+                                            <td className="px-6 py-5 text-sm text-white font-bold tracking-tight opacity-80 group-hover:opacity-100">{item.module}</td>
                                             <td className="px-6 py-5 text-xs font-numbers text-[var(--color-brand-accent)] font-black">
-                                                {item.amount.toLocaleString()}
+                                                {item.credits.toLocaleString()}
                                                 <span className="text-[9px] opacity-40 ml-1.5 font-numbers uppercase tracking-widest italic">AC</span>
                                             </td>
                                             <td className="px-6 py-5 text-right">
-                                                <span className={`text-[9px] px-2.5 py-1 rounded-full border uppercase font-black tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)] ${item.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                                                    }`}>
-                                                    {item.status}
+                                                <span className="text-[9px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-black tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                                                    Settled
                                                 </span>
                                             </td>
                                         </tr>

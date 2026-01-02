@@ -15,7 +15,7 @@ import { RoleManagement } from './app/RoleManagement';
 import { SettingsView } from './app/Settings';
 import { DocumentationView } from './app/Documentation';
 import { SupportView } from './app/Support';
-import { UserRole, Notification } from '../types';
+import { UserRole, Notification } from '../src/types';
 import { Menu } from '../components/ui/Icons';
 
 interface WebAppProps {
