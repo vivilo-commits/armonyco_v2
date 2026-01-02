@@ -1,34 +1,56 @@
-import React, { useState } from 'react';
-import { LogEntry } from '../../types';
-import { Search, Filter, Calendar, ChevronDown, Activity, MessageCircle, TrendingUp, Shield, Zap, AlertTriangle, FileText, CheckCircle } from '../../components/ui/Icons';
+import React, { useState, useEffect } from 'react';
+import {
+    Search, Filter, Calendar, ChevronDown, Activity, MessageCircle,
+    TrendingUp, Shield, Zap, AlertTriangle, FileText, CheckCircle
+} from '../../components/ui/Icons';
 import { AgentCard } from '../../components/ui/AgentCard';
-import { agents } from '../../data/agents';
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/app/StatCard';
 import { Button } from '../../components/ui/Button';
 import { Tooltip } from '../../components/ui/Tooltip';
-
-const mockLogs: LogEntry[] = [
-    { id: 'EVT 29384', timestamp: '2023-10-24 14:22:01', policy: 'POL TRAVEL EU', verdict: 'ALLOW', evidenceHash: '0x9a8b...2f1', responsible: 'SYS AUTO', credits: 1 },
-    { id: 'EVT 29385', timestamp: '2023-10-24 14:23:45', policy: 'POL SPEND LIMIT', verdict: 'DENY', evidenceHash: '0x1c3d...8e9', responsible: 'SYS AUTO', credits: 1 },
-    { id: 'EVT 29386', timestamp: '2023-10-24 14:24:12', policy: 'POL VENDOR KYC', verdict: 'MODIFY', evidenceHash: '0x7f2a...1b4', responsible: 'HUMAN REV', credits: 2 },
-    { id: 'EVT 29387', timestamp: '2023-10-24 14:26:00', policy: 'POL INVOICE MATCH', verdict: 'ALLOW', evidenceHash: '0x5e6d...9c2', responsible: 'SYS AUTO', credits: 1 },
-    { id: 'EVT 29388', timestamp: '2023-10-24 14:28:33', policy: 'POL CONTRACT VAL', verdict: 'ALLOW', evidenceHash: '0x3a4b...5f6', responsible: 'SYS AUTO', credits: 2 },
-    { id: 'EVT 29389', timestamp: '2023-10-25 09:15:00', policy: 'POL HR ACCESS', verdict: 'ALLOW', evidenceHash: '0x2b8c...1a9', responsible: 'SYS AUTO', credits: 1 },
-    { id: 'EVT 29390', timestamp: '2023-10-25 10:00:22', policy: 'POL DATA EXPORT', verdict: 'DENY', evidenceHash: '0x4d9e...3f2', responsible: 'SEC OPS', credits: 3 },
-];
+import { logService, agentService, usageService } from '../../src/services';
+import { DecisionRecord, Agent, UsageMetrics } from '../../src/types';
 
 export const DecisionLog: React.FC = () => {
     const [filterPolicy, setFilterPolicy] = useState('');
     const [filterVerdict, setFilterVerdict] = useState('ALL');
     const [filterEntity, setFilterEntity] = useState('');
 
-    const filteredLogs = mockLogs.filter(log => {
+    const [logs, setLogs] = useState<DecisionRecord[]>([]);
+    const [agents, setAgents] = useState<Agent[]>([]);
+    const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAllData = async () => {
+            try {
+                const [fetchedLogs, fetchedAgents, fetchedMetrics] = await Promise.all([
+                    logService.getLogs(),
+                    agentService.getAgents(),
+                    usageService.getMetrics()
+                ]);
+                setLogs(fetchedLogs);
+                setAgents(fetchedAgents);
+                setMetrics(fetchedMetrics);
+            } catch (error) {
+                console.error('Failed to fetch decision log data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAllData();
+    }, []);
+
+    const filteredLogs = logs.filter(log => {
         const matchesPolicy = log.policy.toLowerCase().includes(filterPolicy.toLowerCase());
         const matchesVerdict = filterVerdict === 'ALL' || log.verdict === filterVerdict;
-        const matchesEntity = log.responsible.toLowerCase().includes(filterEntity.toLowerCase());
+        const matchesEntity = (log.responsible || '').toLowerCase().includes(filterEntity.toLowerCase());
         return matchesPolicy && matchesVerdict && matchesEntity;
     });
+
+    if (isLoading) {
+        return <div className="p-8 text-white opacity-50 uppercase tracking-widest animate-pulse">Syncing Ledger...</div>;
+    }
 
     return (
         <div className="p-8 animate-fade-in pb-20 overflow-x-hidden bg-black text-white">
@@ -55,20 +77,20 @@ export const DecisionLog: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <StatCard
                     label="Decisions (24h)"
-                    value="1,492"
+                    value={metrics?.governedValue.toLocaleString() || '0'}
                     icon={Zap}
                     trend={{ value: "+12%", isPositive: true, label: "load" }}
                 />
                 <StatCard
                     label="Autonomy Rate"
-                    value="98.2%"
+                    value={`${metrics?.autonomyRate || 0}%`}
                     icon={Activity}
                     iconColor="text-[var(--color-brand-accent)]"
                     subtext="Autonomous execution"
                 />
                 <StatCard
                     label="Active Alerts"
-                    value="3"
+                    value={metrics?.activeAlerts.toString() || '0'}
                     icon={AlertTriangle}
                     iconColor="text-amber-500"
                     subtext="Signals requiring review"
@@ -96,7 +118,13 @@ export const DecisionLog: React.FC = () => {
                     {agents.map((agent) => (
                         <div key={agent.id} className="transition-all duration-300 hover:scale-[1.02]">
                             <AgentCard
-                                {...agent}
+                                id={agent.id}
+                                name={agent.name}
+                                role={agent.role}
+                                status={agent.status}
+                                productivity={agent.productivity}
+                                uptime={agent.uptime}
+                                decisions={agent.decisions}
                                 hideAction={true}
                             />
                         </div>
