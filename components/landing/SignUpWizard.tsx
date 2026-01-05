@@ -47,7 +47,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
             isOpen={isOpen}
             onClose={onClose}
             title="Start now"
-            width="xl"
+            width="2xl"
             showCloseButton={true}
         >
             <div className="flex flex-col h-auto max-h-[85vh] md:max-h-none">
@@ -62,7 +62,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                         <img src="/assets/logo-full.png" alt="Armonyco" className="h-16 object-contain" />
                     </div>
                     {step === 1 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 pt-2">
+                        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300 pt-2">
                             <div className="grid grid-cols-2 gap-6">
                                 <FloatingInput
                                     label="First Name"
@@ -98,7 +98,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                         </div>
                     )}
                     {step === 2 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 pt-2">
+                        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300 pt-2">
                             <FloatingInput
                                 label="Organization Name"
                                 value={org.name}
@@ -114,7 +114,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                     )}
                     {step === 3 && (
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="bg-[var(--color-background)] p-5 rounded-xl border border-[var(--color-border)] text-center space-y-3 ui-card">
+                            <div className="max-w-3xl mx-auto bg-[var(--color-background)] p-5 rounded-xl border border-[var(--color-border)] text-center space-y-3 ui-card">
                                 <div>
                                     <h2 className="text-lg font-medium text-[var(--color-text-main)] mb-1">ArmoCredits™ System</h2>
                                     <p className="text-[var(--color-text-muted)] text-sm">The fuel for autonomous governance.</p>
@@ -128,29 +128,35 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-4 text-center">Select Initial Plan</label>
-                                <div className="grid grid-cols-4 gap-4 mb-2">
+                            <div className="max-w-7xl mx-auto">
+                                <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-6 text-center">Select Institutional Plan</label>
+                                <div className="grid grid-cols-4 gap-6 mb-2">
                                     {[
-                                        { id: 1, amt: 10000, price: 39, units: 'Up to 50' },
-                                        { id: 2, amt: 20000, price: 49, units: 'Up to 200' },
-                                        { id: 3, amt: 50000, price: 79, units: 'Up to 500' },
-                                        { id: 4, amt: 100000, price: 129, units: '500+' }
+                                        { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
+                                        { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
+                                        { id: 3, name: 'Elite', amt: 50000, price: 79, units: 'Up to 500' },
+                                        { id: 4, name: 'VIP', amt: 100000, price: 129, units: '500+' }
                                     ].map(plan => (
                                         <button
                                             key={plan.amt}
                                             onClick={() => setCredits(plan.amt)}
-                                            className={`py-5 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
+                                            className={`py-8 px-4 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-1.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)] hover:bg-[var(--color-background)]'}`}
                                         >
-                                            <span className="text-[10px] opacity-40 mb-1 uppercase tracking-widest font-black">Plan {plan.id}</span>
-                                            <span className="text-[20px] font-bold leading-none mb-2">€{plan.price}<span className="text-[10px] opacity-60">/mo</span></span>
-                                            <div className="flex flex-col items-center gap-0.5 border-t border-white/5 pt-2 mt-1 w-full">
-                                                <span className="text-[9px] font-bold uppercase tracking-tight">Includes {plan.amt.toLocaleString('de-DE')}</span>
-                                                <span className="text-[7px] opacity-40 uppercase tracking-widest italic">{plan.units} units</span>
+                                            <span className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                            <span className="text-[28px] font-bold leading-none mb-0.5">€{plan.price}<span className="text-[12px] opacity-60 font-medium">/mo</span></span>
+                                            <span className="text-[7px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
+                                            <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
+                                                    <span className="text-[15px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
+                                                    <span className="text-[8px] opacity-40 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                                </div>
+                                                <span className="text-[8px] opacity-40 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
                                             </div>
                                         </button>
                                     ))}
                                 </div>
+                                <p className="text-center text-[10px] text-[var(--color-text-muted)] mt-6 italic opacity-60">All prices include VAT. Resource allocation reset every 30 days.</p>
                             </div>
                         </div>
                     )}
