@@ -615,9 +615,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN: Calibration & Agents */}
+                {/* RIGHT COLUMN: Calibration & Templates */}
                 <div className="lg:col-span-4 space-y-8">
-                    <Card variant="dark" padding="lg" className="border-white/5 bg-black/60 backdrop-blur-xl h-full flex flex-col justify-between min-h-[500px]">
+                    {/* Knowledge Templates Card */}
+                    <Card variant="dark" padding="lg" className="border-[var(--color-brand-accent)]/20 shadow-[0_0_30px_rgba(212,175,55,0.05)]">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-6 flex items-center gap-2">
+                            <Download size={14} /> Knowledge Templates
+                        </h3>
+                        <div className="space-y-3">
+                            {[
+                                { name: 'Institutional Policies', type: 'PDF Template', icon: FileText },
+                                { name: 'Property Assets Matrix', type: 'CSV Reference', icon: Database },
+                                { name: 'Service Workflow Protocol', type: 'PDF Model', icon: Zap }
+                            ].map((model, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/5 transition-all group cursor-pointer border-dashed">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                            <model.icon size={14} className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" />
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-black text-white/80 uppercase tracking-tight">{model.name}</div>
+                                            <div className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{model.type}</div>
+                                        </div>
+                                    </div>
+                                    <div className="w-8 h-8 flex items-center justify-center bg-white/5 border border-white/10 rounded-lg group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all">
+                                        <Download size={12} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="mt-6 text-[9px] text-zinc-500 leading-relaxed italic border-t border-white/5 pt-4">
+                            Download templates, populate with institutional data, and upload in the primary flow for seamless system calibration.
+                        </p>
+                    </Card>
+
+                    <Card variant="dark" padding="lg" className="border-white/5 bg-black/60 backdrop-blur-xl h-fit flex flex-col justify-between">
                         <div className="space-y-8">
                             <div>
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-6 flex items-center gap-2">
