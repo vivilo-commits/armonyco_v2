@@ -38,8 +38,8 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   // Shared State for User & Organization (Source of Truth)
   // Initialize with initialData if present, otherwise default mock data
   const [userProfile, setUserProfile] = useState(initialData?.userProfile || {
-    firstName: 'Executive',
-    lastName: 'Admin',
+    firstName: 'First',
+    lastName: 'Name',
     email: 'admin@armonyco.com',
     phone: '+1 (555) 0123-4567',
     photo: null as string | null
