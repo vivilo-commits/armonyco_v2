@@ -50,7 +50,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
             width="xl"
             showCloseButton={true}
         >
-            <div className="flex flex-col h-[70vh] md:h-auto">
+            <div className="flex flex-col h-auto max-h-[85vh] md:max-h-none">
                 {/* Header Subtext */}
                 <div className="px-6 pb-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex justify-between items-center -mt-4 mb-0">
                     <div className="text-xs font-mono text-[var(--color-text-subtle)]">Step {step} of 3</div>
@@ -113,8 +113,8 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                         </div>
                     )}
                     {step === 3 && (
-                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                            <div className="bg-[var(--color-background)] p-6 rounded-xl border border-[var(--color-border)] text-center space-y-4 ui-card">
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="bg-[var(--color-background)] p-5 rounded-xl border border-[var(--color-border)] text-center space-y-3 ui-card">
                                 <div>
                                     <h2 className="text-lg font-medium text-[var(--color-text-main)] mb-1">ArmoCredits™ System</h2>
                                     <p className="text-[var(--color-text-muted)] text-sm">The fuel for autonomous governance.</p>
@@ -129,24 +129,24 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-4 text-center">Select Initial Credits</label>
+                                <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-4 text-center">Select Initial Plan</label>
                                 <div className="grid grid-cols-4 gap-4 mb-2">
                                     {[
-                                        { amt: 10000, price: 39, units: 'Up to 50' },
-                                        { amt: 20000, price: 49, units: 'Up to 200' },
-                                        { amt: 50000, price: 79, units: 'Up to 500' },
-                                        { amt: 100000, price: 129, units: '500+' }
+                                        { id: 1, amt: 10000, price: 39, units: 'Up to 50' },
+                                        { id: 2, amt: 20000, price: 49, units: 'Up to 200' },
+                                        { id: 3, amt: 50000, price: 79, units: 'Up to 500' },
+                                        { id: 4, amt: 100000, price: 129, units: '500+' }
                                     ].map(plan => (
                                         <button
                                             key={plan.amt}
                                             onClick={() => setCredits(plan.amt)}
-                                            className={`py-6 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
+                                            className={`py-5 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
                                         >
-                                            <span className="text-[18px] font-bold leading-none">{plan.amt.toLocaleString('de-DE')}</span>
-                                            <span className="text-[9px] opacity-70 mb-2 uppercase tracking-tighter">ArmoCredits©</span>
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="text-[12px] font-bold text-[var(--color-brand-accent)]">€{plan.price}/mo</span>
-                                                <span className="text-[8px] opacity-40 italic">{plan.units} units</span>
+                                            <span className="text-[10px] opacity-40 mb-1 uppercase tracking-widest font-black">Plan {plan.id}</span>
+                                            <span className="text-[20px] font-bold leading-none mb-2">€{plan.price}<span className="text-[10px] opacity-60">/mo</span></span>
+                                            <div className="flex flex-col items-center gap-0.5 border-t border-white/5 pt-2 mt-1 w-full">
+                                                <span className="text-[9px] font-bold uppercase tracking-tight">Includes {plan.amt.toLocaleString('de-DE')}</span>
+                                                <span className="text-[7px] opacity-40 uppercase tracking-widest italic">{plan.units} units</span>
                                             </div>
                                         </button>
                                     ))}
