@@ -735,7 +735,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
                             {autoTopUpEnabled
-                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up (€10/trigger)."
+                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up."
                                 : "No automatic reloads configured. Services may pause on zero balance."
                             }
                         </p>
@@ -914,8 +914,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <span className={`text-2xl font-numbers font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
                                         {amount.toLocaleString('de-DE')}
                                     </span>
-                                    <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-1">ArmoCredits©</span>
-                                    <div className="mt-2 text-[12px] font-bold text-[var(--color-brand-accent)]">€{(amount / 1000).toLocaleString('de-DE')}</div>
+                                    <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-2">ArmoCredits©</span>
                                 </button>
                             ))}
                         </div>
@@ -1008,8 +1007,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <div className="space-y-6">
                                 <div className="p-6 bg-zinc-900/50 rounded-2xl border border-white/5 text-center">
                                     <div className="text-[10px] uppercase font-black tracking-widest text-[var(--color-brand-accent)] mb-2 italic">New Execution Tier Protocol</div>
-                                    <div className="text-3xl font-bold text-white mb-1 uppercase tracking-tight">{pendingPlan.name}</div>
-                                    <div className="text-xl font-numbers text-[var(--color-brand-accent)] font-black">€{pendingPlan.price} <span className="text-xs opacity-40 italic">/ monthly</span></div>
+                                    <div className="text-3xl font-bold text-white mb-4 uppercase tracking-tight">{pendingPlan.name}</div>
                                     <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest leading-relaxed">
                                         The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.
                                     </div>
