@@ -6,29 +6,25 @@ import { Constructs } from '../components/landing/Constructs';
 import { Addendums } from '../components/landing/Addendums';
 import { FAQ } from '../components/landing/FAQ';
 import { Footer } from '../components/landing/Footer';
-import { ChevronDown, Menu, X, CheckCircle, CreditCard, User, Building, MapPin, Globe, ChevronRight, ChevronLeft, Lock, ArrowRight, LogIn, MessageCircle, TrendingUp, Activity, Shield } from '../components/ui/Icons';
+import { ChevronDown, Menu, X, CheckCircle, CreditCard, User, Building, MapPin, Globe, ChevronRight, ChevronLeft, Lock, ArrowRight, LogIn, MessageCircle, TrendingUp, Activity, Shield, Cpu } from '../components/ui/Icons';
 import { AiTeamStrip } from '../components/ui/AiTeamStrip';
 import { ModuleListModal, ModuleSuite } from '../components/landing/ModuleListModal';
 import { Card } from '../components/ui/Card';
-import { ActiveWorkforce } from '../components/landing/ActiveWorkforce';
 import { SignInModal } from '../components/landing/SignInModal';
 import { SignUpWizard } from '../components/landing/SignUpWizard';
 
 // --- Types ---
 interface LandingPageProps {
     onLogin: (data?: any) => void;
+    onNavigateSolutions: (industry?: 'pm' | 'ins' | 'inv' | 'ent') => void;
+    onNavigateSection: (sectionId: string) => void;
 }
 
-
-
-export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSolutions, onNavigateSection }) => {
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [selectedSuite, setSelectedSuite] = useState<ModuleSuite | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    // Agent Configuration
-
 
     return (
         <div className="bg-stone-50 min-h-screen font-sans text-stone-900 selection:bg-armonyco-gold/30">
@@ -36,6 +32,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <Header
                 onLogin={() => setIsSignInOpen(true)}
                 onSignUp={() => setIsSignUpOpen(true)}
+                onNavigateSolutions={onNavigateSolutions}
+                onNavigateSection={onNavigateSection}
             />
 
             <main>
@@ -43,31 +41,67 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 <Pillars />
                 <Constructs />
 
-                {/* Active Workforce Section - USING FLEX NOW */}
-                <ActiveWorkforce />
+                <section id="solutions-teaser" className="py-32 px-6 md:px-24 bg-[var(--color-surface)] border-b border-[var(--color-border)] text-center">
+                    <div className="max-w-4xl mx-auto">
+                        <h4 className="text-[var(--color-brand-accent)] text-[10px] font-black uppercase tracking-[0.4em] mb-8 animate-fade-in">Decision Infrastructure</h4>
+                        <h2 className="text-5xl md:text-7xl text-zinc-900 font-light mb-10 leading-[1.1] tracking-tight">One system.<br />Every institutional decision.</h2>
+                        <div className="mb-16 p-8 bg-zinc-900 rounded-[2rem] border border-white/5 shadow-2xl">
+                            <p className="text-2xl text-white font-light italic leading-relaxed">
+                                "For operators, Armonyco turns daily chaos into predictable cashflow per unit. At scale, that’s what a Decision OS really is."
+                            </p>
+                        </div>
 
-                <section id="products" className="py-24 px-6 md:px-24 bg-[var(--color-surface)] border-b border-[var(--color-border)] scroll-mt-20">
-                    <div className="mb-16">
-                        <h2 className="text-4xl text-[var(--color-text-main)] font-light mb-4">Products</h2>
-                        <p className="text-[var(--color-text-muted)] max-w-3xl text-lg">Operational coverage for the critical moments of truth.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card id="products-guest" hover padding="md" onClick={() => setSelectedSuite('GUEST')} className="cursor-pointer group">
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-brand-accent)] transition-colors">Guest Experience</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Pre-arrival, access, and self-resolution.</p>
-                        </Card>
-                        <Card id="products-revenue" hover padding="md" onClick={() => setSelectedSuite('REVENUE')} className="cursor-pointer group">
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-brand-accent)] transition-colors">Revenue Generation</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Monetization of exceptions and opportunities.</p>
-                        </Card>
-                        <Card id="products-ops" hover padding="md" onClick={() => setSelectedSuite('OPS')} className="cursor-pointer group">
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-brand-accent)] transition-colors">Operational Efficiency</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Triage and closure for real-world operations.</p>
-                        </Card>
-                        <Card id="products-response" hover padding="md" onClick={() => setSelectedSuite('RESPONSE')} className="cursor-pointer group">
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-brand-accent)] transition-colors">Incident Response</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Policy-driven incident handling playbooks.</p>
-                        </Card>
+                        <p className="text-xl text-zinc-500 mb-12 leading-relaxed max-w-2xl mx-auto italic">
+                            Move beyond tools. Deploy the Decision OS across your hospitality vertical.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+                            {[
+                                {
+                                    id: "card-pm",
+                                    slug: "pm",
+                                    title: "Property Managers",
+                                    desc: "Turn daily operational chaos into predictable cashflow per unit at scale.",
+                                    icon: <Building size={24} className="text-[var(--color-brand-accent)]" />
+                                },
+                                {
+                                    id: "card-ins",
+                                    slug: "ins",
+                                    title: "Insurers",
+                                    desc: "The data substrate for real-time risk modification and fiduciary accountability layers.",
+                                    icon: <Shield size={24} className="text-[var(--color-brand-accent)]" />
+                                },
+                                {
+                                    id: "card-inv",
+                                    slug: "inv",
+                                    title: "Investment Funds",
+                                    desc: "Securing institutional capital through standardized operational auditing and asset protection.",
+                                    icon: <TrendingUp size={24} className="text-[var(--color-brand-accent)]" />
+                                },
+                                {
+                                    id: "card-ent",
+                                    slug: "ent",
+                                    title: "Enterprise",
+                                    desc: "Global governance layers for cross-border operations and complex stakeholder ecologies.",
+                                    icon: <Globe size={24} className="text-[var(--color-brand-accent)]" />
+                                }
+                            ].map((industry, i) => (
+                                <div key={i} id={industry.id} className="group p-8 rounded-[2rem] bg-white border border-zinc-100 hover:border-[var(--color-brand-accent)] transition-all hover:shadow-2xl flex flex-col h-full scroll-mt-24">
+                                    <div className="mb-6 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        {industry.icon}
+                                    </div>
+                                    <h3 className="text-lg font-bold text-zinc-900 mb-3">{industry.title}</h3>
+                                    <p className="text-sm text-zinc-500 leading-relaxed mb-8 flex-grow">{industry.desc}</p>
+
+                                    <button
+                                        onClick={() => onNavigateSolutions(industry.slug as any)}
+                                        className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 group-hover:text-zinc-900 transition-colors"
+                                    >
+                                        Learn More
+                                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </section>
                 <Addendums />

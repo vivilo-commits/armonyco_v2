@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bell, AlertTriangle, CheckCircle, Settings, XCircle, Activity, Shield } from '../../components/ui/Icons';
-import { Notification } from '../../types';
+import { Notification } from '../../src/types';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatCard } from '../../components/app/StatCard';

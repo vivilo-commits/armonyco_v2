@@ -6,14 +6,14 @@ import { Settings, Shield, Activity, Zap } from './Icons';
 interface AgentCardProps {
   name: string;
   role: string;
-  description: string;
+  description?: string;
   status: 'active' | 'learning' | 'idle';
-  metrics: {
+  metrics?: {
     label: string;
     value: string;
     trend?: number;
   }[];
-  icon: any;
+  icon?: any;
   hideAction?: boolean;
 }
 
@@ -26,7 +26,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
 }) => {
   return (
     <Card
-      noPadding
+      variant="dark"
+      padding="none"
       className="group relative h-full bg-[#080808] border border-white/5 hover:border-[var(--color-brand-accent)]/30 transition-all duration-500 rounded-[2rem] overflow-hidden flex flex-col items-center"
     >
       {/* Dynamic Background Glow */}
@@ -74,8 +75,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
               </div>
               {metric.trend !== undefined && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black border transition-all ${metric.trend > 0
-                    ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
-                    : 'bg-red-500/5 text-red-500 border-red-500/10'
+                  ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
+                  : 'bg-red-500/5 text-red-500 border-red-500/10'
                   }`}>
                   {metric.trend > 0 ? '↑' : '↓'}{Math.abs(metric.trend)}%
                 </div>

@@ -50,6 +50,8 @@ export interface ProductModule {
     why?: string[];
     how?: string;
     requiresExternal?: boolean;
+    laborReduction?: string; // e.g. "85%"
+    valueGenerated?: string; // e.g. "€1.2k/mo"
 }
 
 export interface UsageRecord {

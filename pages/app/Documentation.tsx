@@ -48,7 +48,7 @@ export const DocumentationView: React.FC = () => {
         return (
           <div className="space-y-8 animate-fade-in">
             <p className="text-sm text-white/60 leading-relaxed italic">
-              Ingest institutional events into the Armonyco Event Model (AEM) for real-time validation and ledgering.
+              Ingest institutional events into the AEM - Armonyco Event Model™ for real-time validation and ledgering.
             </p>
             <div className="space-y-4">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">Protocol Endpoints</h3>
@@ -132,7 +132,7 @@ export const DocumentationView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
         {[
           { title: 'Neural Kickstart', type: 'KICKSTART', icon: <Zap />, desc: 'Deploy first agent in < 5m' },
-          { title: 'AEM Protocol', type: 'API', icon: <Code />, desc: 'Full event model reference' },
+          { title: 'AEM - Armonyco Event Model™', type: 'API', icon: <Code />, desc: 'Full event model reference' },
           { title: 'Process Logic', type: 'PROCESS', icon: <Database />, desc: 'The 12 hospitality flows' },
           { title: 'Agent Tuning', type: 'CONFIG', icon: <Settings />, desc: 'Voice & Escalation rules' }
         ].map((doc, i) => (
@@ -145,7 +145,7 @@ export const DocumentationView: React.FC = () => {
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/[0.02] rounded-full blur-2xl group-hover:bg-[var(--color-brand-accent)]/5 transition-all"></div>
             <div>
               <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center mb-6 text-white/20 group-hover:text-[var(--color-brand-accent)] transition-all duration-500 group-hover:scale-110 shadow-lg">
-                {React.cloneElement(doc.icon as React.ReactElement, { size: 20 })}
+                {React.isValidElement(doc.icon) ? React.cloneElement(doc.icon as React.ReactElement<any>, { size: 20 }) : null}
               </div>
               <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-3 group-hover:text-[var(--color-brand-accent)] transition-colors">{doc.title}</h3>
               <p className="text-[10px] text-white/30 font-bold leading-relaxed group-hover:text-white/50 transition-colors uppercase tracking-widest">{doc.desc}</p>
@@ -179,7 +179,7 @@ export const DocumentationView: React.FC = () => {
             <div className="relative pl-10 group opacity-60 hover:opacity-100 transition-opacity">
               <span className="absolute left-[3px] top-2 w-2.5 h-2.5 rounded-full bg-white/10 border-[3px] border-zinc-950 z-10 transition-transform group-hover:scale-125"></span>
               <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] mb-2 italic">Shift: Yesterday</div>
-              <p className="text-white/60 text-sm font-bold tracking-tight leading-relaxed">Released Global Core Constructs Pass (AEM, AOS, ARS, AGS Architecture).</p>
+              <p className="text-white/60 text-sm font-bold tracking-tight leading-relaxed">Released Global Core Constructs Pass (AEM, AOS, AIM, ARS, AGS Architecture).</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ export const DocumentationView: React.FC = () => {
         isOpen={!!activeDoc}
         onClose={() => setActiveDoc(null)}
         title={activeDoc?.title || 'DOCUMENTATION_UPLINK'}
-        width="800px"
+        width="xl"
       >
         <div className="p-10 bg-zinc-950 text-white min-h-[500px] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-brand-accent)]/5 blur-3xl rounded-full"></div>

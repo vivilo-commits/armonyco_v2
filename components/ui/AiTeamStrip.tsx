@@ -7,8 +7,8 @@ export const AiTeamStrip: React.FC<{ className?: string }> = ({ className = '' }
     {
       id: 'amelia',
       name: 'Amelia',
-      role: 'Guest Experience',
-      description: 'Autonomously manages guest inquiries, check-ins, and concierge requests 24/7.',
+      role: 'Intake & Understanding',
+      description: 'Interpreta l’input ed estrae i dati operativi dai canali (WhatsApp/PMS).',
       metrics: [{ label: 'Intent Accuracy', value: '99.8%' }],
       status: 'active' as const,
       icon: MessageCircle
@@ -16,8 +16,8 @@ export const AiTeamStrip: React.FC<{ className?: string }> = ({ className = '' }
     {
       id: 'lara',
       name: 'Lara',
-      role: 'Revenue Engine',
-      description: 'Dynamic upsell generation and gap monetization assistant.',
+      role: 'Planning & Policy',
+      description: 'Decide cosa fare in base alle regole del prodotto e al contesto dell’unità.',
       metrics: [{ label: 'Upsell Conversion', value: '24.2%', trend: 12 }],
       status: 'active' as const,
       icon: TrendingUp
@@ -25,8 +25,8 @@ export const AiTeamStrip: React.FC<{ className?: string }> = ({ className = '' }
     {
       id: 'elon',
       name: 'Elon',
-      role: 'Ops Architect',
-      description: 'Orchestrates maintenance tickets and housekeeping schedules.',
+      role: 'Execution & Communication',
+      description: 'Esegue le azioni operative: messaggi agli ospiti, coordinamento e aggiornamenti.',
       metrics: [{ label: 'Zero Error Rate', value: '100%' }],
       status: 'active' as const,
       icon: Activity
@@ -34,10 +34,10 @@ export const AiTeamStrip: React.FC<{ className?: string }> = ({ className = '' }
     {
       id: 'james',
       name: 'James',
-      role: 'Compliance',
-      description: 'Enforces policy adherence and risk auditing across all events.',
+      role: 'Verification & Closure',
+      description: 'Verifica le prove, chiude l’evento e registra la decisione nel ledger immutabile.',
       metrics: [{ label: 'Policy Adherence', value: '100%' }],
-      status: 'learning' as const,
+      status: 'active' as const,
       icon: Shield
     },
   ];

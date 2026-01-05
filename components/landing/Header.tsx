@@ -5,9 +5,11 @@ import { Button } from '../ui/Button';
 interface HeaderProps {
     onLogin: () => void;
     onSignUp: () => void;
+    onNavigateSolutions?: (industry?: 'pm' | 'ins' | 'inv' | 'ent') => void;
+    onNavigateSection?: (sectionId: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp }) => {
+export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp, onNavigateSolutions, onNavigateSection }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
@@ -26,11 +28,11 @@ export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp }) => {
                     </button>
                     <div className="absolute top-14 left-0 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2 z-50">
                         <div className="flex flex-col">
-                            <a href="#governance" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Governed Value™</a>
-                            <a href="#governance" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Decision Log</a>
-                            <a href="#governance" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Compliance Rate™</a>
-                            <a href="#governance" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Human Risk</a>
-                            <a href="#governance" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Residual Risk</a>
+                            <button onClick={() => onNavigateSection?.('governed-value')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Governed Cashflow™</button>
+                            <button onClick={() => onNavigateSection?.('decision-log')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Decision Log</button>
+                            <button onClick={() => onNavigateSection?.('compliance-rate')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Compliance Rate™</button>
+                            <button onClick={() => onNavigateSection?.('human-risk')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Human Risk</button>
+                            <button onClick={() => onNavigateSection?.('residual-risk')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Residual Risk</button>
                         </div>
                     </div>
                 </div>
@@ -42,31 +44,32 @@ export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp }) => {
                     </button>
                     <div className="absolute top-14 left-0 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2 z-50">
                         <div className="flex flex-col">
-                            <a href="#core" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">AEM Event Model™</a>
-                            <a href="#core" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">AOS Operating System™</a>
-                            <a href="#core" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">ARS Reliability™</a>
-                            <a href="#core" className="block w-full px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">AGS Scorecard™</a>
+                            <button onClick={() => onNavigateSection?.('aem')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">AEM - Armonyco Event Model™</button>
+                            <button onClick={() => onNavigateSection?.('aos')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">AOS - Armonyco Operating System™</button>
+                            <button onClick={() => onNavigateSection?.('aim')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">AIM - Armonyco Intelligence Matrix™</button>
+                            <button onClick={() => onNavigateSection?.('ars')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">ARS - Armonyco Reliability System™</button>
+                            <button onClick={() => onNavigateSection?.('ags')} className="block w-full px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">AGS - Armonyco Governance Scorecard™</button>
                         </div>
                     </div>
                 </div>
 
-                {/* Products Dropdown */}
+                {/* Solutions Dropdown */}
                 <div className="relative group h-full flex items-center">
                     <button className="px-4 py-2 hover:text-[var(--color-text-main)] transition-colors flex items-center gap-1">
-                        Products <ChevronDown size={14} />
+                        Solutions <ChevronDown size={14} />
                     </button>
-                    <div className="absolute top-14 left-0 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2 z-50">
+                    <div className="absolute top-14 left-0 w-64 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 p-2 z-50">
                         <div className="flex flex-col">
-                            <a href="#products" className="px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Guest Experience</a>
-                            <a href="#products" className="px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Revenue Generation</a>
-                            <a href="#products" className="px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Operational Efficiency</a>
-                            <a href="#products" className="px-3 py-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left">Incident Response</a>
+                            <button onClick={() => onNavigateSection?.('card-pm')} className="px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Property Manager</button>
+                            <button onClick={() => onNavigateSection?.('card-ins')} className="px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Insurers</button>
+                            <button onClick={() => onNavigateSection?.('card-inv')} className="px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Investment Funds</button>
+                            <button onClick={() => onNavigateSection?.('card-ent')} className="px-3 py-2 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)] rounded-lg text-left uppercase font-bold tracking-widest transition-all">Enterprise</button>
                         </div>
                     </div>
                 </div>
 
-                <a href="#manifesto" className="px-4 py-2 hover:text-[var(--color-text-main)] transition-colors">Manifesto</a>
-                <a href="#faq" className="px-4 py-2 hover:text-[var(--color-text-main)] transition-colors">FAQ</a>
+                <button onClick={() => onNavigateSection?.('manifesto')} className="px-4 py-2 hover:text-[var(--color-text-main)] transition-colors">Manifesto</button>
+                <button onClick={() => onNavigateSection?.('faq')} className="px-4 py-2 hover:text-[var(--color-text-main)] transition-colors">FAQ</button>
             </div>
 
             <div className="flex items-center gap-4">
@@ -97,11 +100,11 @@ export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp }) => {
             {isMobileMenuOpen && (
                 <div className="fixed top-20 inset-x-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] p-6 md:hidden z-50 shadow-2xl animate-in slide-in-from-top-5 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
                     <img src="/assets/logo-full.png" alt="Armonyco" className="h-14 object-contain mb-8 self-center" />
-                    <a href="#governance" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded">Governance</a>
-                    <a href="#core" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded">Core</a>
-                    <a href="#products" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded">Products</a>
-                    <a href="#manifesto" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded">Manifesto</a>
-                    <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded">FAQ</a>
+                    <button onClick={() => { onNavigateSection?.('governance'); setIsMobileMenuOpen(false); }} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded text-left w-full uppercase tracking-widest text-xs">Governance</button>
+                    <button onClick={() => { onNavigateSection?.('core'); setIsMobileMenuOpen(false); }} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded text-left w-full uppercase tracking-widest text-xs">Core Constructs</button>
+                    <button onClick={() => { onNavigateSection?.('solutions-teaser'); setIsMobileMenuOpen(false); }} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded text-left w-full">Solutions Portfolio™</button>
+                    <button onClick={() => { onNavigateSection?.('manifesto'); setIsMobileMenuOpen(false); }} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded text-left w-full">Manifesto</button>
+                    <button onClick={() => { onNavigateSection?.('faq'); setIsMobileMenuOpen(false); }} className="text-lg font-medium text-[var(--color-text-main)] block p-2 hover:bg-[var(--color-surface-hover)] rounded text-left w-full">FAQ</button>
 
                     <div className="pt-6 border-t border-[var(--color-border)] flex flex-col gap-4 items-center">
                         <Button

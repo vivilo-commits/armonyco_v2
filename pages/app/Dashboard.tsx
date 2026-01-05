@@ -8,7 +8,8 @@ import {
     Users,
     Package,
     AlertTriangle,
-    IconSizes
+    IconSizes,
+    CreditCard
 } from '../../components/ui/Icons';
 import {
     AreaChart,
@@ -69,7 +70,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         if (!module) return { value: '0%', trend: 'No module' };
 
         switch (category) {
-            case 'REVENUE': return { value: '12,450 AC', trend: '+18% vs Target' };
+            case 'REVENUE': return { value: '12.450 ArmoCredits©', trend: '+18% vs Target' };
             case 'OPS': return { value: '94.2%', trend: '420h Saved' };
             default: return { value: '99.9%', trend: 'Optimal' };
         }
@@ -80,9 +81,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <LayoutDashboard className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Control Tower™ <span className="text-[var(--color-text-muted)] text-sm font-normal lowercase italic tracking-normal opacity-50">/ Overview</span></h1>
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Control Tower™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ institutional truth</span></h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Real-time Operational Governance & System Performance.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Consolidated overview of operational events and governed decision protocols.</p>
                 </div>
             </header>
 
@@ -90,20 +91,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 items-stretch">
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('value')}>
                     <StatCard
-                        label="Governed Value™"
-                        value={`${(userProfile?.credits || 0).toLocaleString()} €`}
+                        label="Governed Cashflow™"
+                        value={`${(userProfile?.credits || 0).toLocaleString('de-DE')} €`}
                         icon={TrendingUp}
-                        trend={{ value: "↑ 2.4%", isPositive: true, label: "since yesterday" }}
-                    />
+                        trend={{ value: "↑ 2.4%", isPositive: true, label: "24h velocity" }}
+                    >
+                        <div className="flex items-center gap-2 mt-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest italic">Immutable Proof</span>
+                        </div>
+                    </StatCard>
                 </div>
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('log')}>
                     <StatCard
                         label="Decision Log"
-                        value="1,492"
+                        value="1.492"
                         icon={Zap}
                         iconColor="text-white"
-                        subtext="Verified events (24h)"
+                        subtext={<span className="text-[var(--color-text-muted)] opacity-60">Truth Ledger: Decisions Registered</span>}
                     />
                 </div>
 
@@ -112,10 +118,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         label="Compliance Rate™"
                         value="96.8%"
                         icon={Shield}
-                        iconColor="text-[var(--color-success)]"
+                        iconColor="text-emerald-500"
                     >
-                        <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-2">
-                            <div className="bg-[var(--color-success)] w-[96.8%] h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+                        <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-1">
+                            <div className="bg-emerald-500 w-[96.8%] h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
                         </div>
                     </StatCard>
                 </div>
@@ -123,20 +129,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('human-risk')}>
                     <StatCard
                         label="Human Risk"
-                        value="3.2%"
+                        value="1.8%"
                         icon={AlertTriangle}
-                        iconColor="text-[var(--color-danger)]"
-                        subtext={<span className="text-[var(--color-danger)] animate-pulse">Intervention required</span>}
+                        iconColor="text-red-500"
+                        subtext={<span className="text-emerald-500 font-black uppercase tracking-widest text-[9px] italic">Target: {'<'} 3%</span>}
                     />
                 </div>
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('residual-risk')}>
                     <StatCard
                         label="Residual Risk"
-                        value="1.8%"
+                        value="0.4%"
                         icon={Activity}
-                        iconColor="text-[var(--color-warning)]"
-                        subtext="Ungoverned signals"
+                        iconColor="text-amber-500"
+                        subtext={<span className="text-emerald-500 font-black uppercase tracking-widest text-[9px] italic">Target: {'<'} 1%</span>}
                     />
                 </div>
             </div>
@@ -147,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {/* Main Chart Area */}
                 <Card padding="lg" className="lg:col-span-2 min-h-[400px]">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-[var(--color-text-main)] font-medium">Governed Value Velocity</h3>
+                        <h3 className="text-[var(--color-text-main)] font-medium">Governed Cashflow™ Velocity</h3>
                         <div className="flex gap-2">
                             <span className="px-2 py-1 bg-white/5 text-[var(--color-text-muted)] rounded text-[10px] uppercase font-bold tracking-widest border border-white/10">Today</span>
                         </div>

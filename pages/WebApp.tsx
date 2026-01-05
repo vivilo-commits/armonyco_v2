@@ -9,7 +9,8 @@ import { AEMView } from './app/AEM';
 import { AOSView } from './app/AOS';
 import { ARSView } from './app/ARS';
 import { AGSView } from './app/AGS';
-import { ProductsView } from './app/Products';
+import { AIMView } from './app/AIM';
+import { ProductManagement } from './app/ProductManagement';
 import { ConversationsView } from './app/Conversations';
 import { RoleManagement } from './app/RoleManagement';
 import { SettingsView } from './app/Settings';
@@ -67,9 +68,9 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
 
   // Mock Notifications
   const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', type: 'ALERT', message: 'Armonyco Compliance Rate™ drop detected', timestamp: '10m ago', read: false, metric: '94.2%' },
+    { id: '1', type: 'ALERT', message: 'Armonyco AGS - Governance Scorecard™ drop detected', timestamp: '10m ago', read: false, metric: '94.2%' },
     { id: '2', type: 'WARNING', message: 'Armonyco Human Risk™ spike > 5%', timestamp: '1h ago', read: false, metric: 'Risk' },
-    { id: '3', type: 'INFO', message: 'Weekly Armonyco Governance Report™ generated', timestamp: '1d ago', read: true },
+    { id: '3', type: 'INFO', message: 'Weekly Armonyco AGS - Scorecard Report generated', timestamp: '1d ago', read: true },
   ]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -85,25 +86,24 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   const getPageTitle = (view: string) => {
     switch (view) {
       case 'dashboard': return 'Armonyco Control Tower™';
-      case 'value': return 'Governed Value™';
+      case 'value': return 'Governed Cashflow™';
       case 'log': return 'Decision Log';
       case 'compliance': return 'Compliance Rate™';
       case 'human-risk': return 'Human Risk';
       case 'residual-risk': return 'Residual Risk';
-      case 'aem': return 'Armonyco Event Model™';
-      case 'aos': return 'Armonyco Operating System™';
-      case 'ars': return 'Armonyco Reliability Standard™';
-      case 'ags': return 'Armonyco Governance Scorecard™';
-      case 'products-guest': return 'Armonyco Marketplace™ / Guest';
-      case 'products-revenue': return 'Armonyco Marketplace™ / Revenue';
-      case 'products-ops': return 'Armonyco Marketplace™ / Ops';
-      case 'products-response': return 'Armonyco Marketplace™ / Response';
+      case 'aem': return 'AEM - Armonyco Event Model™';
+      case 'aos': return 'AOS - Armonyco Operating System™';
+      case 'ars': return 'ARS - Armonyco Reliability System™';
+      case 'ags': return 'AGS - Armonyco Governance Scorecard™';
+      case 'aim': return 'AIM - Armonyco Intelligence Matrix™';
+      case 'products': return 'My Services';
       case 'conversations': return 'Conversations';
       // Settings Sub-menus
       // Settings Sub-menus
-      case 'settings-profile': return 'Settings / General';
-      case 'settings-company': return 'Settings / Profile';
-      case 'settings-billing': return 'Settings / Billing';
+      case 'settings-profile':
+      case 'settings-company':
+      case 'settings-billing':
+        return 'System Settings';
       case 'documentation': return 'Documentation';
       case 'support': return 'Support';
       case 'roles': return 'Role Management';
@@ -122,11 +122,9 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
       case 'aem': return <AEMView />;
       case 'aos': return <AOSView />;
       case 'ars': return <ARSView />;
+      case 'aim': return <AIMView />;
       case 'ags': return <AGSView />;
-      case 'products-guest': return <ProductsView block="GUEST" onNavigateToBilling={() => setActiveView('settings-billing')} />;
-      case 'products-revenue': return <ProductsView block="REVENUE" onNavigateToBilling={() => setActiveView('settings-billing')} />;
-      case 'products-ops': return <ProductsView block="OPS" onNavigateToBilling={() => setActiveView('settings-billing')} />;
-      case 'products-response': return <ProductsView block="PLAYBOOK" onNavigateToBilling={() => setActiveView('settings-billing')} />;
+      case 'products': return <ProductManagement />;
       case 'conversations': return <ConversationsView />;
       case 'roles': return <RoleManagement />;
 

@@ -14,46 +14,61 @@ export async function mockFetch<T>(data: T, minDelay = API_CONFIG.MOCK_DELAY.MIN
 }
 
 /**
- * Standard API Client that switches between MOCK and REAL data.
+ * Standard API Client with production features (Timeouts, Retries, Auth)
  */
 export const apiClient = {
-    async get<T>(endpoint: string, mockData: T): Promise<T> {
+    async request<T>(endpoint: string, options: RequestInit = {}, mockData: T, retryCount = 0): Promise<T> {
         if (isMock()) {
             return mockFetch(mockData);
         }
 
-        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Add Authorization header if needed
-                // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+                ...options,
+                signal: controller.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('armonyco_token') || ''}`,
+                    ...options.headers,
+                }
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                // Handle specific status codes if needed
+                if (response.status === 401) {
+                    // Logic for logout or refresh token
+                }
+                throw new Error(`[API ERROR] ${response.status}: ${response.statusText}`);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
+            return response.json();
+        } catch (error: any) {
+            clearTimeout(timeoutId);
+
+            // Simple retry logic for network errors or timeouts
+            if (retryCount < API_CONFIG.MAX_RETRIES && (error.name === 'AbortError' || !window.navigator.onLine)) {
+                console.warn(`[API RETRY] Attempt ${retryCount + 1} for ${endpoint}`);
+                return this.request(endpoint, options, mockData, retryCount + 1);
+            }
+
+            console.error(`[API FATAL] ${endpoint}:`, error);
+            throw error;
         }
+    },
 
-        return response.json();
+    async get<T>(endpoint: string, mockData: T): Promise<T> {
+        return this.request(endpoint, { method: 'GET' }, mockData);
     },
 
     async post<T, R>(endpoint: string, body: T, mockData: R): Promise<R> {
-        if (isMock()) {
-            return mockFetch(mockData);
-        }
-
-        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+        return this.request(endpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
-        }
-
-        return response.json();
+        }, mockData);
     }
 };

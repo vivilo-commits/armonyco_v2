@@ -2,34 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { Download, Power } from 'lucide-react';
 
 interface ActionToggleProps {
-  type: 'download' | 'toggle';
+  type?: 'download' | 'toggle';
   labelIdle?: string;
   labelActive?: string;
   isActive?: boolean;
+  checked?: boolean; // Alias for isActive
   onToggle?: () => void;
+  onChange?: () => void; // Alias for onToggle
   className?: string; // Allow external positioning
 }
 
 export const ActionToggle: React.FC<ActionToggleProps> = ({
-  type,
+  type = 'toggle',
   labelIdle,
   labelActive,
   isActive = false,
+  checked,
   onToggle,
+  onChange,
   className = ''
 }) => {
-  const [internalState, setInternalState] = useState(isActive);
+  const finalActive = checked !== undefined ? checked : isActive;
+  const [internalState, setInternalState] = useState(finalActive);
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    setInternalState(isActive);
-  }, [isActive]);
+    setInternalState(finalActive);
+  }, [finalActive]);
 
   const handleChange = () => {
     if (isAnimating) return;
 
     setIsAnimating(true);
     if (onToggle) onToggle();
+    if (onChange) onChange();
 
     if (type === 'download') {
       setInternalState(true);

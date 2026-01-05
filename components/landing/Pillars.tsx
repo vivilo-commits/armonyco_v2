@@ -12,14 +12,24 @@ export const Pillars: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-12">
+      <div className="max-w-4xl mb-16">
+        <h2 className="text-4xl md:text-5xl text-[var(--color-text-main)] font-light leading-tight">
+          The problem is not working hard.<br />
+          <span className="text-[var(--color-brand-accent)] italic">It’s not knowing what really worked.</span>
+        </h2>
+        <p className="mt-6 text-xl text-[var(--color-text-muted)] italic">
+          If it’s not governed, it’s not real cashflow.
+        </p>
+      </div>
+
+      <div className="space-y-32">
         {/* Pillar 1 */}
         <div id="governed-value" className="group border-l-2 border-[var(--color-brand-accent)] pl-8 py-2 scroll-mt-32">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-[var(--color-brand-accent)] font-mono text-sm">01</span>
-            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">Governed Value™ (€) Lifetime</h3>
+            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">Governed Cashflow™ (€) Lifetime</h3>
           </div>
-          <p className="text-lg text-[var(--color-text-main)] mb-6">Governed Value is money that becomes institutional.</p>
+          <p className="text-lg text-[var(--color-text-main)] mb-6">Memory is not a system. Chats are not accountability.</p>
           <p className="text-[var(--color-text-muted)] mb-6 max-w-4xl leading-relaxed">
             Not projected. Not estimated. Not “attributed by a dashboard.” Certified cashflow, governed end-to-end by policy-driven decisions, with traceable responsibility and proof of execution.
           </p>
@@ -32,7 +42,7 @@ export const Pillars: React.FC = () => {
               <li><span className="text-[var(--color-text-main)] font-medium">Value that survives ownership change.</span> Value becomes transferable because it is provable.</li>
             </ul>
           </div>
-          <p className="mt-6 text-[var(--color-brand-accent)] italic font-medium">Governed Value is the difference between “we perform” and “we can prove performance without trust.”</p>
+          <p className="mt-6 text-[var(--color-brand-accent)] italic font-medium">Governed Cashflow™ is the difference between “we perform” and “we can prove performance without trust.”</p>
         </div>
 
         {/* Pillar 2 */}
@@ -122,7 +132,7 @@ export const Pillars: React.FC = () => {
             <h4 className="text-sm text-[var(--color-text-subtle)] uppercase tracking-wider mb-4">What this unlocks:</h4>
             <ul className="space-y-3 text-[var(--color-text-muted)]">
               <li><span className="text-[var(--color-text-main)] font-medium">Clear boundaries of control.</span> You always know what is governed vs. what is exposed.</li>
-              <li><span className="text-[var(--color-text-main)] font-medium">A roadmap driven by risk, not feature requests.</span> Every improvement reduces residual risk or increases governed value.</li>
+              <li><span className="text-[var(--color-text-main)] font-medium">A roadmap driven by risk, not feature requests.</span> Every improvement reduces residual risk or increases Governed Cashflow™.</li>
               <li><span className="text-[var(--color-text-main)] font-medium">A compounding governance perimeter.</span> Each exception becomes a class; each class becomes a policy; each policy becomes autonomy.</li>
               <li><span className="text-[var(--color-text-main)] font-medium">A system designed for irreversibility.</span> The governed perimeter expands until the “outside” becomes intolerable.</li>
             </ul>

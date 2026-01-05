@@ -24,6 +24,8 @@ export const mockProductModules: ProductModule[] = baseModules.map((m: any, i: n
         creditCost: 25000,
         isPurchased,
         isActive,
-        isPaused
+        isPaused,
+        laborReduction: `${70 + (i % 25)}%`,
+        valueGenerated: `${(1 + (i % 5)) * 400}€/mo`
     };
 });

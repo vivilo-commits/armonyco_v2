@@ -17,8 +17,9 @@ export const Input: React.FC<InputProps> = ({
     id,
     ...props
 }) => {
-    // Generate a random ID if not provided, for the label association
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate a secure ID if not provided, for the label association
+    const internalId = React.useId();
+    const inputId = id || internalId;
 
     return (
         <div className={`relative w-full group ${className}`}>

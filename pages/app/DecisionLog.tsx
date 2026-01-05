@@ -39,9 +39,9 @@ export const DecisionLog: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <FileText className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Decision Log</h1>
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Truth Ledger</h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Decentralized execution records. Cryptographically verified chain of custody.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Registro delle decisioni operative: "Perché" e "Come" documentati per ogni evento.</p>
                 </div>
                 <div className="flex gap-2">
                     <Tooltip text="Hash Integrity Verified">
@@ -87,7 +87,13 @@ export const DecisionLog: React.FC = () => {
             {/* AI Agents / Governance Actors Row */}
             <div className="mb-12">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-white/40 font-black text-[10px] uppercase tracking-[0.3em]">Institutional Intelligence Matrix</h3>
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-white/40 font-black text-[10px] uppercase tracking-[0.3em]">AIM - Armonyco Intelligence Matrix™</h3>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest italic tracking-[0.2em]">Matrix Sync Active</span>
+                        </div>
+                    </div>
                     <span className="text-[9px] text-white/20 flex items-center gap-2 font-black uppercase tracking-widest italic">
                         <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
                         Cognitive Core Nominal
@@ -99,6 +105,7 @@ export const DecisionLog: React.FC = () => {
                         <div key={agent.id} className="transition-all duration-300 hover:scale-[1.02]">
                             <AgentCard
                                 {...agent}
+                                status={agent.status as any}
                                 hideAction={true}
                             />
                         </div>
@@ -107,13 +114,13 @@ export const DecisionLog: React.FC = () => {
             </div>
 
             {/* Main Content Card */}
-            <Card padding="none" className="overflow-hidden border-white/5 bg-black/40 backdrop-blur-3xl shadow-2xl rounded-3xl">
+            <Card padding="none" className="overflow-hidden border-white/5 bg-black/40 backdrop-blur-3xl shadow-2xl rounded-3xl w-full">
                 {/* Advanced Filter Bar */}
-                <div className="p-5 flex flex-wrap gap-4 items-center border-b border-white/5 bg-white/[0.02]">
-                    <div className="flex items-center gap-3 px-4 py-2 bg-white/[0.03] border border-white/5 rounded-2xl min-w-[180px] relative h-[50px] shadow-inner group hover:bg-white/[0.05] transition-colors">
-                        <Filter size={14} className="text-white/30" />
+                <div className="p-6 flex flex-wrap gap-4 items-center border-b border-white/5 bg-white/[0.02] w-full">
+                    <div className="flex items-center gap-4 px-6 py-2 bg-white/[0.03] border border-white/10 rounded-2xl min-w-[240px] relative h-[56px] shadow-inner group hover:bg-white/[0.05] transition-colors">
+                        <Filter size={16} className="text-[var(--color-brand-accent)]" />
                         <select
-                            className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest text-white/60 w-full appearance-none cursor-pointer z-10"
+                            className="bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-[0.2em] text-white/80 w-full appearance-none cursor-pointer z-10"
                             value={filterVerdict}
                             onChange={(e) => setFilterVerdict(e.target.value)}
                         >
@@ -122,27 +129,32 @@ export const DecisionLog: React.FC = () => {
                             <option value="DENY">Deny (Risk)</option>
                             <option value="MODIFY">Modify (Review)</option>
                         </select>
-                        <ChevronDown size={14} className="text-white/30 absolute right-4 pointer-events-none group-hover:text-white/60 transition-colors" />
+                        <ChevronDown size={14} className="text-white/30 absolute right-6 pointer-events-none group-hover:text-white/60 transition-colors" />
+                    </div>
+
+                    <div className="flex-1 h-[56px] bg-white/[0.01] border border-white/5 rounded-2xl flex items-center px-6 gap-4">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">Truth stream decrypted & verified via shard-42</span>
                     </div>
 
                     <Tooltip text="Temporal Filter">
-                        <Button variant="secondary" className="w-[50px] h-[50px] p-0 flex items-center justify-center rounded-2xl border-white/10 hover:bg-white/5">
+                        <Button variant="secondary" className="w-[56px] h-[56px] p-0 flex items-center justify-center rounded-2xl border-white/10 hover:bg-white/5 transition-all">
                             <Calendar size={18} className="text-white/60" />
                         </Button>
                     </Tooltip>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto w-full">
                     <table className="w-full text-left">
                         <thead className="bg-white/[0.01] text-white/30 font-black uppercase text-[9px] tracking-[0.2em] border-b border-white/5">
                             <tr>
-                                <th className="px-8 py-5">Event Temporal Coord</th>
-                                <th className="px-8 py-5">Stream ID</th>
-                                <th className="px-8 py-5">Policy Topology</th>
-                                <th className="px-8 py-5">Verdict</th>
-                                <th className="px-8 py-5 text-right">Value (€)</th>
-                                <th className="px-8 py-5">Evidence Proof</th>
-                                <th className="px-8 py-5 text-right">Entity</th>
+                                <th className="px-10 py-6">Event Temporal Coord</th>
+                                <th className="px-10 py-6">Stream ID</th>
+                                <th className="px-10 py-6">Policy Topology</th>
+                                <th className="px-10 py-6">Verdict</th>
+                                <th className="px-10 py-6 text-right">Value (€)</th>
+                                <th className="px-10 py-6">Evidence Proof</th>
+                                <th className="px-10 py-6 text-right">Entity</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5 font-mono text-[10px]">

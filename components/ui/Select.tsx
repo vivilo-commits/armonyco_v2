@@ -24,7 +24,8 @@ export const Select: React.FC<SelectProps> = ({
     id,
     ...props
 }) => {
-    const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
+    const internalId = React.useId();
+    const selectId = id || internalId;
 
     return (
         <div className={`relative w-full group ${className}`}>

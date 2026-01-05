@@ -24,7 +24,7 @@ export const mockDomainPerformance = [
         id: 'products-revenue',
         label: 'Revenue Generation',
         metric: 'Gap Monetization',
-        value: '12,450 AC',
+        value: '12.450 ArmoCredits©',
         trend: '+18% vs Target',
         icon: TrendingUp,
         color: 'text-[var(--color-brand-accent)]'

@@ -31,32 +31,39 @@ export const StatCard: React.FC<StatCardProps> = ({
             padding="lg"
             className="relative overflow-hidden group hover:scale-[1.02] transition-all duration-300"
         >
-            <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500 ${iconColor}`}>
-                <Icon size={64} />
+            <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:rotate-12 group-hover:scale-110 duration-700 ${iconColor}`}>
+                <Icon size={80} />
             </div>
 
-            <div className="text-[var(--color-text-muted)] text-[10px] uppercase tracking-widest font-bold mb-1">
-                {label}
+            <div className="flex justify-between items-start mb-1">
+                <div className="text-[var(--color-text-muted)] text-[9px] uppercase tracking-[0.2em] font-black opacity-60">
+                    {label}
+                </div>
+                {children && (
+                    <span className="text-[8px] bg-white/5 text-white/40 px-1.5 py-0.5 rounded border border-white/10 font-black uppercase tracking-widest">
+                        Governed
+                    </span>
+                )}
             </div>
 
-            <div className="text-3xl font-numbers text-white">
+            <div className="text-3xl font-numbers text-white font-black tracking-tighter italic">
                 {value}
             </div>
 
             {trend ? (
-                <div className="text-[var(--color-text-muted)] text-xs mt-2 flex items-center gap-1">
-                    <span className={`${trend.isPositive ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'} font-bold font-numbers text-[10px]`}>
+                <div className="text-[var(--color-text-muted)] text-[10px] mt-2 flex items-center gap-1.5 font-bold uppercase tracking-widest">
+                    <span className={`${trend.isPositive ? 'text-emerald-500' : 'text-red-500'} font-black font-numbers`}>
                         {trend.value}
                     </span>
-                    {trend.label}
+                    <span className="opacity-40">{trend.label}</span>
                 </div>
             ) : subtext ? (
-                <div className="text-[var(--color-text-muted)] text-xs mt-2">
+                <div className="text-[var(--color-text-muted)] text-[10px] mt-2 font-bold uppercase tracking-widest opacity-40">
                     {subtext}
                 </div>
             ) : null}
 
-            {children && <div className="mt-3">{children}</div>}
+            {children && <div className="mt-4">{children}</div>}
         </Card>
     );
 };

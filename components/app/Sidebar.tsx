@@ -17,7 +17,7 @@ import {
   Settings,
   IconSizes
 } from '../ui/Icons';
-import { UserRole } from '../../types';
+import { UserRole } from '../../src/types';
 
 interface UserProfile {
   firstName: string;
@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuStructure: MenuItem[] = useMemo(() => [
     {
       id: 'dashboard',
-      label: 'Overview',
+      label: 'Operations Center',
       icon: LayoutDashboard,
       children: [],
       action: () => setView('dashboard')
@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Control Tower',
       icon: Shield,
       children: [
-        { id: 'value', label: 'Governed Value™' },
+        { id: 'value', label: 'Governed Cashflow™' },
         { id: 'log', label: 'Decision Log' },
         { id: 'compliance', label: 'Compliance Rate™' },
         { id: 'human-risk', label: 'Human Risk' },
@@ -94,32 +94,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Core Constructs',
       icon: Database,
       children: [
-        { id: 'aem', label: 'Armonyco Event Model™' },
-        { id: 'aos', label: 'Armonyco Operating System™' },
-        { id: 'ars', label: 'Armonyco Reliability Standard™' },
-        { id: 'ags', label: 'Armonyco Governance Scorecard™' },
+        { id: 'aem', label: 'AEM - Armonyco Event Model™' },
+        { id: 'aos', label: 'AOS - Armonyco Operating System™' },
+        { id: 'aim', label: 'AIM - Armonyco Intelligence Matrix™' },
+        { id: 'ars', label: 'ARS - Armonyco Reliability System™' },
+        { id: 'ags', label: 'AGS - Armonyco Governance Scorecard™' },
       ]
     },
     {
-      id: 'products',
-      label: 'Products',
+      id: 'services',
+      label: 'My Services',
       icon: Package,
-      children: [
-        { id: 'products-guest', label: 'Guest Experience' },
-        { id: 'products-revenue', label: 'Revenue Generation' },
-        { id: 'products-ops', label: 'Operational Efficiency' },
-        { id: 'products-response', label: 'Incident Response' },
-      ]
+      children: [],
+      action: () => setView('products')
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      children: [
-        { id: 'settings-profile', label: 'General' },
-        { id: 'settings-company', label: 'Profile' },
-        { id: 'settings-billing', label: 'Pricing & Billing' },
-      ]
+      children: [],
+      action: () => setView('settings-profile')
     }
   ], [setView]);
 
@@ -135,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         // For simplicity and to match "standard" sidebar behavior often requested:
         setExpandedMenu(item.id);
         // We might want to auto-expand sidebar here if user finds it annoying, but "liquid glass" usually implies hover menus. 
-        // However, user said "menu colapsável tá rolando junto". 
+        // However, user mentioned "collapsible menu should scroll together". 
       } else {
         setExpandedMenu(expandedMenu === item.id ? null : item.id);
       }

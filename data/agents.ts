@@ -4,8 +4,8 @@ export const agents = [
     {
         id: 'amelia',
         name: 'Amelia',
-        role: 'External Interface',
-        description: 'Manages all guest interactions pre-arrival and on-site, answering questions and verifying identity.',
+        role: 'Intake & Understanding',
+        description: 'Interpreta l’input ed estrae i dati operativi dai canali (WhatsApp/PMS).',
         metrics: [
             { label: 'Intent Accuracy', value: '99.2%', trend: 2 }
         ],
@@ -15,8 +15,8 @@ export const agents = [
     {
         id: 'lara',
         name: 'Lara',
-        role: 'Revenue Engine',
-        description: 'Identifies monetization gaps and proactively offers upgrades and services to guests.',
+        role: 'Planning & Policy',
+        description: 'Decide cosa fare in base alle regole del prodotto e al contesto dell’unità.',
         metrics: [
             { label: 'Upsell Conversion', value: '24.8%', trend: 5 }
         ],
@@ -26,8 +26,8 @@ export const agents = [
     {
         id: 'elon',
         name: 'Elon',
-        role: 'Operations Engine',
-        description: 'Orchestrates maintenance and housekeeping, dispatching tasks to the right teams.',
+        role: 'Execution & Communication',
+        description: 'Esegue le azioni operative: messaggi agli ospiti, coordinamento e aggiornamenti.',
         metrics: [
             { label: 'Dispatch Validity', value: '100.0%' }
         ],
@@ -37,12 +37,12 @@ export const agents = [
     {
         id: 'james',
         name: 'James',
-        role: 'Compliance Engine',
-        description: 'Audits every event against the Armonyco Reliability Standard to ensure compliance.',
+        role: 'Verification & Closure',
+        description: 'Verifica le prove, chiude l’evento e registra la decisione nel ledger immutabile.',
         metrics: [
             { label: 'Policy Adherence', value: '100%', trend: 0 }
         ],
-        status: 'learning' as const,
+        status: 'active' as const,
         icon: Shield,
     },
 ];
