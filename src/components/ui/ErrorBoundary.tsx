@@ -1,8 +1,8 @@
-import * as React from 'react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw } from '../../../components/ui/Icons';
 
 interface ErrorBoundaryProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -10,24 +10,24 @@ interface ErrorBoundaryState {
     error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false, error: null };
     }
 
-    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         return { hasError: true, error };
     }
 
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Core Governance Exception:', error, errorInfo);
     }
 
-    render() {
+    public render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen bg-[#050505] flex items-center justify-center p-8 font-sans">
+                <div className="min-h-screen bg-[#050505] flex items-center justify-center p-8 font-sans text-white">
                     <div className="max-w-md w-full text-center space-y-8">
                         <div className="relative inline-block">
                             <div className="w-24 h-24 bg-red-500/10 rounded-[2.5rem] border border-red-500/20 flex items-center justify-center text-red-500 mb-6 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                         </div>
 
                         <div className="space-y-3">
-                            <h1 className="text-2xl font-light text-white uppercase tracking-[0.2em]">System Compromised</h1>
+                            <h1 className="text-2xl font-light tracking-[0.2em] uppercase">System Compromised</h1>
                             <p className="text-zinc-500 text-sm leading-relaxed italic">
                                 A critical exception occurred in the governance routine. Decryption streams have been halted to maintain ledger integrity.
                             </p>
@@ -50,7 +50,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
                         <button
                             onClick={() => window.location.reload()}
-                            className="ui-btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-[0_10px_30px_rgba(212,175,55,0.1)]"
+                            className="bg-white/5 hover:bg-white/10 w-full py-4 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-95 shadow-[0_10px_30px_rgba(212,175,55,0.1)] border border-white/10"
                         >
                             <RefreshCw size={16} />
                             Restart Governance Stream

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, Network, Shield, FileCheck } from '../ui/Icons';
+import { Database, Network, Shield, FileCheck, Cpu } from '../ui/Icons';
 import { Card } from '../ui/Card';
 
 export const Constructs: React.FC = () => {
@@ -10,97 +10,135 @@ export const Constructs: React.FC = () => {
         <p className="text-[var(--color-text-muted)] text-lg">Infrastructure for Institutional Truth.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-8">
         {/* AEM */}
         <Card id="aem" padding="lg" variant="default" className="scroll-mt-32">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
-              <Database className="w-6 h-6" />
+          <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+            <div className="flex items-center gap-4 shrink-0 lg:w-[320px]">
+              <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
+                <Database className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl text-[var(--color-text-main)] font-medium">AEM - Armonyco Event Model™</h3>
+                <p className="text-[var(--color-brand-accent)] text-[10px] font-bold uppercase tracking-widest">Institutional Memory</p>
+              </div>
             </div>
-            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">AEM Armonyco Event Model™</h3>
+            <div className="flex-1">
+              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">The registry of institutional truth.</p>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+                Registers every daily operational event as an immutable truth. It captures type, unit, guest, and channel, ensuring the organization no longer depends on memory or screenshots.
+              </p>
+            </div>
+            <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
+            <div className="lg:w-[300px] text-right">
+              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-xs italic">"Zero dependence on memory or prints."</p>
+            </div>
           </div>
-          <p className="text-[var(--color-text-main)] mb-4 font-medium italic text-lg">AEM is the canonical model of reality.</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-8 leading-relaxed">
-            Organizations fail at governance because “operations” are not structured. They happen in messages, calls, improvisations, supplier habits, informal approvals, and exceptions. AEM converts that chaos into a single governable unit: the Operational Event.
-          </p>
-          <div className="space-y-4 mb-8 text-sm bg-[var(--color-background)] p-6 rounded-lg border border-[var(--color-border)]">
-            <p className="text-[var(--color-text-subtle)] uppercase text-[10px] tracking-widest font-bold">An event is only valid when:</p>
-            <ul className="list-disc pl-4 text-[var(--color-text-muted)] space-y-2">
-              <li>It is recognized and classified</li>
-              <li>It is evaluated against a policy</li>
-              <li>It receives a verdict (allow/deny/modify)</li>
-              <li>It produces evidence</li>
-              <li>It becomes auditable truth</li>
-            </ul>
-          </div>
-          <p className="text-[var(--color-brand-accent)] text-xs font-bold uppercase tracking-wider">AEM is the grammar that makes governance possible.</p>
         </Card>
 
         {/* AOS */}
         <Card id="aos" padding="lg" variant="default" className="scroll-mt-32">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
-              <Network className="w-6 h-6" />
+          <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+            <div className="flex items-center gap-4 shrink-0 lg:w-[320px]">
+              <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
+                <Network className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl text-[var(--color-text-main)] font-medium">AOS - Armonyco Operating System™</h3>
+                <p className="text-[var(--color-brand-accent)] text-[10px] font-bold uppercase tracking-widest">Operational Sequence</p>
+              </div>
             </div>
-            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">AOS Armonyco Operating System™</h3>
+            <div className="flex-1">
+              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Transforming events into executable flow.</p>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+                Takes the institutional truth and renders it into a sequence: classification, context gathering, and execution planning. It turns a "loose message" into a governed operational cycle.
+              </p>
+            </div>
+            <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
+            <div className="lg:w-[300px] text-right">
+              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-xs italic">"Events follow a defined factory flow."</p>
+            </div>
           </div>
-          <p className="text-[var(--color-text-main)] mb-4 font-medium italic text-lg">AOS is the operating system for governed execution.</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-8 leading-relaxed">
-            Not task management. Not workflow software. Not “ops tooling.” AOS is the layer that sits above operations and does three things - always:
-          </p>
-          <ul className="list-disc pl-4 text-[var(--color-text-muted)] text-sm space-y-3 mb-8">
-            <li>Captures operational events from the real world</li>
-            <li>Decides through Decision-First Architecture (policy → verdict)</li>
-            <li>Certifies through evidence, immutable history, and buyer-grade metrics</li>
-          </ul>
-          <p className="text-[var(--color-brand-accent)] text-xs font-bold uppercase tracking-wider">AOS is what your business becomes dependent on to remain governable.</p>
+        </Card>
+
+        {/* AIM */}
+        <Card id="aim" padding="lg" variant="default" className="scroll-mt-32">
+          <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+            <div className="flex items-center gap-4 shrink-0 lg:w-[320px]">
+              <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border(--color-border)]">
+                <Cpu className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl text-[var(--color-text-main)] font-medium">AIM - Armonyco Intelligence Matrix™</h3>
+                <p className="text-[var(--color-brand-accent)] text-[10px] font-bold uppercase tracking-widest">4-Agent Harmony</p>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Autonomous execution workforce.</p>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+                Uses 4 collaborative AI agents: Intake (understanding), Planning (deciding), Execution (communicating), and Verification (closure). Each event is solved with mapped actions and agent-level accountability.
+              </p>
+            </div>
+            <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
+            <div className="lg:w-[300px] text-right">
+              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-xs italic">"Accountable execution per AI agent."</p>
+            </div>
+          </div>
         </Card>
 
         {/* ARS */}
         <Card id="ars" padding="lg" variant="default" className="scroll-mt-32">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
-              <Shield className="w-6 h-6" />
+          <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+            <div className="flex items-center gap-4 shrink-0 lg:w-[320px]">
+              <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border(--color-border)]">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl text-[var(--color-text-main)] font-medium">ARS - Armonyco Reliability System™</h3>
+                <p className="text-[var(--color-brand-accent)] text-[10px] font-bold uppercase tracking-widest">Legal Protection</p>
+              </div>
             </div>
-            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">ARS Armonyco Reliability Standard™</h3>
+            <div className="flex-1">
+              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Reliability standard and escalation thresholds.</p>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+                Defines mandatory checks, prohibited actions, and evidence requirements. It identifies when to act autonomously and when to escalate to humans, ensuring total legal and operational safety.
+              </p>
+            </div>
+            <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
+            <div className="lg:w-[300px] text-right">
+              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-xs italic">"Secure boundaries for AI autonomy."</p>
+            </div>
           </div>
-          <p className="text-[var(--color-text-main)] mb-4 font-medium italic text-lg">ARS defines when something is true enough to be governed.</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-8 leading-relaxed">
-            Most operational systems accept “confirmation.” ARS requires proof. It sets the minimum reliability requirements for each event class:
-          </p>
-          <ul className="list-disc pl-4 text-[var(--color-text-muted)] text-sm space-y-3 mb-8">
-            <li>Evidence sufficiency</li>
-            <li>Accountability chain</li>
-            <li>Validity window</li>
-            <li>Exception handling</li>
-            <li>Default verdict behavior</li>
-          </ul>
-          <p className="text-[var(--color-brand-accent)] text-xs font-bold uppercase tracking-wider">ARS is how governance stops being aspiration and becomes infrastructure.</p>
         </Card>
 
         {/* AGS */}
         <Card id="ags" padding="lg" variant="default" className="scroll-mt-32">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border-[var(--color-border)]">
-              <FileCheck className="w-6 h-6" />
+          <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
+            <div className="flex items-center gap-4 shrink-0 lg:w-[320px]">
+              <div className="w-12 h-12 rounded bg-[var(--color-background)] flex items-center justify-center text-[var(--color-brand-accent)] border border(--color-border)]">
+                <FileCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl text-[var(--color-text-main)] font-medium">AGS - Armonyco Governance Scorecard™</h3>
+                <p className="text-[var(--color-brand-accent)] text-[10px] font-bold uppercase tracking-widest">Performance Signal</p>
+              </div>
             </div>
-            <h3 className="text-2xl text-[var(--color-text-main)] font-medium">AGS Armonyco Governance Scorecard™</h3>
+            <div className="flex-1">
+              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Consolidation of cycle proof.</p>
+              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+                Groups every event scorecard into metrics by unit, group, or product. It populates the Control Tower with the final evidence-backed numbers required by property leadership.
+              </p>
+            </div>
+            <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
+            <div className="lg:w-[300px] text-right">
+              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-xs italic">"Evidence-backed proof of performance."</p>
+            </div>
           </div>
-          <p className="text-[var(--color-text-main)] mb-4 font-medium italic text-lg">AGS is the buyer-grade surface of trust.</p>
-          <p className="text-[var(--color-text-muted)] text-sm mb-8 leading-relaxed">
-            Organizations fail at institutional scale because trust is informal. Performance is narrated. Risk is assumed. Governance is implied. AGS converts operational truth into a readable, comparable signal that capital, insurers, and buyers can rely on without relationships, intuition, or stories.
-          </p>
-          <div className="space-y-4 mb-8 text-sm bg-[var(--color-background)] p-6 rounded-lg border border-[var(--color-border)]">
-            <p className="text-[var(--color-text-subtle)] uppercase text-[10px] tracking-widest font-bold">A scorecard is only credible when:</p>
-            <ul className="list-disc pl-4 text-[var(--color-text-muted)] space-y-2">
-              <li>It is built on governed reality, not reported activity</li>
-              <li>It is comparable across operators and assets</li>
-              <li>It is defensible across time, not a snapshot</li>
-              <li>It is evidence-weighted, not opinion-weighted</li>
-              <li>It reflects what is governed and what remains risk</li>
-            </ul>
-          </div>
-          <p className="text-[var(--color-brand-accent)] text-xs font-bold uppercase tracking-wider">AGS is the trust surface that turns governance into a portfolio signal.</p>
         </Card>
       </div>
     </section>

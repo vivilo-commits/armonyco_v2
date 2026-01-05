@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, AlertTriangle, CheckCircle, Activity, Shield, User, XCircle, Search, Filter, TrendingUp, Zap } from '../../components/ui/Icons';
+import { Calendar, AlertTriangle, CheckCircle, Activity, Shield, User, XCircle, Search, Filter, TrendingUp, Zap, ChevronDown } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { FloatingInput } from '../../components/ui/FloatingInput';
@@ -14,21 +14,25 @@ const calculateCost = (credits: number) => credits * 0.0010;
 
 // Shared Filter Bar Component
 const FilterBar = ({ title }: { title: string }) => (
-    <Card padding="md" className="mb-6 flex flex-wrap gap-4 items-center flex-shrink-0">
-        <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl w-auto h-[50px]">
-            <span className="text-[var(--color-text-muted)] text-xs font-mono font-bold">RANGE</span>
-            <select className="bg-transparent border-none outline-none text-sm text-[var(--color-text-main)] appearance-none cursor-pointer pr-4 font-medium">
+    <Card padding="md" className="mb-8 flex flex-wrap gap-4 items-center flex-shrink-0 w-full bg-white/[0.02] border-white/5">
+        <div className="flex items-center gap-3 px-5 py-3 bg-white/[0.03] border border-white/10 rounded-2xl w-auto h-[56px] group hover:bg-white/[0.05] transition-all">
+            <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">Range_Matrix</span>
+            <select className="bg-transparent border-none outline-none text-xs text-white/80 appearance-none cursor-pointer pr-8 font-black uppercase tracking-wider">
                 <option>24H</option>
                 <option>7D</option>
                 <option>30D</option>
                 <option>90D</option>
                 <option>YTD</option>
             </select>
+            <ChevronDown size={14} className="text-white/20 -ml-6 pointer-events-none" />
         </div>
-        <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl flex-1 h-[50px]">
-            <Calendar size={14} className="text-[var(--color-text-muted)]" />
-            <span className="text-[var(--color-text-main)] text-sm font-medium">2024 Fiscal Year</span>
+        <div className="flex items-center gap-4 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-2xl flex-1 h-[56px]">
+            <Calendar size={16} className="text-[var(--color-brand-accent)]" />
+            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] italic">Fiscal Cycle 2024 • Q1 Protocol Active</span>
         </div>
+        <Button variant="secondary" className="h-[56px] px-8 rounded-2xl border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/5">
+            <TrendingUp size={16} className="mr-2" /> Export Truth Log
+        </Button>
     </Card>
 );
 
@@ -92,22 +96,21 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
 
                 {/* Table Card */}
                 <Card padding="none" className="overflow-hidden">
-                    <div className="p-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-surface-hover)]">
-                        <h3 className="text-[var(--color-text-main)] font-medium flex items-center gap-2">
-                            <Shield size={16} className="text-[var(--color-success)]" /> Recent Autonomous Decisions
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                        <h3 className="text-white font-medium flex items-center gap-3 uppercase text-xs tracking-tight opacity-70">
+                            <Shield size={18} className="text-emerald-500" /> Recent Autonomous Decisions
                         </h3>
-                        <Button variant="secondary" size="sm">Export Log</Button>
                     </div>
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto w-full">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-white/[0.02] text-[var(--color-text-muted)] font-bold border-b border-white/5 text-[9px] uppercase tracking-[0.2em]">
+                            <thead className="bg-white/[0.01] text-white/30 font-black border-b border-white/5 text-[9px] uppercase tracking-[0.2em]">
                                 <tr>
-                                    <th className="px-6 py-4">Event ID</th>
-                                    <th className="px-6 py-4">Timestamp</th>
-                                    <th className="px-6 py-4">Policy Applied</th>
-                                    <th className="px-6 py-4">Agent</th>
-                                    <th className="px-6 py-4">Verdict</th>
-                                    <th className="px-6 py-4 text-right">Value (€)</th>
+                                    <th className="px-10 py-6">Event ID</th>
+                                    <th className="px-10 py-6">Timestamp</th>
+                                    <th className="px-10 py-6">Policy Applied</th>
+                                    <th className="px-10 py-6">Agent</th>
+                                    <th className="px-10 py-6">Verdict</th>
+                                    <th className="px-10 py-6 text-right">Value (€)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
@@ -119,8 +122,8 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.responsible || 'AMELIA'}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded text-[10px] font-bold border ${(row.verdict || '').toUpperCase() === 'ALLOW' ? 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20' :
-                                                    (row.verdict || '').toUpperCase() === 'DENY' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/20' :
-                                                        'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20'
+                                                (row.verdict || '').toUpperCase() === 'DENY' ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/20' :
+                                                    'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20'
                                                 }`}>{row.verdict}</span>
                                         </td>
                                         <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits || 0} €</td>

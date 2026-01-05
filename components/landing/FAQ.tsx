@@ -45,19 +45,19 @@ const faqData: FAQItem[] = [
     // Extended FAQs (12 more)
     {
         question: "How long does it take to activate Armonyco?",
-        answer: "Days, not months. Activation is progressive and doesn't block your operations."
+        answer: "Progressive activation takes less than 24 hours. We import your portfolio and connect WhatsApp/Crossbooking immediately. Full autonomy kicks in as the system learns your specific policies."
+    },
+    {
+        question: "Do I need to change my PMS or internal tools?",
+        answer: "No. Armonyco is PMS-agnostic and overlays your current setup. We pull data from tools like Crossbooking or simple spreadsheets to populate your units automatically."
+    },
+    {
+        question: "How exactly do you measure performance?",
+        answer: "We track Governed Cashflow™. If it's not governed, it's not real cashflow. This is the precise financial value governed by our policy engine—monetizing gaps, protecting deposits, and ensuring every stay follows your profitability rules."
     },
     {
         question: "Can I start with just a few properties?",
-        answer: "Yes. You can test it on a few units and scale without rebuilding anything."
-    },
-    {
-        question: "Does it really talk to guests automatically?",
-        answer: "Yes. It handles operational conversations in multiple languages, on WhatsApp and other channels, 24/7."
-    },
-    {
-        question: "How does it handle check-in, access, and documents?",
-        answer: "Automatically, following precise rules. If something isn't compliant, it blocks and flags."
+        answer: "Yes. You can test Armonyco on a small group or even a single unit and scale as you see the ROI."
     },
     {
         question: "What happens if a guest has a real or urgent problem?",

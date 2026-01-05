@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, X, CheckCircle, AlertTriangle, XCircle, IconSizes } from '../ui/Icons';
-import { Notification } from '../../types';
+import { Notification } from '../../src/types';
 import { FloatingInput } from '../ui/FloatingInput';
 
 interface AppHeaderProps {

@@ -13,63 +13,63 @@ export const mockLogs: DecisionRecord[] = [
 
 export const mockAgents: Agent[] = [
     {
-        id: 'amelia',
+        id: 'intake',
         name: 'Amelia',
-        role: 'External Interface',
+        role: 'Intake & Understanding',
         icon: MessageCircle,
-        description: 'Primary cognitive node for external communication and guest resolution. Specialized in preemptive hospitality protocols.',
+        description: 'Interpreta l’input ed estrae i dati operativi dai canali (WhatsApp/PMS).',
         status: 'active',
         decisionCount: 1240,
         accuracy: '99.2%',
-        avatar: 'A',
+        avatar: 'I',
         metrics: [
             { label: 'Latency', value: '42ms', trend: -12 },
-            { label: 'Autonomy', value: '98.5%', trend: 5 }
+            { label: 'Understanding', value: '98.5%', trend: 5 }
         ]
     },
     {
-        id: 'lara',
+        id: 'planning',
         name: 'Lara',
-        role: 'Revenue Engine',
+        role: 'Planning & Policy',
         icon: TrendingUp,
-        description: 'Strategic optimization node focused on gap monetization and opportunity capture. High-velocity yield management.',
+        description: 'Decide cosa fare in base alle regole del prodotto e al contesto dell’unità.',
         status: 'active',
         decisionCount: 843,
         accuracy: '97.5%',
-        avatar: 'L',
+        avatar: 'P',
         metrics: [
-            { label: 'Yield Impact', value: '+18%', trend: 8 },
-            { label: 'Conversion', value: '94%', trend: 2 }
+            { label: 'Policy Match', value: '100%', trend: 8 },
+            { label: 'Logic Sync', value: '94%', trend: 2 }
         ]
     },
     {
-        id: 'elon',
+        id: 'execution',
         name: 'Elon',
-        role: 'Operations Engine',
+        role: 'Execution & Communication',
         icon: Activity,
-        description: 'Physical-to-digital bridge for operational efficiency. Triages real-world incidents against institutional policy.',
+        description: 'Esegue le azioni operative: messaggi agli ospiti, coordinamento e aggiornamenti.',
         status: 'active',
         decisionCount: 2150,
         accuracy: '100.0%',
         avatar: 'E',
         metrics: [
-            { label: 'Uptime', value: '100%', trend: 0 },
-            { label: 'SLA Match', value: '99.9%', trend: 1 }
+            { label: 'Resolution', value: '100%', trend: 0 },
+            { label: 'TTR Sync', value: '99.9%', trend: 1 }
         ]
     },
     {
-        id: 'james',
+        id: 'verification',
         name: 'James',
-        role: 'Compliance Engine',
+        role: 'Verification & Closure',
         icon: Shield,
-        description: 'Analytical node for policy enforcement and risk mitigation. Currently in advanced learning phase for local regulations.',
-        status: 'learning',
+        description: 'Verifica le prove, chiude l’evento e registra la decisione nel ledger immutabile.',
+        status: 'active',
         decisionCount: 320,
-        accuracy: '88.4%',
-        avatar: 'J',
+        accuracy: '99.4%',
+        avatar: 'V',
         metrics: [
-            { label: 'Recall', value: '82%', trend: 15 },
-            { label: 'Precision', value: '91%', trend: 4 }
+            { label: 'Evidence Matrix', value: '100%', trend: 15 },
+            { label: 'Audit Trail', value: '100%', trend: 4 }
         ]
     },
 ];

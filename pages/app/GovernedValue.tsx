@@ -24,7 +24,7 @@ export const GovernedValueView: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Shield className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Governed Value™ <span className="text-white/40 italic">Lifetime</span></h1>
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Governed Cashflow™ <span className="text-white/40 italic">Lifetime</span></h1>
                     </div>
                     <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Wealth that survives personnel shifts, disputes, and ownership evolution.</p>
                 </div>

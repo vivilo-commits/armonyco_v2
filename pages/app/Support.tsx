@@ -20,7 +20,7 @@ export const SupportView: React.FC = () => {
                         text="ESTABLISH FEED (NEW TICKET)"
                         icon={<Plus size={16} />}
                         width="240px"
-                        onClick={() => console.log('New Ticket')}
+                        onClick={() => { }}
                     />
                 </div>
             </header>

@@ -19,7 +19,7 @@ interface SettingsViewProps {
     onUpdateCredits: (amount: number) => void;
 }
 
-type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING';
+type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
 
 // --- Helper for Cost ---
 const COST_PER_CREDIT = 0.10; // Keeping for logic, but UI will not show Euros
@@ -43,6 +43,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             if (activeView === 'settings-profile') setActiveTab('PROFILE');
             if (activeView === 'settings-company') setActiveTab('ORG');
             if (activeView === 'settings-billing') setActiveTab('BILLING');
+            if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
         }
     }, [activeView]);
 
@@ -92,9 +93,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // -- Activation State --
     const [activationSteps, setActivationSteps] = useState([
-        { id: 1, label: 'Connect WhatsApp Business API', status: 'Pending' },
-        { id: 2, label: 'Connect PMS', status: 'Pending' },
-        { id: 3, label: 'Knowledge Base', status: 'Pending' }
+        { id: 1, label: 'Knowledge Base Upload', status: 'Pending' },
+        { id: 2, label: 'Connect Channels', status: 'Pending' },
+        { id: 3, label: 'Infrastructure Setup', status: 'Pending' }
     ]);
     const [activeStepModal, setActiveStepModal] = useState<number | null>(null);
     const [isValidating, setIsValidating] = useState(false);
@@ -102,10 +103,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // Activation Forms State
     const [waForm, setWaForm] = useState({
-        accessToken: '', businessId: '', phoneId: '', clientId: '', clientSecret: ''
+        accessToken: '', businessId: '', phoneId: '', verifyToken: '', appSecret: ''
     });
     const [pmsForm, setPmsForm] = useState({
-        provider: 'Kross Booking', username: '', password: '', pmsId: ''
+        url: '', username: '', password: '', hotelId: ''
     });
     const [kbFiles, setKbFiles] = useState<string[]>([]);
 
@@ -133,7 +134,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             let errorMsg = '';
 
             if (stepId === 1) {
-                if (!waForm.accessToken || !waForm.businessId || !waForm.clientId || !waForm.clientSecret) {
+                if (!waForm.accessToken || !waForm.businessId || !waForm.phoneId || !waForm.appSecret) {
                     success = false;
                     errorMsg = 'Please fill in all required fields marked with *';
                 }
@@ -193,62 +194,95 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     const renderProfile = () => {
         return (
-            <div className="space-y-6 animate-fade-in w-full">
-                {/* Personal Information */}
-                <Card padding="lg">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)]">Personal Information</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Manage your identity and contact details.</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FloatingInput label="First Name" value={localProfile.firstName} onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} />
-                        <FloatingInput label="Last Name" value={localProfile.lastName} onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} />
-                        <FloatingInput label="Email Address" value={localProfile.email} onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })} />
-                        <FloatingInput label="Phone Number" value={localProfile.phone} onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} />
-                    </div>
-                </Card>
+            <div className="space-y-6 animate-fade-in w-full pb-20">
+                {/* Identity Header */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-6">
+                        {/* Personal Information */}
+                        <Card padding="lg">
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 className="text-lg font-medium text-[var(--color-text-main)]">Personal Information</h3>
+                                    <p className="text-sm text-[var(--color-text-muted)]">Manage your identity and contact details.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FloatingInput label="First Name" value={localProfile.firstName} onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} />
+                                <FloatingInput label="Last Name" value={localProfile.lastName} onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} />
+                                <FloatingInput label="Email Address" value={localProfile.email} onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })} />
+                                <FloatingInput label="Phone Number" value={localProfile.phone} onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} />
+                                <div className="md:col-span-2">
+                                    <FloatingInput label="Job Role / Title" value="Regional Operations Director" />
+                                </div>
+                            </div>
+                        </Card>
 
-                {/* Preferences */}
-                <Card padding="lg">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-medium text-[var(--color-text-main)]">Preferences</h3>
-                        <p className="text-sm text-[var(--color-text-muted)]">Regional and display settings.</p>
+                        {/* Preferences */}
+                        <Card padding="lg">
+                            <div className="mb-6">
+                                <h3 className="text-lg font-medium text-[var(--color-text-main)]">Regional Preferences</h3>
+                                <p className="text-sm text-[var(--color-text-muted)]">Language, timezone, and data formatting.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="relative">
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Language</label>
+                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                        <option>English (US) - Primary</option>
+                                        <option>Português (Brasil)</option>
+                                        <option>Español (LatAm)</option>
+                                        <option>Italiano</option>
+                                    </select>
+                                </div>
+                                <div className="relative">
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Timezone</label>
+                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                        <option>UTC (Coordinated Universal Time)</option>
+                                        <option>EST (Eastern Standard Time)</option>
+                                        <option>CET (Central European Time)</option>
+                                        <option>BRT (Brasilia Time)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="relative">
-                            <label className="text-xs text-[var(--color-text-muted)] absolute top-2 left-3">Language</label>
-                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                <option>English (US)</option>
-                                <option>Italiano</option>
-                                <option>Español</option>
-                            </select>
-                        </div>
-                        <div className="relative">
-                            <label className="text-xs text-[var(--color-text-muted)] absolute top-2 left-3">Timezone</label>
-                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                <option>UTC (Coordinated Universal Time)</option>
-                                <option>EST (Eastern Standard Time)</option>
-                                <option>CET (Central European Time)</option>
-                            </select>
-                        </div>
-                    </div>
-                </Card>
 
-                {/* Security Placeholder */}
-                <Card padding="lg">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h3 className="text-lg font-medium text-[var(--color-text-main)]">Security</h3>
-                            <p className="text-sm text-[var(--color-text-muted)]">Password and authentication methods.</p>
-                        </div>
-                        <Button variant="secondary" size="sm">Change Password</Button>
-                    </div>
-                </Card>
+                    {/* Sidebar / Profile Avatar */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <Card variant="dark" padding="lg" className="text-center flex flex-col items-center">
+                            <div className="relative group cursor-pointer mb-6">
+                                <div className="w-32 h-32 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-all overflow-hidden">
+                                    <Camera size={32} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                </div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--color-brand-accent)] flex items-center justify-center text-black shadow-lg">
+                                    <Plus size={16} />
+                                </div>
+                            </div>
+                            <h4 className="text-white font-bold tracking-tight">Profile Avatar</h4>
+                            <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mt-1">Institutional Identity</p>
+                            <p className="text-[10px] text-zinc-600 mt-4 px-4 italic leading-relaxed">Recommended size: 500x500px. JPG or PNG allowed.</p>
+                        </Card>
 
-                <div className="flex justify-end pt-4">
-                    <Button size="lg" leftIcon={<Save size={18} />} onClick={() => onUpdateProfile(localProfile)}>Save All Changes</Button>
+                        <Card variant="dark" padding="lg">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Security Baseline</h4>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                    <span className="text-white/40">2FA Status</span>
+                                    <span className="text-emerald-500">Active</span>
+                                </div>
+                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                    <span className="text-white/40">Last Login</span>
+                                    <span className="text-white/60">2 hours ago</span>
+                                </div>
+                                <button className="w-full py-3 mt-4 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 rounded-xl hover:bg-white/5 transition-all">
+                                    Change Password
+                                </button>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-white/5 mt-10">
+                    <Button size="lg" leftIcon={<Save size={18} />} onClick={() => onUpdateProfile(localProfile)}>Save Identity Changes</Button>
                 </div>
             </div>
         );
@@ -256,70 +290,357 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     const renderOrg = () => {
         return (
-            <div className="w-full animate-fade-in">
-                <Card padding="lg" className="mb-8">
-                    <h3 className="text-lg font-medium mb-4">Organization Settings</h3>
-                    <div className="grid grid-cols-1 gap-6">
-                        <FloatingInput label="Organization Name" value={localOrg.name} onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} />
-                        <FloatingInput label="Billing Email" value={localOrg.billingEmail} onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} />
-                    </div>
-                    <div className="mt-6 flex justify-end">
-                        <Button leftIcon={<Save size={18} />} onClick={() => onUpdateOrganization(localOrg)}>Save Changes</Button>
-                    </div>
-                </Card>
+            <div className="w-full animate-fade-in space-y-8 pb-20">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Main Org Data */}
+                    <div className="lg:col-span-8 space-y-8">
+                        <Card padding="lg">
+                            <h3 className="text-lg font-medium mb-6">Organization Profile</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FloatingInput label="Organization Name" value={localOrg.name} onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} />
+                                <FloatingInput label="Corporate Email" value={localOrg.billingEmail} onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} />
+                                <FloatingInput label="Company Website" value="https://armonyco.io" />
+                                <div className="relative">
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Legal Structure</label>
+                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                        <option>LLC / Ltd.</option>
+                                        <option>S.A. / Corporation</option>
+                                        <option>Inc.</option>
+                                        <option>Private Individual / Host</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </Card>
 
-                {/* Billing Details Re-implementation within Org Tab if needed, but keeping primarily in Billing Tab */}
-                <div className="border-t border-[var(--color-border)] pt-8">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Billing Information</h3>
-                        <Button variant="secondary" size="sm" onClick={() => setShowBillingModal(true)}>Edit Details</Button>
+                        <Card padding="lg">
+                            <h3 className="text-lg font-medium mb-6">Fiscal Address (Global Universal)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="md:col-span-2">
+                                    <FloatingInput label="Street Address" value={localBillingDetails.address || ''} />
+                                </div>
+                                <FloatingInput label="Suite / Apt" value="" />
+                                <FloatingInput label="City" value="" />
+                                <FloatingInput label="State / Province / Region" value="" />
+                                <FloatingInput label="Zip / Postal Code" value="" />
+                                <div className="relative md:col-span-3">
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Country / Territory</label>
+                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                        <option>United States</option>
+                                        <option>Brazil</option>
+                                        <option>Italy</option>
+                                        <option>Mexico</option>
+                                        <option>Colombia</option>
+                                        <option>European Union (Select Member State)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </Card>
                     </div>
-                    <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)]">
-                        <p className="font-medium">{localBillingDetails.legalName || 'Not Set'}</p>
-                        <p className="text-sm text-[var(--color-text-muted)]">{localBillingDetails.address || 'Address not set'}</p>
-                        <p className="text-sm text-[var(--color-text-muted)]">VAT: {localBillingDetails.vatNumber || 'N/A'}</p>
+
+                    {/* Org Sidebar */}
+                    <div className="lg:col-span-4 space-y-8">
+                        <Card variant="dark" padding="lg">
+                            <div className="flex justify-between items-center mb-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 italic">Compliance Status</h4>
+                                <span className="text-[8px] px-2 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded uppercase font-black">Authorized</span>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="p-4 bg-white/5 border border-white/5 rounded-xl space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[9px] text-zinc-500 font-bold uppercase italic">Master Services Agreement</span>
+                                        <CheckCircle size={12} className="text-emerald-500" />
+                                    </div>
+                                    <button className="w-full py-2 bg-[var(--color-brand-accent)] text-black text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 hover:bg-white transition-all">
+                                        <Link size={12} /> DocuSign Infrastructure
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="aspect-square bg-white/[0.02] border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 group cursor-pointer hover:bg-white/5 transition-all">
+                                        <Camera size={16} className="text-white/20 group-hover:text-[var(--color-brand-accent)]" />
+                                        <span className="text-[8px] text-white/40 font-black uppercase text-center px-2">Legal Rep. Photo</span>
+                                    </div>
+                                    <div className="aspect-square bg-white/[0.02] border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 group cursor-pointer hover:bg-white/5 transition-all">
+                                        <FileText size={16} className="text-white/20 group-hover:text-[var(--color-brand-accent)]" />
+                                        <span className="text-[8px] text-white/40 font-black uppercase text-center px-2">Gov. ID / Passport</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card variant="dark" padding="lg">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Institutional Compliance</h4>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Universal Tax ID / VAT / EIN / CNPJ</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Legal ID"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40"
+                                        value={localBillingDetails.vatNumber || ''}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Settlement Currency</label>
+                                    <div className="relative">
+                                        <select className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer">
+                                            <option>USD - United States Dollar</option>
+                                            <option>EUR - Euro</option>
+                                            <option>GBP - British Pound</option>
+                                            <option>BRL - Brazilian Real</option>
+                                            <option>MXN - Mexican Peso</option>
+                                        </select>
+                                        <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/20 pointer-events-none" />
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card variant="dark" padding="lg" className="border-[var(--color-brand-accent)]/20 shadow-[0_0_30px_rgba(212,175,55,0.05)]">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Shield size={18} className="text-[var(--color-brand-accent)]" />
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Trust Substrate</h4>
+                            </div>
+                            <p className="text-[10px] text-zinc-500 leading-relaxed italic">
+                                ArmonycoOS™ requires verified organizational data to establish node sovereignty and cross-border settlement protocols.
+                            </p>
+                        </Card>
                     </div>
+                </div>
+
+                <div className="mt-6 flex justify-end pt-8 border-t border-white/5">
+                    <Button leftIcon={<Save size={18} />} onClick={() => onUpdateOrganization(localOrg)}>Update Organization Infrastructure</Button>
                 </div>
             </div>
         )
     }
 
     const renderActivation = () => (
-        <div className="w-full animate-fade-in">
-            <div className="border-b border-[var(--color-border)] pb-6 mb-6">
-                <h2 className="text-xl font-light">System Activation</h2>
+        <div className="w-full animate-fade-in space-y-10 pb-20">
+            {/* Header Section */}
+            <div className="border-b border-white/10 pb-10 flex justify-between items-center">
+                <div>
+                    <div className="flex items-center gap-4 mb-3">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <Zap className="text-[var(--color-brand-accent)]" size={24} />
+                        </div>
+                        <h2 className="text-4xl font-light text-white tracking-tight">System Activation & Knowledge</h2>
+                    </div>
+                    <p className="text-zinc-500 text-[11px] uppercase font-black tracking-[0.4em] italic">Self-Onboarding Flow • Institutional Calibration</p>
+                </div>
+                <div className="flex items-center gap-4 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                    <span className="text-[11px] text-emerald-500 font-black uppercase tracking-[0.2em] italic">System Active</span>
+                </div>
             </div>
-            <div className="space-y-4">
-                {activationSteps.map((step) => (
-                    <Card key={step.id} padding="md" className="flex items-center justify-between bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all group rounded-2xl">
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* LEFT COLUMN: The Flow */}
+                <div className="lg:col-span-8 space-y-12">
+
+                    {/* STEP 1: KNOWLEDGE BASE */}
+                    <div className="space-y-6">
                         <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs border shadow-lg transition-transform group-hover:scale-110 ${step.status === 'Completed'
-                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-                                : step.status === 'Error'
-                                    ? 'bg-red-500/10 text-red-500 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                                    : 'bg-white/5 text-white/40 border-white/10'
-                                }`}>
-                                {step.status === 'Completed' ? <CheckCircle size={18} /> : <span>0{step.id}</span>}
+                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-xs italic">1</div>
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Knowledge Base Upload</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="group cursor-pointer">
+                                <Card className="border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[var(--color-brand-accent)]/20 to-transparent group-hover:via-[var(--color-brand-accent)]/40 transition-all"></div>
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <FileText className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
+                                    </div>
+                                    <div className="text-center px-4">
+                                        <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Institutional Policies</div>
+                                        <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Grounding Material (PDF)</div>
+                                    </div>
+                                </Card>
                             </div>
-                            <div>
-                                <h3 className="font-bold text-white uppercase tracking-widest text-xs">{step.label}</h3>
-                                <p className="text-[10px] text-white/30 uppercase tracking-[0.1em] font-black mt-1">
-                                    {step.status === 'Completed' ? 'Identity Verified & Secure' : 'Authorization Required'}
-                                </p>
+
+                            <div className="group cursor-pointer">
+                                <Card className="border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[var(--color-brand-accent)]/20 to-transparent group-hover:via-[var(--color-brand-accent)]/40 transition-all"></div>
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Database className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
+                                    </div>
+                                    <div className="text-center px-4">
+                                        <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Property Data</div>
+                                        <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Wi-Fi, Codes & Assets (CSV)</div>
+                                    </div>
+                                </Card>
                             </div>
                         </div>
-                        <Button
-                            leftIcon={step.status === 'Completed' ? <Settings size={18} /> : <Link size={18} />}
-                            onClick={() => setActiveStepModal(step.id)}
-                            variant={step.status === 'Completed' ? 'secondary' : 'primary'}
-                            className="rounded-xl font-black uppercase tracking-widest text-[10px]"
-                        >
-                            {step.status === 'Completed' ? 'Configure' : 'Establish Link'}
-                        </Button>
+
+                        <div className="flex items-center gap-2 px-1">
+                            <CheckCircle size={14} className="text-emerald-500" />
+                            <p className="text-[10px] text-white/30 font-medium italic">System automatically parses property rules from PDF.</p>
+                        </div>
+                    </div>
+
+                    {/* STEP 2: CHANNELS */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-xs italic">2</div>
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Connect Channels</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Permanent Access Token</label>
+                                <input
+                                    type="password"
+                                    value="••••••••••••••••••••••••••••••••••••"
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                    readOnly
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">WhatsApp Business ID</label>
+                                <input
+                                    type="text"
+                                    value="294857204918234"
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
+                                    readOnly
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Phone Number ID</label>
+                                <input
+                                    type="text"
+                                    value="102938475612345"
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
+                                    readOnly
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Webhook Verify Token</label>
+                                <input
+                                    type="text"
+                                    value="armonyco_secure_v1"
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* STEP 3: INFRASTRUCTURE */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-xs italic">3</div>
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">PMS Connection</h3>
+                        </div>
+
+                        <Card variant="dark" padding="none" className="overflow-hidden border-white/5 bg-gradient-to-br from-zinc-900 via-black to-black">
+                            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <Zap className="text-[var(--color-brand-accent)]" size={16} />
+                                    <span className="text-xs font-black uppercase tracking-widest text-white">PMS Connection</span>
+                                </div>
+                                <span className="text-[9px] px-3 py-1 bg-white/5 border border-white/10 rounded text-white/40 font-black uppercase tracking-widest">Encrypted</span>
+                            </div>
+                            <div className="p-8 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">API Endpoint / URL *</label>
+                                        <input
+                                            type="text"
+                                            placeholder="https://pms.example.com/api"
+                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Hotel ID / Property ID</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Optional"
+                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Auth Username *</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Auth Password *</label>
+                                        <input
+                                            type="password"
+                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex items-center gap-4">
+                                    <div className="flex-1 h-[1px] bg-white/5"></div>
+                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900 border border-white/5 rounded-full">
+                                        <Clock size={12} className="text-[var(--color-brand-accent)]" />
+                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest italic">Activation within 48 hours</span>
+                                    </div>
+                                    <div className="flex-1 h-[1px] bg-white/5"></div>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: Calibration & Agents */}
+                <div className="lg:col-span-4 space-y-8">
+                    <Card variant="dark" padding="lg" className="border-white/5 bg-black/60 backdrop-blur-xl h-full flex flex-col justify-between min-h-[500px]">
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-6 flex items-center gap-2">
+                                    <Shield size={14} /> Neural Integrity
+                                </h3>
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-white/40 italic">Parsing Accuracy</span>
+                                        <span className="text-emerald-500">99.2%</span>
+                                    </div>
+                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="w-[99.2%] h-full bg-emerald-500"></div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-white/40 italic">Calibration Status</span>
+                                        <span className="text-white font-mono uppercase">Optimized</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-white/40 italic">Data Sovereignty</span>
+                                        <span className="text-white font-mono uppercase">Secured</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-8 border-t border-white/5">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 italic">Active Agent Nodes</h3>
+                                <div className="space-y-3">
+                                    {['Amelia', 'Lara', 'Elon', 'James'].map(agent => (
+                                        <div key={agent} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl group hover:border-[var(--color-brand-accent)]/20 transition-all">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">{agent}</span>
+                                            </div>
+                                            <span className="text-[8px] text-white/20 font-black uppercase tracking-tighter italic">Live</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-8 text-center text-balance">
+                            <p className="text-[9px] text-white/20 leading-relaxed italic">
+                                ArmonycoOS™ Knowledge Engine ensures absolute fidelity across all cognitive tasks.
+                            </p>
+                        </div>
                     </Card>
-                ))}
+                </div>
             </div>
-            {/* Note: Modals for activation are simplified/omitted for brevity but logic is there */}
         </div>
     );
 
@@ -343,10 +664,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         ];
 
         const history = [
-            { id: 1, date: '02 May 2024, 14:20', module: 'Neural Chat (AEM)', credits: 450, status: 'Settled' },
+            { id: 1, date: '02 May 2024, 14:20', module: 'Neural Chat (AEM - Armonyco Event Model™)', credits: 450, status: 'Settled' },
             { id: 2, date: '01 May 2024, 09:15', module: 'Control Tower Sync', credits: 120, status: 'Settled' },
-            { id: 3, date: '30 Apr 2024, 18:45', module: 'ARS Reliability Check', credits: 850, status: 'Settled' },
-            { id: 4, date: '29 Apr 2024, 11:30', module: 'AOS Core Migration', credits: 5000, status: 'Settled' },
+            { id: 3, date: '30 Apr 2024, 18:45', module: 'ARS - Armonyco Reliability System™ Check', credits: 850, status: 'Settled' },
+            { id: 4, date: '29 Apr 2024, 11:30', module: 'AOS - Armonyco Operating System™ Migration', credits: 5000, status: 'Settled' },
             { id: 5, date: '28 Apr 2024, 23:10', module: 'Agent "Amelia" Task', credits: 240, status: 'Settled' },
         ];
 
@@ -366,8 +687,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="relative z-10">
                             <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Current Balance</div>
                             <div className="text-4xl font-numbers font-bold text-white tracking-tight">
-                                {Math.floor(currentCredits).toLocaleString()}
-                                <span className="text-xs text-zinc-600 block mt-1 font-numbers uppercase tracking-widest italic">AC</span>
+                                {Math.floor(currentCredits).toLocaleString('de-DE')}
+                                <span className="text-xs text-zinc-600 block mt-1 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
                             </div>
                         </div>
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={40} /></div>
@@ -391,7 +712,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
                             {autoTopUpEnabled
-                                ? "If balance < 10,000 credits, trigger +10,000 AC top-up."
+                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up."
                                 : "No automatic reloads configured. Services may pause on zero balance."
                             }
                         </p>
@@ -451,8 +772,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             <td className="px-6 py-5 text-[10px] font-mono text-white/40 group-hover:text-white/60 transition-colors uppercase tracking-widest">{item.date}</td>
                                             <td className="px-6 py-5 text-sm text-white font-bold tracking-tight opacity-80 group-hover:opacity-100">{item.module}</td>
                                             <td className="px-6 py-5 text-xs font-numbers text-[var(--color-brand-accent)] font-black">
-                                                {item.credits.toLocaleString()}
-                                                <span className="text-[9px] opacity-40 ml-1.5 font-numbers uppercase tracking-widest italic">AC</span>
+                                                {item.credits.toLocaleString('de-DE')}
+                                                <span className="text-[9px] opacity-40 ml-1.5 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <span className="text-[9px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-black tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)]">
@@ -515,7 +836,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     `}
                                 >
                                     <span className={`text-lg font-mono font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
-                                        {amount.toLocaleString()}
+                                        {amount.toLocaleString('de-DE')}
                                     </span>
                                     <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mt-1">ArmoCredits©</span>
                                 </button>
@@ -547,8 +868,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                         <h3 className="text-center font-medium text-lg mb-2">Never Run Out of Credits</h3>
                         <p className="text-center text-sm text-[var(--color-text-muted)] mb-6">
-                            When your balance falls below <strong className="text-[var(--color-text-main)]">10,000 ArmoCredits©</strong>,
-                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">10,000 ArmoCredits©</strong>.
+                            When your balance falls below <strong className="text-[var(--color-text-main)]">10.000 ArmoCredits©</strong>,
+                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">10.000 ArmoCredits©</strong>.
                         </p>
 
                         <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
@@ -563,7 +884,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="mb-6 flex justify-center">
                             <div className="text-center">
                                 <span className="text-xs text-[var(--color-text-muted)] uppercase font-bold">Top-up Amount</span>
-                                <div className="text-lg font-bold">10,000 ArmoCredits©</div>
+                                <div className="text-lg font-bold">10.000 ArmoCredits©</div>
                             </div>
                         </div>
 
@@ -617,9 +938,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <nav className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-md">
                     {[
-                        { id: 'PROFILE', label: 'Identity', icon: User },
-                        { id: 'ORG', label: 'Organization', icon: Building },
-                        { id: 'BILLING', label: 'Billing & AC', icon: CreditCard }
+                        { id: 'PROFILE', label: 'IDENTITY', icon: User },
+                        { id: 'ORG', label: 'ORGANIZATION', icon: Building },
+                        { id: 'ACTIVATION', label: 'SYSTEM ACTIVATION', icon: Zap },
+                        { id: 'BILLING', label: 'BILLING & ARMOCREDITS©', icon: CreditCard }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -640,6 +962,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {activeTab === 'PROFILE' && renderProfile()}
                 {activeTab === 'ORG' && renderOrg()}
                 {activeTab === 'BILLING' && renderBilling()}
+                {activeTab === 'ACTIVATION' && renderActivation()}
             </div>
         </div>
     );

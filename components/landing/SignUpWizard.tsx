@@ -120,7 +120,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                     <p className="text-[var(--color-text-muted)] text-sm">The fuel for autonomous governance.</p>
                                 </div>
                                 <div className="text-xs text-[var(--color-text-muted)] space-y-2 border-t border-[var(--color-border)] pt-4">
-                                    <p>ArmoCredits (AC) power your autonomous governance. Charges apply for module activation and ongoing operational routines.</p>
+                                    <p>ArmoCredits© power your autonomous governance. Charges apply for module activation and ongoing operational routines.</p>
                                     <div className="flex justify-center gap-4 font-mono font-medium text-[var(--color-text-main)]">
                                         <span>Activation + Execution Model</span>
                                         <span className="text-[var(--color-border)]">|</span>
@@ -136,7 +136,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                             key={amt}
                                             onClick={() => setCredits(amt)}
                                             className={`py-4 rounded-lg border transition-all text-sm font-medium ${credits === amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
-                                        >{(amt / 1000)}k AC</button>
+                                        >{amt.toLocaleString('de-DE')} ArmoCredits©</button>
                                     ))}
                                 </div>
                             </div>

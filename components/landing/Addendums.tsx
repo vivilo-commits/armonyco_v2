@@ -102,7 +102,7 @@ export const Addendums: React.FC = () => {
       <AddendumCard number="08" title="The Iron Clause" subtitle="(What Armonyco Refuses to Build)">
         <p>Armonyco’s roadmap is governed by a hard rule: Every feature must strengthen at least one of:</p>
         <ol className="list-decimal pl-4 space-y-1">
-          <li>Increase Governed Value</li>
+          <li>Increase Governed Cashflow™</li>
           <li>Reduce Human Risk</li>
           <li>Increase Structural Lock-In</li>
         </ol>
