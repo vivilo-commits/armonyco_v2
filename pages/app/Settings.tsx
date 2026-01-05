@@ -712,7 +712,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
                             {autoTopUpEnabled
-                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up."
+                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up (€10/trigger)."
                                 : "No automatic reloads configured. Services may pause on zero balance."
                             }
                         </p>
@@ -747,6 +747,38 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                     </Card>
 
+                </div>
+                <div className="pt-10">
+                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30 mb-6 italic flex items-center gap-3">
+                        <Layers size={14} className="text-[var(--color-brand-accent)]" />
+                        Institutional Subscription Plans
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                            { id: 1, amt: 10000, price: 39, units: 'Up to 50' },
+                            { id: 2, amt: 20000, price: 49, units: 'Up to 200' },
+                            { id: 3, amt: 50000, price: 79, units: 'Up to 500' },
+                            { id: 4, amt: 100000, price: 129, units: '500+' }
+                        ].map(plan => (
+                            <button
+                                key={plan.id}
+                                className={`py-6 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 relative group overflow-hidden ${plan.id === 1 ? 'bg-white/5 border-[var(--color-brand-accent)]' : 'bg-black/20 border-white/5 hover:border-white/10'}`}
+                            >
+                                {plan.id === 1 && (
+                                    <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[7px] font-black uppercase px-2 py-0.5 rounded-bl-lg">Current Tier</div>
+                                )}
+                                <span className="text-[10px] opacity-40 mb-1 uppercase tracking-widest font-black">Plan {plan.id}</span>
+                                <span className="text-[20px] font-bold leading-none mb-2 text-white">€{plan.price}<span className="text-[10px] opacity-60">/mo</span></span>
+                                <div className="flex flex-col items-center gap-0.5 border-t border-white/5 pt-2 mt-1 w-full">
+                                    <span className="text-[9px] font-bold uppercase tracking-tight text-white/80">Includes {plan.amt.toLocaleString('de-DE')}</span>
+                                    <span className="text-[7px] opacity-40 uppercase tracking-widest italic">{plan.units} units</span>
+                                </div>
+                                {plan.id !== 1 && (
+                                    <div className="mt-4 px-3 py-1 bg-white/5 rounded text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-white/60 transition-colors">Select for Change</div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* CONSUMPTION TABLE */}
@@ -828,17 +860,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     key={amount}
                                     onClick={() => setSelectedPack(amount)}
                                     className={`
-                                        p-4 rounded-xl border flex flex-col items-center justify-center transition-all bg-[var(--color-surface)]
+                                        p-6 rounded-xl border flex flex-col items-center justify-center transition-all bg-[var(--color-surface)]
                                         ${selectedPack === amount
                                             ? 'border-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)] shadow-md bg-[var(--color-brand-primary)]/5'
                                             : 'border-[var(--color-border)] hover:border-[var(--color-text-muted)]'
                                         }
                                     `}
                                 >
-                                    <span className={`text-lg font-mono font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
+                                    <span className={`text-2xl font-numbers font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
                                         {amount.toLocaleString('de-DE')}
                                     </span>
-                                    <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mt-1">ArmoCredits©</span>
+                                    <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-1">ArmoCredits©</span>
+                                    <div className="mt-2 text-[12px] font-bold text-[var(--color-brand-accent)]">€{(amount / 1000).toLocaleString('de-DE')}</div>
                                 </button>
                             ))}
                         </div>
