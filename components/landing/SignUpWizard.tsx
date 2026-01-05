@@ -144,19 +144,19 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                         >
                                             <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'}`}>{plan.name}</span>
                                             <span className="text-[32px] font-bold leading-none mb-0">€{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
-                                            <span className="text-[8px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
+                                            <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mb-1.5">VAT Incl.</span>
                                             <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
                                                 <div className="flex flex-col items-center">
                                                     <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
                                                     <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
-                                                    <span className="text-[9px] opacity-40 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                                    <span className="text-[9px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
                                                 </div>
-                                                <span className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
+                                                <span className="text-[10px] opacity-60 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
                                             </div>
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-center text-[9px] text-[var(--color-text-muted)] mt-5 italic opacity-50 uppercase tracking-tighter">VAT Included. Monthly refresh.</p>
+                                <p className="text-center text-[9px] text-[var(--color-text-muted)] mt-5 italic opacity-70 uppercase tracking-tighter">VAT Included. Monthly refresh.</p>
                             </div>
                         </div>
                     )}

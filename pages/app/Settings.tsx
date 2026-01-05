@@ -802,14 +802,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
                                     €{plan.price}<span className="text-[18px] opacity-60 font-medium">/mo</span>
                                 </span>
-                                <span className="text-[10px] uppercase font-black opacity-20 tracking-widest mb-4">VAT Included</span>
+                                <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-4">VAT Included</span>
                                 <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-8 mt-2 w-full">
                                     <div className="flex flex-col items-center">
                                         <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">Includes</span>
                                         <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
-                                        <span className="text-[10px] opacity-30 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                        <span className="text-[10px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
                                     </div>
-                                    <span className="text-[11px] opacity-40 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
+                                    <span className="text-[11px] opacity-70 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
                                 {plan.id !== activePlanId && (
                                     <div
@@ -822,7 +822,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </button>
                         ))}
                     </div>
-                    <p className="mt-8 text-center text-[10px] text-zinc-600 uppercase font-bold tracking-widest italic opacity-40">All payments are processed securely. VAT included in all institutional tiers.</p>
+                    <p className="mt-8 text-center text-[10px] text-zinc-500 uppercase font-bold tracking-widest italic opacity-60">All payments are processed securely. VAT included in all institutional tiers.</p>
                 </div>
 
                 {/* CONSUMPTION TABLE */}
@@ -1008,7 +1008,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div className="p-6 bg-zinc-900/50 rounded-2xl border border-white/5 text-center">
                                     <div className="text-[10px] uppercase font-black tracking-widest text-[var(--color-brand-accent)] mb-2 italic">New Execution Tier Protocol</div>
                                     <div className="text-3xl font-bold text-white mb-4 uppercase tracking-tight">{pendingPlan.name}</div>
-                                    <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest leading-relaxed">
+                                    <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-zinc-400 uppercase tracking-widest leading-relaxed">
                                         The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.
                                     </div>
                                 </div>
@@ -1024,7 +1024,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </Button>
                                     <Button
                                         variant="ghost"
-                                        className="w-full text-zinc-600 hover:text-white uppercase tracking-widest font-black text-[9px]"
+                                        className="w-full text-zinc-400 hover:text-zinc-900 uppercase tracking-widest font-black text-[9px]"
                                         onClick={() => setShowPlanChangeModal(false)}
                                         disabled={isUpdatingPlan}
                                     >
