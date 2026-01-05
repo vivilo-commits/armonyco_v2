@@ -283,10 +283,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-black text-white uppercase tracking-tight truncate">
+                <div className="text-[13px] font-black text-black uppercase tracking-tight truncate leading-tight">
                   {userProfile?.firstName} {userProfile?.lastName}
                 </div>
-                <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.2em] mt-0.5 truncate flex items-center gap-1.5 opacity-80">
+                <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.2em] mt-0.5 truncate">
                   {getPlanName(activePlanId)}
                 </div>
               </div>
