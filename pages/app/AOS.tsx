@@ -29,7 +29,7 @@ export const AOSView: React.FC = () => {
                         <Network className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">AOS - Armonyco Operating System™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ executable truth</span></h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Trasforma la verità istituzionale in una sequenza eseguibile di azioni governate e monitorate.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Transforms institutional truth into an executable sequence of governed and monitored actions.</p>
                 </div>
             </header>
 
@@ -194,7 +194,7 @@ export const AOSView: React.FC = () => {
                                     </div>
                                     <div className="p-5 bg-zinc-900/95 border border-white/10 rounded-2xl rounded-tl-none shadow-2xl">
                                         <p className="text-[13px] text-white/90 leading-relaxed italic pr-4">
-                                            ¡Hola Donata! Soy Amelia, el Guardián de Riesgos de Armonyco. He detectado que tu reserva para el 31 de diciembre no tiene una hora de llegada confirmada.
+                                            Hi Donata! I'm Amelia, your Armonyco Risk Guardian. I've noticed your reservation for December 31st doesn't have a confirmed arrival time yet.
                                         </p>
                                         <div className="text-right mt-3 opacity-30 text-[9px] font-black uppercase tracking-widest">
                                             15:30 • Read
@@ -206,7 +206,7 @@ export const AOSView: React.FC = () => {
                                 <div className="flex flex-col items-end self-end max-w-[85%]">
                                     <div className="p-5 bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 rounded-2xl rounded-tr-none shadow-2xl backdrop-blur-sm">
                                         <p className="text-[13px] text-white/95 leading-relaxed italic pl-4">
-                                            Hola Amelia, que bien que me contactas. Si, llegamos el 31 sobre las 10:00 de la mañana. ¿Es posible dejar las maletas o entrar antes?
+                                            Hi Amelia, glad you reached out. Yes, we arrive on the 31st around 10:00 AM. Is it possible to drop off luggage or check in early?
                                         </p>
                                         <div className="text-right mt-3 opacity-40 text-[9px] font-black uppercase">
                                             15:32
@@ -221,7 +221,7 @@ export const AOSView: React.FC = () => {
                                     </div>
                                     <div className="p-5 bg-zinc-900/95 border border-white/10 rounded-2xl rounded-tl-none shadow-2xl">
                                         <p className="text-[13px] text-white/90 leading-relaxed italic">
-                                            Para poder ayudarte con tu reserva necesito verificar un segundo dato. ¿Podrías confirmarme, por favor, el número de noches de tu estancia? Así podré localizar tu reserva correctamente en el sistema.
+                                            To better assist you, I need to verify one more detail. Could you please confirm the number of nights for your stay? This will help me locate your reservation accurately in our system.
                                         </p>
                                         <div className="text-right mt-3 opacity-30 text-[9px] font-black">
                                             15:38
@@ -233,7 +233,7 @@ export const AOSView: React.FC = () => {
                                 <div className="flex flex-col items-end self-end max-w-[85%]">
                                     <div className="p-5 bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 rounded-2xl rounded-tr-none shadow-2xl backdrop-blur-sm">
                                         <p className="text-[13px] text-white/95 leading-relaxed italic pl-4">
-                                            Si claro, nos quedamos 5 noches. El código es 17722/2025 de Booking.
+                                            Of course, we are staying for 5 nights. The Booking.com code is 17722/2025.
                                         </p>
                                         <div className="text-right mt-3 opacity-40 text-[9px] font-black uppercase">
                                             15:40
@@ -248,7 +248,7 @@ export const AOSView: React.FC = () => {
                                     </div>
                                     <div className="p-5 bg-emerald-500/[0.02] border border-emerald-500/20 rounded-2xl rounded-tl-none shadow-xl">
                                         <p className="text-[13px] text-emerald-500/80 leading-relaxed italic">
-                                            Perfecto Donata. He consultado el calendario y tenemos disponibilidad para un Early Check-in a las 10:00. El cargo adicional es de 25€. ¿Deseas que procedamos con el cargo automático a tu tarjeta registrada?
+                                            Perfect, Donata. I've checked the calendar and we have availability for an Early Check-in at 10:00 AM. There is an additional charge of €25. Would you like us to proceed with the automatic charge to your registered card?
                                         </p>
                                         <div className="text-right mt-3 opacity-30 text-[9px] font-black">
                                             15:42
@@ -294,7 +294,7 @@ export const AOSView: React.FC = () => {
                                             <div className="flex flex-col p-3 bg-black/40 rounded-xl border border-white/5">
                                                 <span className="text-[9px] text-white/40 font-black uppercase tracking-widest mb-1">Check-in Sequence</span>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-[12px] text-white font-bold italic tracking-tight">Mer 31/12/2025</span>
+                                                    <span className="text-[12px] text-white font-bold italic tracking-tight">Wed 12/31/2025</span>
                                                     <span className="text-[11px] text-[var(--color-brand-accent)] font-black">10:00</span>
                                                 </div>
                                             </div>
@@ -308,7 +308,7 @@ export const AOSView: React.FC = () => {
                                         <span className="text-[9px] text-amber-500 font-black uppercase tracking-[0.25em]">Staff Intelligence</span>
                                     </div>
                                     <p className="text-[12px] text-amber-500/80 leading-relaxed italic font-medium">
-                                        "Addebitata stripe 03.12 nath deve pagare 30€ tax."
+                                        "Charged via Stripe 12/03 nath must pay €30 tax."
                                     </p>
                                 </Card>
                             </div>
@@ -340,17 +340,17 @@ export const AOSView: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2 text-[10px] text-white/60">
                                 <Calendar size={12} className="opacity-50" />
-                                04/01/2026 - 07/01/2026
+                                01/04/2026 - 01/07/2026
                             </div>
                             <div className="flex items-center gap-2 text-[10px] text-white/60">
                                 <Clock size={12} className="opacity-50" />
-                                3 Notti
+                                3 Nights
                             </div>
-                            <div className="text-[10px] font-bold text-white">288,12€</div>
+                            <div className="text-[10px] font-bold text-white">€288.12</div>
                         </div>
                         <div className="flex gap-2">
                             <div className="px-3 py-1 bg-white/5 rounded-full text-[9px] font-bold flex items-center gap-2">
-                                <Activity size={10} className="text-[var(--color-brand-accent)]" /> Segmenti
+                                <Activity size={10} className="text-[var(--color-brand-accent)]" /> Segments
                             </div>
                             <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Phone size={12} /></div>
                             <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Mail size={12} /></div>
@@ -363,7 +363,7 @@ export const AOSView: React.FC = () => {
                             {/* Column 1: Info & Status */}
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Riferimento</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Reference</label>
                                     <div className="flex gap-2">
                                         <div className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg p-3 text-[13px] font-bold flex justify-between items-center">
                                             Shurpik Maksim
@@ -379,46 +379,46 @@ export const AOSView: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Status</label>
-                                        <div className="bg-blue-600 px-3 py-2 rounded-lg text-[11px] font-bold flex justify-between items-center">
-                                            Check-in effettuato
+                                        <div className="bg-blue-600 px-3 py-2 rounded-lg text-[11px] font-bold flex justify-between items-center text-white">
+                                            Checked-in
                                             <ChevronDown size={14} />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Scadenza</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Expiration</label>
                                         <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] flex justify-between items-center text-white/40">
-                                            gg/mm/aaaa
+                                            mm/dd/yyyy
                                             <Calendar size={14} />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Periodo</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Period</label>
                                     <div className="flex gap-2">
-                                        <div className="flex-1 bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] font-bold">04/01/2026</div>
+                                        <div className="flex-1 bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] font-bold">01/04/2026</div>
                                         <div className="w-12 bg-white/5 border border-white/10 px-2 py-2 rounded-lg text-center text-[11px] font-bold">3</div>
-                                        <div className="flex-1 bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] font-bold">07/01/2026</div>
+                                        <div className="flex-1 bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] font-bold">01/07/2026</div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/30 text-[8px]">Arrival Time</label>
-                                        <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] flex justify-between items-center">
+                                        <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] flex justify-between items-center text-white">
                                             14:00 <Clock size={12} className="opacity-40" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-white/30 text-[8px]">Departure</label>
-                                        <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] flex justify-between items-center">
+                                        <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-[11px] flex justify-between items-center text-white">
                                             06:30 <Clock size={12} className="opacity-40" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 text-[8px]">Prenotazione</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 text-[8px]">Reservation</label>
                                         <div className="bg-white/5 border border-white/10 px-2 py-2 rounded-lg text-[9px] text-white/60">
-                                            03/12/2025
+                                            12/03/2025
                                         </div>
                                     </div>
                                 </div>
@@ -433,14 +433,14 @@ export const AOSView: React.FC = () => {
                                             mshurp.412180@guest.booking.com
                                         </div>
                                         <button className="px-4 py-2 bg-[var(--color-brand-accent)]/10 text-[var(--color-brand-accent)] border border-[var(--color-brand-accent)]/20 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[var(--color-brand-accent)]/20 transition-all flex items-center gap-2 shrink-0">
-                                            Invia Email <Mail size={12} />
+                                            Send Email <Mail size={12} />
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Tipologia Viaggio</label>
-                                    <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Trip Type</label>
+                                    <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer text-white">
                                         Select Type...
                                         <ChevronDown size={16} className="opacity-40 group-hover:opacity-100" />
                                     </div>
@@ -448,15 +448,15 @@ export const AOSView: React.FC = () => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Metodo Acquisizione</label>
-                                        <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Acquisition Method</label>
+                                        <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer text-white">
                                             Channel Manager
                                             <ChevronDown size={14} className="opacity-40" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Origine Lead</label>
-                                        <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Lead Origin</label>
+                                        <div className="bg-white/10 border border-white/20 px-3 py-2.5 rounded-lg text-[12px] font-bold flex justify-between items-center group cursor-pointer text-white">
                                             OTA
                                             <ChevronDown size={14} className="opacity-40" />
                                         </div>
@@ -469,7 +469,7 @@ export const AOSView: React.FC = () => {
                                         <span className="text-[9px] font-black uppercase tracking-widest">System Intelligence Note</span>
                                     </div>
                                     <p className="text-[11px] italic text-[var(--color-brand-accent)]/80 leading-relaxed font-medium">
-                                        Ospite forse ha già soggiornato nel cluster Armonyco (U42). Verificare cronologia pagamenti.
+                                        Guest may have stayed in the Armonyco cluster (U42). Verify payment history.
                                     </p>
                                 </div>
                             </div>
@@ -477,21 +477,21 @@ export const AOSView: React.FC = () => {
                             {/* Column 3: Notes & Alerts */}
                             <div className="space-y-6">
                                 <div className="space-y-2 flex flex-col h-full">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Note Canale</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Channel Notes</label>
                                     <div className="p-4 bg-white/[0.03] border border-white/10 rounded-xl flex-1 min-h-[140px]">
                                         <div className="text-[10px] font-black text-[var(--color-brand-accent)] uppercase tracking-wider mb-2">** THIS RESERVATION HAS BEEN PRE-PAID **</div>
                                         <p className="text-[11px] text-white/60 leading-relaxed italic">
-                                            Reservation has a cancellation grace period. Do not charge if cancelled before 2025-12-04 22:40:20.
+                                            Reservation has a cancellation grace period. Do not charge if cancelled before 12/04/2025 22:40:20.
                                             BOOKING NOTE: Payment charge is EUR 3.6019.
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Note Interne</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30">Internal Notes</label>
                                     <textarea
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-[12px] italic text-white/80 min-h-[100px] outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
-                                        defaultValue="Deve pagare 42€ tax."
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-[12px] italic text-white/80 min-h-[100px] outline-none focus:border-[var(--color-brand-accent)]/40 transition-all font-sans"
+                                        defaultValue="Must pay €42 tax."
                                     />
                                 </div>
                             </div>
@@ -500,19 +500,19 @@ export const AOSView: React.FC = () => {
                         {/* Rooms/Units Bottom Table */}
                         <div className="mt-10 border-t border-white/5 pt-8 overflow-hidden">
                             <div className="flex gap-4 border-b border-white/5 pb-2 mb-6">
-                                <span className="text-[11px] font-bold text-[var(--color-brand-accent)] border-b-2 border-[var(--color-brand-accent)] pb-2 px-4 cursor-pointer">Camere</span>
-                                <span className="text-[11px] font-medium text-white/20 pb-2 px-4 cursor-pointer hover:text-white/40 transition-colors">Servizi</span>
+                                <span className="text-[11px] font-bold text-[var(--color-brand-accent)] border-b-2 border-[var(--color-brand-accent)] pb-2 px-4 cursor-pointer">Rooms</span>
+                                <span className="text-[11px] font-medium text-white/20 pb-2 px-4 cursor-pointer hover:text-white/40 transition-colors">Services</span>
                                 <span className="text-[11px] font-medium text-white/20 pb-2 px-4 cursor-pointer hover:text-white/40 transition-colors">Audit</span>
                             </div>
 
-                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-6">
+                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-6 text-white">
                                 <div className="grid grid-cols-12 gap-4 items-center">
-                                    <div className="col-span-1 text-[10px] font-black uppercase text-white/20">Unità</div>
-                                    <div className="col-span-4 text-[10px] font-black uppercase text-white/20">Tariffa</div>
-                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Ospiti Tot.</div>
-                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Configurazione</div>
-                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Prezzo/notte</div>
-                                    <div className="col-span-1 text-[10px] font-black uppercase text-white/20">Totale</div>
+                                    <div className="col-span-1 text-[10px] font-black uppercase text-white/20">Unit</div>
+                                    <div className="col-span-4 text-[10px] font-black uppercase text-white/20">Rate</div>
+                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Total Guests</div>
+                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Configuration</div>
+                                    <div className="col-span-2 text-[10px] font-black uppercase text-white/20">Price/night</div>
+                                    <div className="col-span-1 text-[10px] font-black uppercase text-white/20">Total</div>
 
                                     {/* Row 1 */}
                                     <div className="col-span-1 py-4">
@@ -522,31 +522,31 @@ export const AOSView: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="col-span-4 py-4">
-                                        <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-lg p-2.5 group cursor-pointer">
+                                        <div className="flex items-center justify-between bg-white/[0.03] border border-white/10 rounded-lg p-2.5 group cursor-pointer text-white">
                                             <div className="flex items-center gap-2">
                                                 <div className="px-1.5 py-0.5 bg-blue-600 rounded text-[8px] font-black uppercase">Q.</div>
-                                                <span className="text-[11px] font-bold truncate">NON RIMBORSABILE - OTA</span>
+                                                <span className="text-[11px] font-bold truncate">NON-REFUNDABLE - OTA</span>
                                             </div>
                                             <ChevronDown size={14} className="opacity-20 group-hover:opacity-100" />
                                         </div>
                                     </div>
                                     <div className="col-span-2 py-4">
-                                        <div className="bg-white/[0.03] border border-white/10 rounded-lg p-2.5 flex justify-between items-center text-[11px] font-bold">
-                                            2 Ospiti <ChevronDown size={14} className="opacity-20" />
+                                        <div className="bg-white/[0.03] border border-white/10 rounded-lg p-2.5 flex justify-between items-center text-[11px] font-bold text-white">
+                                            2 Guests <ChevronDown size={14} className="opacity-20" />
                                         </div>
                                     </div>
                                     <div className="col-span-2 py-4">
-                                        <div className="bg-white/[0.03] border border-white/10 rounded-lg p-2.5 flex justify-between items-center text-[11px] font-bold">
-                                            Matrimoniale <ChevronDown size={14} className="opacity-20" />
+                                        <div className="bg-white/[0.03] border border-white/10 rounded-lg p-2.5 flex justify-between items-center text-[11px] font-bold text-white">
+                                            Double <ChevronDown size={14} className="opacity-20" />
                                         </div>
                                     </div>
                                     <div className="col-span-2 py-4">
-                                        <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
-                                            <span className="opacity-40">€</span> Prezzo/notte
+                                        <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all text-white">
+                                            <span className="opacity-40">€</span> Price/night
                                         </button>
                                     </div>
                                     <div className="col-span-1 py-4 flex items-center justify-end gap-3 font-numbers text-[14px] font-black italic">
-                                        246,12 <span className="text-emerald-500 font-black">€</span>
+                                        246.12 <span className="text-emerald-500 font-black">€</span>
                                     </div>
                                 </div>
                             </div>
@@ -559,7 +559,7 @@ export const AOSView: React.FC = () => {
                             onClick={() => setIsReservationModalOpen(false)}
                             className="px-10 py-3 bg-[var(--color-brand-accent)] text-black rounded-full text-[11px] font-black uppercase tracking-[0.2em] transform active:scale-95 transition-all shadow-xl shadow-[var(--color-brand-accent)]/20"
                         >
-                            Chiudi Protocollo
+                            Close Protocol
                         </button>
                     </div>
                 </div>

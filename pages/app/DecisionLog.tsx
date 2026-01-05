@@ -41,7 +41,7 @@ export const DecisionLog: React.FC = () => {
                         <FileText className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">Truth Ledger</h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Registro delle decisioni operative: "Perché" e "Come" documentati per ogni evento.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Operational decision log: "Why" and "How" documented for every event.</p>
                 </div>
                 <div className="flex gap-2">
                     <Tooltip text="Hash Integrity Verified">

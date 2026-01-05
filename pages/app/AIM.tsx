@@ -29,7 +29,7 @@ export const AIMView: React.FC = () => {
                         <Cpu className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">AIM - Armonyco Intelligence Matrix™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ 4-agent harmony</span></h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Quattro agenti IA che lavorano in armonia per gestire ogni evento: dall'input alla chiusura certificata.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Four AI agents working in harmony to manage every event: from input to certified closure.</p>
                 </div>
                 <div className="flex gap-2">
                     <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[9px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
@@ -130,10 +130,10 @@ export const AIMView: React.FC = () => {
                         </div>
                         <div className="flex-1 overflow-y-auto p-5 scrollbar-hide space-y-6">
                             {[
-                                { node: 'AMELIA', text: 'Interpretazione WhatsApp (U42): Early Check-in richiesto.', time: '2m ago', color: 'bg-[var(--color-brand-accent)]' },
-                                { node: 'LARA', text: 'Protocollo Early Check-in attivo. Verifica disponibilità conclusa.', time: '15m ago', color: 'bg-emerald-500' },
-                                { node: 'ELON', text: 'Offerta accettata (€25). Coordinamento pulizie sincronizzato.', time: '1h ago', color: 'bg-zinc-700' },
-                                { node: 'JAMES', text: 'Verifica prove conclusa (Screenshot + PMS). Evento chiuso.', time: '2h ago', color: 'bg-white' }
+                                { node: 'AMELIA', text: 'WhatsApp Interpretation (U42): Early Check-in requested.', time: '2m ago', color: 'bg-[var(--color-brand-accent)]' },
+                                { node: 'LARA', text: 'Early Check-in Protocol active. Availability verify complete.', time: '15m ago', color: 'bg-emerald-500' },
+                                { node: 'ELON', text: 'Offer accepted (€25). Cleaning coordination synchronized.', time: '1h ago', color: 'bg-zinc-700' },
+                                { node: 'JAMES', text: 'Evidence verification complete (Screenshot + PMS). Event closed.', time: '2h ago', color: 'bg-white' }
                             ].map((item, i) => (
                                 <div key={i} className="flex gap-3">
                                     <div className={`w-0.5 h-auto ${item.color} rounded-full shrink-0`}></div>

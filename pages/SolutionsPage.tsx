@@ -46,17 +46,17 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             ]
         },
         ins: {
-            title: "Assicurazioni",
+            title: "Insurance",
             desc: "Providing the data substrate for real-time risk modification and fiduciary accountability.",
             image: "/assets/solutions/insurers-bg.jpg",
-            heroTitle: "Gestione sinistri con standard, evidenze e velocità.",
-            subHeadline: "Armonyco governa ogni evento dal FNOL alla chiusura: triage, controlli, prove, escalation e metriche.",
+            heroTitle: "Claims management with standards, evidence, and velocity.",
+            subHeadline: "Armonyco governs every event from FNOL to closure: triage, checks, evidence, escalation, and metrics.",
             bullets: [
-                "Meno trabalho manual, mais controle",
-                "Dossiê e Log de Decisões imutável",
-                "Riscos mitigados em tempo real"
+                "Less manual work, more control",
+                "Immutable Dossier and Decision Log",
+                "Real-time risk mitigation"
             ],
-            cta: "Richiedi uma demo per Assicurazioni",
+            cta: "Request a demo for Insurance",
             products: [
                 { name: 'FNOL Intake & Structuring', code: 'AS-01', agent: 'Amelia', category: 'CLAIMS', status: 'Governed' },
                 { name: 'Coverage Eligibility Check', code: 'AS-02', agent: 'James', category: 'COMPLIANCE', status: 'Governed' },
@@ -65,23 +65,23 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 { name: 'Document Completeness Pack', code: 'AS-05', agent: 'Lara', category: 'EVIDENCE', status: 'Governed' },
                 { name: 'Repair Coordination', code: 'AS-06', agent: 'Elon', category: 'VENDORS', status: 'Rapid Dispatch' },
                 { name: 'Reserve Adequacy Check', code: 'AS-07', agent: 'James', category: 'FINANCIAL', status: 'Matrix Active' },
-                { name: 'Regulatory Events (IVASS)', code: 'AS-08', agent: 'Lara', category: 'COMPLIANCE', status: 'Governed' },
+                { name: 'Regulatory Events', code: 'AS-08', agent: 'Lara', category: 'COMPLIANCE', status: 'Governed' },
                 { name: 'Customer Communication', code: 'AS-09', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
                 { name: 'Subrogation Detection', code: 'AS-10', agent: 'James', category: 'REVENUE', status: 'Autonomous' }
             ]
         },
         inv: {
-            title: "Fondi di Investimento",
+            title: "Investment Funds",
             desc: "Securing institutional capital through standardized operational auditing and asset protection.",
             image: "/assets/solutions/investors-bg.jpg",
-            heroTitle: "Governança operacional para milhares de unidades.",
-            subHeadline: "O Armonyco transforma triagens, manutenções e acessos em eventos auditáveis. Zero dependência de memória.",
+            heroTitle: "Operational governance for thousands of units.",
+            subHeadline: "Armonyco transforms triage, maintenance, and access into auditable events. Zero memory dependence.",
             bullets: [
-                "Ecceções viram dados, não caos",
-                "Riscos mitigados em tempo real",
-                "Prova de performance per unit"
+                "Exceptions become data, not chaos",
+                "Real-time risk mitigation",
+                "Proof of performance per unit"
             ],
-            cta: "Richiedi uma demo per Fondi",
+            cta: "Request a demo for Funds",
             products: [
                 { name: 'NAV Exception Triage', code: 'FI-01', agent: 'James', category: 'PORTFOLIO', status: 'Governed' },
                 { name: 'Cashflow Reconciliation', code: 'FI-02', agent: 'James', category: 'FINANCIAL', status: 'Governed' },
@@ -99,14 +99,14 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             title: "Enterprise",
             desc: "Global governance layers for cross-border operations and complex stakeholder ecologies.",
             image: "/assets/solutions/enterprise-bg.jpg",
-            heroTitle: "Enterprise: Armonyco su misura per a sua organização.",
-            subHeadline: "Para empresas com processos, riscos e integrações fora do padrão. Desenhamos um sistema sob medida.",
+            heroTitle: "Enterprise: Armonyco tailored for your organization.",
+            subHeadline: "For companies with non-standard processes, risks, and integrations. We design a tailored system.",
             bullets: [
-                "Processos não padronizados",
-                "Integrações multiplas e complexas",
-                "Requisitos legais e de TI customizados"
+                "Non-standard processes",
+                "Multiple and complex integrations",
+                "Custom IT and legal requirements"
             ],
-            cta: "Fale conosco (Enterprise)",
+            cta: "Contact us (Enterprise)",
             products: [
                 { name: 'Custom Services Pack', code: 'ENT-01', agent: 'Matrix Team', category: 'CUSTOM', status: 'Tailored' },
                 { name: 'Integration Pack', code: 'ENT-02', agent: 'Elon + James', category: 'INTEGRATION', status: 'Matrix Active' },
@@ -158,36 +158,36 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                             <div className="mb-20">
                                 <div className="flex items-center gap-2 mb-4">
                                     <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] hover:opacity-70 transition-opacity flex items-center gap-1">
-                                        ← Volver al Inicio
+                                        ← Back to Start
                                     </button>
                                 </div>
 
                                 <div className="mb-24">
                                     <h4 className="text-[var(--color-brand-accent)] text-xs font-bold uppercase tracking-widest mb-4">The Point of No Return</h4>
-                                    <h2 className="text-5xl md:text-7xl text-zinc-900 font-light mb-12 leading-[1.1] tracking-tight">Se não é governado,<br />não é cashflow real.</h2>
+                                    <h2 className="text-5xl md:text-7xl text-zinc-900 font-light mb-12 leading-[1.1] tracking-tight">If it isn't governed,<br />it isn't real cash flow.</h2>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl">
                                         <div>
                                             <p className="text-zinc-500 text-xl leading-relaxed mb-6">
-                                                A indústria falha por falta de sistemas, não de ferramentas. Memória não é sistema. WhatsApp não é governança.
+                                                The industry fails due to lack of systems, not tools. Memory is not a system. WhatsApp is not governance.
                                             </p>
                                             <p className="text-zinc-900 font-medium italic text-xl border-l-2 border-[var(--color-brand-accent)] pl-6">
-                                                Protocolo Armonyco: Quanto de cashflow cada unidade produz sob governança auditável?
+                                                Armonyco Protocol: How much cash flow does each unit produce under auditable governance?
                                             </p>
                                         </div>
                                         <div className="space-y-8">
                                             <div className="flex gap-4">
                                                 <div className="w-1 h-full bg-zinc-100 shrink-0"></div>
                                                 <div>
-                                                    <p className="text-lg font-bold text-zinc-900 mb-1">Responsabilidade Estrutural</p>
-                                                    <p className="text-sm text-zinc-500">Introdução de accountability que sobrevive a indivíduos.</p>
+                                                    <p className="text-lg font-bold text-zinc-900 mb-1">Structural Responsibility</p>
+                                                    <p className="text-sm text-zinc-500">Introducing accountability that survives individuals.</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-4">
                                                 <div className="w-1 h-full bg-zinc-100 shrink-0"></div>
                                                 <div>
-                                                    <p className="text-lg font-bold text-zinc-900 mb-1">Log de Decisões Imutável</p>
-                                                    <p className="text-sm text-zinc-500">Evidência cronológica e não regravável de cada veredito.</p>
+                                                    <p className="text-lg font-bold text-zinc-900 mb-1">Immutable Decision Log</p>
+                                                    <p className="text-sm text-zinc-500">Chronological and non-rewritable evidence of every verdict.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -228,7 +228,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                             <div className="mb-20">
                                 <div className="flex items-center gap-2 mb-4">
                                     <button onClick={() => onNavigateIndustry(undefined)} className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-accent)] hover:opacity-70 transition-opacity flex items-center gap-1">
-                                        ← Volver al Showcase
+                                        ← Back to Showcase
                                     </button>
                                 </div>
                                 <h2 className="text-5xl text-zinc-900 font-light mb-6 leading-tight">{industries[industry].heroTitle}</h2>
