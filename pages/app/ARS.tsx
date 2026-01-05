@@ -22,7 +22,7 @@ export const ARSView: React.FC = () => {
                         <Shield className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">ARS - Armonyco Reliability Standard™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ sovereign safety</span></h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Standard di affidabilità: controlli preventivi, escalation obbligatorie e gestione dei limiti operativi.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Reliability Standard: preventive controls, mandatory escalations, and management of operational limits.</p>
                 </div>
                 <div className="flex gap-2">
                     <Tooltip text="Compliance standard met">

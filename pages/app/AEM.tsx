@@ -23,7 +23,7 @@ export const AEMView: React.FC = () => {
                         <Database className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">AEM - Armonyco Event Model™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ institutional truth</span></h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Registra ogni evento operativo come verità istituzionale: Input → Azioni → Decisioni → Prove.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Records every operational event as institutional truth: Input → Actions → Decisions → Proofs.</p>
                 </div>
                 <div className="flex gap-2">
                     <Tooltip text="Schema validation active">

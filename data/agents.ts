@@ -5,7 +5,7 @@ export const agents = [
         id: 'amelia',
         name: 'Amelia',
         role: 'Intake & Understanding',
-        description: 'Interpreta l’input ed estrae i dati operativi dai canali (WhatsApp/PMS).',
+        description: 'Interprets input and extracts operational data from channels (WhatsApp/PMS).',
         metrics: [
             { label: 'Intent Accuracy', value: '99.2%', trend: 2 }
         ],
@@ -16,7 +16,7 @@ export const agents = [
         id: 'lara',
         name: 'Lara',
         role: 'Planning & Policy',
-        description: 'Decide cosa fare in base alle regole del prodotto e al contesto dell’unità.',
+        description: 'Decides what to do based on product rules and the unit context.',
         metrics: [
             { label: 'Upsell Conversion', value: '24.8%', trend: 5 }
         ],
@@ -27,7 +27,7 @@ export const agents = [
         id: 'elon',
         name: 'Elon',
         role: 'Execution & Communication',
-        description: 'Esegue le azioni operative: messaggi agli ospiti, coordinamento e aggiornamenti.',
+        description: 'Executes operational actions: guest messaging, coordination, and updates.',
         metrics: [
             { label: 'Dispatch Validity', value: '100.0%' }
         ],
@@ -38,7 +38,7 @@ export const agents = [
         id: 'james',
         name: 'James',
         role: 'Verification & Closure',
-        description: 'Verifica le prove, chiude l’evento e registra la decisione nel ledger immutabile.',
+        description: 'Verifies evidence, closes the event, and records the decision in the immutable ledger.',
         metrics: [
             { label: 'Policy Adherence', value: '100%', trend: 0 }
         ],
