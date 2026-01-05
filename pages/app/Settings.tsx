@@ -811,14 +811,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </div>
                                     <span className="text-[11px] opacity-70 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
-                                {plan.id !== activePlanId && (
-                                    <div
-                                        onClick={() => handlePlanChange(plan)}
-                                        className="mt-6 px-6 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all cursor-pointer"
-                                    >
-                                        Select Plan
-                                    </div>
-                                )}
+                                <div
+                                    onClick={plan.id !== activePlanId ? () => handlePlanChange(plan) : undefined}
+                                    className={`mt-6 px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${plan.id === activePlanId
+                                        ? 'bg-transparent border border-[var(--color-brand-accent)]/30 text-[var(--color-brand-accent)]/50 cursor-default'
+                                        : 'bg-[var(--color-brand-accent)] text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer'
+                                        }`}
+                                >
+                                    {plan.id === activePlanId ? 'ACTIVE PROTOCOL' : 'Select Plan'}
+                                </div>
                             </button>
                         ))}
                     </div>
