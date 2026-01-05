@@ -814,7 +814,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div
                                     onClick={plan.id !== activePlanId ? () => handlePlanChange(plan) : undefined}
                                     className={`mt-6 px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${plan.id === activePlanId
-                                        ? 'bg-transparent border border-[var(--color-brand-accent)]/30 text-[var(--color-brand-accent)]/50 cursor-default'
+                                        ? 'bg-transparent border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] cursor-default'
                                         : 'bg-[var(--color-brand-accent)] text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer'
                                         }`}
                                 >
