@@ -818,7 +818,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         : 'bg-[var(--color-brand-accent)] text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer'
                                         }`}
                                 >
-                                    {plan.id === activePlanId ? 'ACTIVE PROTOCOL' : 'Select Plan'}
+                                    {plan.id === activePlanId ? 'ACTIVE' : 'Select Plan'}
                                 </div>
                             </button>
                         ))}
@@ -1006,18 +1006,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <div className="p-8">
                         {pendingPlan && (
                             <div className="space-y-6">
-                                <div className="p-6 bg-zinc-900/50 rounded-2xl border border-white/5 text-center">
-                                    <div className="text-[10px] uppercase font-black tracking-widest text-[var(--color-brand-accent)] mb-2 italic">New Execution Tier Protocol</div>
-                                    <div className="text-3xl font-bold text-white mb-4 uppercase tracking-tight">{pendingPlan.name}</div>
-                                    <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-zinc-400 uppercase tracking-widest leading-relaxed">
+                                <div className="p-8 bg-black/90 rounded-2xl border border-white/10 text-center shadow-2xl">
+                                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-[var(--color-brand-accent)] mb-3 italic">New Execution Tier Protocol</div>
+                                    <div className="text-5xl font-black text-white mb-6 uppercase tracking-tighter">{pendingPlan.name}</div>
+                                    <div className="mt-6 pt-6 border-t border-white/5 text-[11px] text-zinc-400 uppercase tracking-[0.15em] leading-relaxed font-medium">
                                         The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-4 mt-4">
                                     <Button
                                         variant="primary"
-                                        className="w-full h-14 !bg-white !text-black font-black uppercase tracking-[0.3em] text-[10px]"
+                                        className="w-full h-14 !bg-[var(--color-brand-accent)] !text-black font-black uppercase tracking-[0.3em] text-[10px] border-none shadow-[0_0_30px_rgba(212,175,55,0.2)]"
                                         onClick={confirmPlanChange}
                                         disabled={isUpdatingPlan}
                                     >
@@ -1025,11 +1025,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </Button>
                                     <Button
                                         variant="ghost"
-                                        className="w-full text-zinc-400 hover:text-zinc-900 uppercase tracking-widest font-black text-[9px]"
+                                        className="w-full text-zinc-500 hover:text-white uppercase tracking-[0.2em] font-black text-[9px] transition-colors"
                                         onClick={() => setShowPlanChangeModal(false)}
                                         disabled={isUpdatingPlan}
                                     >
-                                        ABORT
+                                        ABORT MISSION
                                     </Button>
                                 </div>
                             </div>
