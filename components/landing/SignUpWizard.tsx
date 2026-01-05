@@ -57,9 +57,9 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                 </div>
 
                 {/* Body - Scrollable */}
-                <div className="p-8 overflow-y-auto flex-1">
-                    <div className="flex justify-center mb-10">
-                        <img src="/assets/logo-full.png" alt="Armonyco" className="h-16 object-contain" />
+                <div className="p-6 md:p-8 overflow-y-auto flex-1">
+                    <div className="flex justify-center mb-6">
+                        <img src="/assets/logo-full.png" alt="Armonyco" className="h-12 object-contain" />
                     </div>
                     {step === 1 && (
                         <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300 pt-2">
@@ -113,15 +113,15 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                         </div>
                     )}
                     {step === 3 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="max-w-3xl mx-auto bg-[var(--color-background)] p-5 rounded-xl border border-[var(--color-border)] text-center space-y-3 ui-card">
+                        <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                            <div className="max-w-3xl mx-auto bg-[var(--color-background)] p-4 rounded-xl border border-[var(--color-border)] text-center space-y-2 ui-card">
                                 <div>
-                                    <h2 className="text-lg font-medium text-[var(--color-text-main)] mb-1">ArmoCredits™ System</h2>
-                                    <p className="text-[var(--color-text-muted)] text-sm">The fuel for autonomous governance.</p>
+                                    <h2 className="text-base font-medium text-[var(--color-text-main)]">ArmoCredits™ System</h2>
+                                    <p className="text-[var(--color-text-muted)] text-[10px]">The fuel for autonomous governance.</p>
                                 </div>
-                                <div className="text-xs text-[var(--color-text-muted)] space-y-2 border-t border-[var(--color-border)] pt-4">
-                                    <p>ArmoCredits© power your autonomous governance. Plans include monthly credits with automatic top-up protection.</p>
-                                    <div className="flex justify-center gap-4 font-mono font-medium text-[var(--color-text-main)]">
+                                <div className="text-[10px] text-[var(--color-text-muted)] space-y-1 border-t border-[var(--color-border)] pt-3">
+                                    <p>Plans include monthly credits with automatic top-up protection.</p>
+                                    <div className="flex justify-center gap-4 font-mono font-medium text-[var(--color-text-main)] text-[9px]">
                                         <span>Activation + Execution Model</span>
                                         <span className="text-[var(--color-border)]">|</span>
                                         <span>Monthly Refresh</span>
@@ -129,8 +129,8 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                 </div>
                             </div>
                             <div className="max-w-5xl mx-auto">
-                                <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-6 text-center">Select Institutional Plan</label>
-                                <div className="grid grid-cols-4 gap-4 mb-2">
+                                <label className="block text-[10px] font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-2 text-center">Select Institutional Plan</label>
+                                <div className="grid grid-cols-4 gap-4 mb-1">
                                     {[
                                         { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
                                         { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
@@ -140,12 +140,12 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                         <button
                                             key={plan.amt}
                                             onClick={() => setCredits(plan.amt)}
-                                            className={`py-8 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-1.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)] hover:bg-[var(--color-background)]'}`}
+                                            className={`py-5 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)] hover:bg-[var(--color-background)]'}`}
                                         >
                                             <span className="text-[12px] opacity-40 uppercase tracking-[0.2em] font-black">{plan.name}</span>
                                             <span className="text-[32px] font-bold leading-none mb-0.5">€{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
                                             <span className="text-[8px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
-                                            <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
+                                            <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-3 mt-1.5 w-full">
                                                 <div className="flex flex-col items-center">
                                                     <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
                                                     <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
@@ -156,7 +156,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-center text-[10px] text-[var(--color-text-muted)] mt-6 italic opacity-60">All prices include VAT. Resource allocation reset every 30 days.</p>
+                                <p className="text-center text-[10px] text-[var(--color-text-muted)] mt-4 italic opacity-60">All prices include VAT. Resource allocation reset every 30 days.</p>
                             </div>
                         </div>
                     )}
