@@ -793,7 +793,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         ].map(plan => (
                             <button
                                 key={plan.id}
-                                className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === 1 ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
+                                className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === activePlanId ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
                             >
                                 {plan.id === activePlanId && (
                                     <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
