@@ -14,7 +14,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
     const [step, setStep] = useState(1);
 
     // State Collection
-    const [credits, setCredits] = useState(20);
+    const [credits, setCredits] = useState(10000);
     const [profile, setProfile] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '', terms: false, privacy: false });
     const [org, setOrg] = useState({ name: '', billingEmail: '', language: 'EN', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
     const [billing, setBilling] = useState({ legalName: '', vatNumber: '', fiscalCode: '', address: '', city: '', zip: '', country: '', sdiCode: '', pecEmail: '' });
@@ -120,23 +120,35 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                     <p className="text-[var(--color-text-muted)] text-sm">The fuel for autonomous governance.</p>
                                 </div>
                                 <div className="text-xs text-[var(--color-text-muted)] space-y-2 border-t border-[var(--color-border)] pt-4">
-                                    <p>ArmoCredits© power your autonomous governance. Charges apply for module activation and ongoing operational routines.</p>
+                                    <p>ArmoCredits© power your autonomous governance. Plans include monthly credits with automatic top-up protection.</p>
                                     <div className="flex justify-center gap-4 font-mono font-medium text-[var(--color-text-main)]">
                                         <span>Activation + Execution Model</span>
                                         <span className="text-[var(--color-border)]">|</span>
-                                        <span>Lifetime Validity</span>
+                                        <span>Monthly Refresh</span>
                                     </div>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-4 text-center">Select Initial Credits</label>
                                 <div className="grid grid-cols-4 gap-4 mb-2">
-                                    {[10000, 20000, 50000, 100000].map(amt => (
+                                    {[
+                                        { amt: 10000, price: 39, units: 'Up to 50' },
+                                        { amt: 20000, price: 49, units: 'Up to 200' },
+                                        { amt: 50000, price: 79, units: 'Up to 500' },
+                                        { amt: 100000, price: 129, units: '500+' }
+                                    ].map(plan => (
                                         <button
-                                            key={amt}
-                                            onClick={() => setCredits(amt)}
-                                            className={`py-4 rounded-lg border transition-all text-sm font-medium ${credits === amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
-                                        >{amt.toLocaleString('de-DE')} ArmoCredits©</button>
+                                            key={plan.amt}
+                                            onClick={() => setCredits(plan.amt)}
+                                            className={`py-6 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
+                                        >
+                                            <span className="text-[18px] font-bold leading-none">{plan.amt.toLocaleString('de-DE')}</span>
+                                            <span className="text-[9px] opacity-70 mb-2 uppercase tracking-tighter">ArmoCredits©</span>
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="text-[12px] font-bold text-[var(--color-brand-accent)]">€{plan.price}/mo</span>
+                                                <span className="text-[8px] opacity-40 italic">{plan.units} units</span>
+                                            </div>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
