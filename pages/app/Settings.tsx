@@ -89,6 +89,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const AUTO_TOPUP_THRESHOLD = 10000;
     const AUTO_TOPUP_AMOUNT = 10000;
 
+    // -- Subscription Plan State --
+    const [activePlanId, setActivePlanId] = useState<number>(1);
+    const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
+    const [pendingPlan, setPendingPlan] = useState<{ id: number, name: string, price: number } | null>(null);
+    const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
+
+    const handlePlanChange = (plan: { id: number, name: string, price: number }) => {
+        if (plan.id === activePlanId) return;
+        setPendingPlan(plan);
+        setShowPlanChangeModal(true);
+    };
+
+    const confirmPlanChange = () => {
+        setIsUpdatingPlan(true);
+        setTimeout(() => {
+            if (pendingPlan) {
+                setActivePlanId(pendingPlan.id);
+            }
+            setIsUpdatingPlan(false);
+            setShowPlanChangeModal(false);
+        }, 1500);
+    };
+
     const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
 
     // -- Activation State --
@@ -772,11 +795,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 key={plan.id}
                                 className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === 1 ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
                             >
-                                {plan.id === 1 && (
+                                {plan.id === activePlanId && (
                                     <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
                                 )}
-                                <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
-                                <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
+                                <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
+                                <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
                                     €{plan.price}<span className="text-[18px] opacity-60 font-medium">/mo</span>
                                 </span>
                                 <span className="text-[10px] uppercase font-black opacity-20 tracking-widest mb-4">VAT Included</span>
@@ -788,8 +811,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </div>
                                     <span className="text-[11px] opacity-40 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
-                                {plan.id !== 1 && (
-                                    <div className="mt-6 px-6 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all">
+                                {plan.id !== activePlanId && (
+                                    <div
+                                        onClick={() => handlePlanChange(plan)}
+                                        className="mt-6 px-6 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all cursor-pointer"
+                                    >
                                         Select Plan
                                     </div>
                                 )}
@@ -953,13 +979,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                 </Modal>
 
+                {/* Edit Billing Details Modal */}
                 <Modal
                     isOpen={showBillingModal}
                     onClose={() => setShowBillingModal(false)}
                     title="Edit Billing Details"
                 >
                     <div className="p-6 space-y-5">
-                        {/* Billing Form Inputs */}
                         <div className="space-y-4">
                             <FloatingInput label="Legal Entity Name" value={localBillingDetails.legalName} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })} />
                             <FloatingInput label="VAT Number" value={localBillingDetails.vatNumber} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })} />
@@ -968,6 +994,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="flex justify-end pt-4">
                             <Button onClick={handleSaveBillingDetails}>Save Details</Button>
                         </div>
+                    </div>
+                </Modal>
+
+                {/* Plan Change Modal */}
+                <Modal
+                    isOpen={showPlanChangeModal}
+                    onClose={() => !isUpdatingPlan && setShowPlanChangeModal(false)}
+                    title="Confirm Protocol Change"
+                >
+                    <div className="p-8">
+                        {pendingPlan && (
+                            <div className="space-y-6">
+                                <div className="p-6 bg-zinc-900/50 rounded-2xl border border-white/5 text-center">
+                                    <div className="text-[10px] uppercase font-black tracking-widest text-[var(--color-brand-accent)] mb-2 italic">New Execution Tier Protocol</div>
+                                    <div className="text-3xl font-bold text-white mb-1 uppercase tracking-tight">{pendingPlan.name}</div>
+                                    <div className="text-xl font-numbers text-[var(--color-brand-accent)] font-black">€{pendingPlan.price} <span className="text-xs opacity-40 italic">/ monthly</span></div>
+                                    <div className="mt-4 pt-4 border-t border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest leading-relaxed">
+                                        The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <Button
+                                        variant="primary"
+                                        className="w-full h-14 !bg-white !text-black font-black uppercase tracking-[0.3em] text-[10px]"
+                                        onClick={confirmPlanChange}
+                                        disabled={isUpdatingPlan}
+                                    >
+                                        {isUpdatingPlan ? <RefreshCw className="animate-spin mr-2" /> : 'AUTHORIZE DEPLOYMENT'}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full text-zinc-600 hover:text-white uppercase tracking-widest font-black text-[9px]"
+                                        onClick={() => setShowPlanChangeModal(false)}
+                                        disabled={isUpdatingPlan}
+                                    >
+                                        ABORT
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Modal>
             </div>
