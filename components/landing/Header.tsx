@@ -117,7 +117,6 @@ export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp, onNavigateSol
                         <Button
                             variant="primary"
                             fullWidth
-                            rightIcon={<ArrowRight size={18} />}
                             onClick={() => { onSignUp(); setIsMobileMenuOpen(false); }}
                         >
                             Start Now
