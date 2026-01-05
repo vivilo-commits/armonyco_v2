@@ -775,7 +775,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 {plan.id === 1 && (
                                     <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
                                 )}
-                                <span className="text-[14px] opacity-40 mb-1 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
                                 <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
                                     €{plan.price}<span className="text-[18px] opacity-60 font-medium">/mo</span>
                                 </span>

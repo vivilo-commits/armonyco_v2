@@ -142,7 +142,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                             onClick={() => setCredits(plan.amt)}
                                             className={`py-6 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
                                         >
-                                            <span className="text-[12px] opacity-40 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                            <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'}`}>{plan.name}</span>
                                             <span className="text-[32px] font-bold leading-none mb-0">€{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
                                             <span className="text-[8px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
                                             <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
