@@ -748,37 +748,55 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </Card>
 
                 </div>
-                <div className="pt-10">
-                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30 mb-6 italic flex items-center gap-3">
-                        <Layers size={14} className="text-[var(--color-brand-accent)]" />
-                        Institutional Subscription Plans
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="pt-16 pb-10">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 flex items-center justify-center">
+                                <Layers size={24} className="text-[var(--color-brand-accent)]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-light text-white">Institutional Subscription Plans</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-1">Upgrade or scale your autonomous fleet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { id: 1, amt: 10000, price: 39, units: 'Up to 50' },
-                            { id: 2, amt: 20000, price: 49, units: 'Up to 200' },
-                            { id: 3, amt: 50000, price: 79, units: 'Up to 500' },
-                            { id: 4, amt: 100000, price: 129, units: '500+' }
+                            { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
+                            { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
+                            { id: 3, name: 'Elite', amt: 50000, price: 79, units: 'Up to 500' },
+                            { id: 4, name: 'VIP', amt: 100000, price: 129, units: '500+' }
                         ].map(plan => (
                             <button
                                 key={plan.id}
-                                className={`py-6 rounded-xl border transition-all text-sm font-medium flex flex-col items-center justify-center gap-0.5 relative group overflow-hidden ${plan.id === 1 ? 'bg-white/5 border-[var(--color-brand-accent)]' : 'bg-black/20 border-white/5 hover:border-white/10'}`}
+                                className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === 1 ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
                             >
                                 {plan.id === 1 && (
-                                    <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[7px] font-black uppercase px-2 py-0.5 rounded-bl-lg">Current Tier</div>
+                                    <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
                                 )}
-                                <span className="text-[10px] opacity-40 mb-1 uppercase tracking-widest font-black">Plan {plan.id}</span>
-                                <span className="text-[20px] font-bold leading-none mb-2 text-white">€{plan.price}<span className="text-[10px] opacity-60">/mo</span></span>
-                                <div className="flex flex-col items-center gap-0.5 border-t border-white/5 pt-2 mt-1 w-full">
-                                    <span className="text-[9px] font-bold uppercase tracking-tight text-white/80">Includes {plan.amt.toLocaleString('de-DE')}</span>
-                                    <span className="text-[7px] opacity-40 uppercase tracking-widest italic">{plan.units} units</span>
+                                <span className="text-[11px] opacity-40 mb-1 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                <span className={`text-[32px] font-bold leading-none mb-1 ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
+                                    €{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span>
+                                </span>
+                                <span className="text-[8px] uppercase font-black opacity-20 tracking-widest mb-4">VAT Included</span>
+                                <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-6 mt-2 w-full">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">Includes</span>
+                                        <span className="text-[16px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
+                                        <span className="text-[8px] opacity-30 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                    </div>
+                                    <span className="text-[9px] opacity-40 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
                                 {plan.id !== 1 && (
-                                    <div className="mt-4 px-3 py-1 bg-white/5 rounded text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-white/60 transition-colors">Select for Change</div>
+                                    <div className="mt-6 px-6 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all">
+                                        Select Plan
+                                    </div>
                                 )}
                             </button>
                         ))}
                     </div>
+                    <p className="mt-8 text-center text-[10px] text-zinc-600 uppercase font-bold tracking-widest italic opacity-40">All payments are processed securely. VAT included in all institutional tiers.</p>
                 </div>
 
                 {/* CONSUMPTION TABLE */}
