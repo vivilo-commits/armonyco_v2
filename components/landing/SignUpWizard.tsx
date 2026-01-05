@@ -47,7 +47,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
             isOpen={isOpen}
             onClose={onClose}
             title="Start now"
-            width="2xl"
+            width="full"
             showCloseButton={true}
         >
             <div className="flex flex-col h-auto max-h-[85vh] md:max-h-none">
@@ -128,9 +128,9 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                     </div>
                                 </div>
                             </div>
-                            <div className="max-w-7xl mx-auto">
+                            <div className="max-w-5xl mx-auto">
                                 <label className="block text-xs font-bold text-[var(--color-text-subtle)] uppercase tracking-wider mb-6 text-center">Select Institutional Plan</label>
-                                <div className="grid grid-cols-4 gap-6 mb-2">
+                                <div className="grid grid-cols-4 gap-4 mb-2">
                                     {[
                                         { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
                                         { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
@@ -140,18 +140,18 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                         <button
                                             key={plan.amt}
                                             onClick={() => setCredits(plan.amt)}
-                                            className={`py-8 px-4 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-1.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)] hover:bg-[var(--color-background)]'}`}
+                                            className={`py-8 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-1.5 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)] hover:bg-[var(--color-background)]'}`}
                                         >
-                                            <span className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-black">{plan.name}</span>
-                                            <span className="text-[28px] font-bold leading-none mb-0.5">€{plan.price}<span className="text-[12px] opacity-60 font-medium">/mo</span></span>
-                                            <span className="text-[7px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
+                                            <span className="text-[12px] opacity-40 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                            <span className="text-[32px] font-bold leading-none mb-0.5">€{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
+                                            <span className="text-[8px] uppercase font-black opacity-30 tracking-widest mb-1.5">VAT Incl.</span>
                                             <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
                                                 <div className="flex flex-col items-center">
-                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
-                                                    <span className="text-[15px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
-                                                    <span className="text-[8px] opacity-40 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
+                                                    <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
+                                                    <span className="text-[9px] opacity-40 font-black uppercase tracking-widest">ArmoCredits©</span>
                                                 </div>
-                                                <span className="text-[8px] opacity-40 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
+                                                <span className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
                                             </div>
                                         </button>
                                     ))}

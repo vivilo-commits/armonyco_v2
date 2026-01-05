@@ -775,18 +775,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 {plan.id === 1 && (
                                     <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
                                 )}
-                                <span className="text-[11px] opacity-40 mb-1 uppercase tracking-[0.2em] font-black">{plan.name}</span>
-                                <span className={`text-[32px] font-bold leading-none mb-1 ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
-                                    €{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span>
+                                <span className="text-[14px] opacity-40 mb-1 uppercase tracking-[0.2em] font-black">{plan.name}</span>
+                                <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === 1 ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
+                                    €{plan.price}<span className="text-[18px] opacity-60 font-medium">/mo</span>
                                 </span>
-                                <span className="text-[8px] uppercase font-black opacity-20 tracking-widest mb-4">VAT Included</span>
-                                <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-6 mt-2 w-full">
+                                <span className="text-[10px] uppercase font-black opacity-20 tracking-widest mb-4">VAT Included</span>
+                                <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-8 mt-2 w-full">
                                     <div className="flex flex-col items-center">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">Includes</span>
-                                        <span className="text-[16px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
-                                        <span className="text-[8px] opacity-30 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                        <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">Includes</span>
+                                        <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
+                                        <span className="text-[10px] opacity-30 font-black uppercase tracking-widest">ArmoCredits©</span>
                                     </div>
-                                    <span className="text-[9px] opacity-40 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
+                                    <span className="text-[11px] opacity-40 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
                                 {plan.id !== 1 && (
                                     <div className="mt-6 px-6 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white group-hover:bg-[var(--color-brand-accent)] group-hover:text-black transition-all">
