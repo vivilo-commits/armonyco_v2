@@ -43,6 +43,7 @@ interface SidebarProps {
   setIsMobileOpen: (isOpen: boolean) => void;
   userProfile: UserProfile;
   organization: Organization;
+  activePlanId?: number;
 }
 
 type MenuItem = {
@@ -64,7 +65,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen,
   setIsMobileOpen,
   userProfile,
-  organization
+  organization,
+  activePlanId = 1
 }) => {
   const [expandedMenu, setExpandedMenu] = useState<string | null>('governance');
 
@@ -142,7 +144,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const userInitials = `${userProfile.firstName?.[0] || ''}${userProfile.lastName?.[0] || ''}`.toUpperCase();
+  const userInitials = `${userProfile?.firstName?.[0] || 'A'}${userProfile?.lastName?.[0] || 'C'}`.toUpperCase();
+
+  const getPlanName = (id: number) => {
+    switch (id) {
+      case 1: return 'Starter Tier';
+      case 2: return 'Pro Tier';
+      case 3: return 'Elite Tier';
+      case 4: return 'VIP Tier';
+      default: return 'Institutional Tier';
+    }
+  };
 
   return (
     <>
@@ -197,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 ${isCollapsed ? 'justify-center h-12 w-12 mx-auto' : 'px-4 py-3 text-left'}
                                 ${isActive
                       ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-main)] shadow-inner'
-                      : 'text-[var(--color-text-main)]/80 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-main)]'
+                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-main)]'
                     }
                             `}
                   title={isCollapsed ? item.label : undefined}
@@ -237,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             w-full text-left py-2 px-3 rounded-lg text-xs transition-all flex justify-between items-center
                                             ${activeView === child.id
                             ? 'text-[var(--color-text-main)] bg-[var(--color-surface-active)] font-medium'
-                            : 'text-[var(--color-text-main)]/70 hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)]'
+                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)]'
                           }
                                         `}
                       >
@@ -261,14 +273,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!isCollapsed ? (
             <button
               onClick={() => setView('settings-profile')}
-              className="flex items-center gap-3 mb-4 w-full text-left p-2 rounded-xl border border-transparent hover:border-white/10 hover:bg-white/[0.03] transition-all group"
+              className="flex items-center gap-3 mb-4 w-full text-left p-2 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all group shadow-sm"
             >
-              <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-border)] flex items-center justify-center text-xs font-bold text-[var(--color-text-main)] group-hover:scale-110 transition-transform">
-                {userProfile.photo ? <img src={userProfile.photo} className="w-full h-full rounded-full object-cover" /> : userInitials}
+              <div className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-[10px] font-black text-white group-hover:scale-105 transition-transform overflow-hidden">
+                {userProfile?.photo ? (
+                  <img src={userProfile.photo} className="w-full h-full object-cover" />
+                ) : (
+                  userInitials
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-[var(--color-text-main)] truncate group-hover:text-[var(--color-brand-accent)] transition-colors">{userProfile.firstName} {userProfile.lastName}</div>
-                <div className="text-[10px] text-[var(--color-text-main)]/60 truncate uppercase font-bold tracking-widest">{organization.name}</div>
+                <div className="text-[11px] font-black text-white uppercase tracking-tight truncate">
+                  {userProfile?.firstName} {userProfile?.lastName}
+                </div>
+                <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.2em] mt-0.5 truncate flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand-accent)] animate-pulse shrink-0" />
+                  {getPlanName(activePlanId)}
+                </div>
               </div>
             </button>
           ) : (
@@ -285,16 +306,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onLogout}
             className={`
-                    flex items-center justify-center gap-2 w-full rounded-xl transition-all duration-300 group
+                    flex items-center justify-center gap-3 w-full rounded-full transition-all duration-300 group
                     ${isCollapsed
-                ? 'h-10 w-10 mx-auto text-[var(--color-text-main)]/70 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
-                : 'py-2.5 bg-white hover:bg-[var(--color-danger)] text-[var(--color-text-main)] hover:text-white border-2 border-[var(--color-border)] hover:border-transparent'
+                ? 'h-10 w-10 mx-auto text-zinc-400 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/5'
+                : 'py-3 bg-transparent border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] hover:bg-[var(--color-brand-accent)] hover:text-black hover:shadow-[0_0_15px_rgba(197,165,114,0.2)]'
               }
                 `}
             title="Logout"
           >
-            <LogOut size={18} />
-            {!isCollapsed && <span className="text-xs font-bold uppercase tracking-wider">Logout</span>}
+            <LogOut size={isCollapsed ? 18 : 14} strokeWidth={2.5} />
+            {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.3em]">Logout</span>}
           </button>
         </div>
 

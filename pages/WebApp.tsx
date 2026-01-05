@@ -65,6 +65,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   });
 
   const [currentCredits, setCurrentCredits] = useState(initialData?.credits || 12500);
+  const [activePlanId, setActivePlanId] = useState(1);
 
   // Mock Notifications
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -142,6 +143,8 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
           onUpdateBillingDetails={(b) => setBillingDetails({ ...billingDetails, ...b })}
           currentCredits={currentCredits}
           onUpdateCredits={setCurrentCredits}
+          activePlanId={activePlanId}
+          onUpdatePlanId={setActivePlanId}
         />;
 
       case 'documentation': return <DocumentationView />;
@@ -166,6 +169,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
         setIsMobileOpen={setIsMobileOpen}
         userProfile={userProfile}
         organization={organization}
+        activePlanId={activePlanId}
       />
 
       <main className={`flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? 'md:ml-[80px]' : 'md:ml-[280px]'}`}>

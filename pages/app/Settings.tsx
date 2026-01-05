@@ -17,6 +17,8 @@ interface SettingsViewProps {
     onUpdateBillingDetails: (data: Partial<BillingDetails>) => void;
     currentCredits: number;
     onUpdateCredits: (amount: number) => void;
+    activePlanId: number;
+    onUpdatePlanId: (id: number) => void;
 }
 
 type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
@@ -33,7 +35,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     billingDetails,
     onUpdateBillingDetails,
     currentCredits,
-    onUpdateCredits
+    onUpdateCredits,
+    activePlanId,
+    onUpdatePlanId
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
 
@@ -90,7 +94,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const AUTO_TOPUP_AMOUNT = 10000;
 
     // -- Subscription Plan State --
-    const [activePlanId, setActivePlanId] = useState<number>(1);
     const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
     const [pendingPlan, setPendingPlan] = useState<{ id: number, name: string, price: number } | null>(null);
     const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
@@ -105,7 +108,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setIsUpdatingPlan(true);
         setTimeout(() => {
             if (pendingPlan) {
-                setActivePlanId(pendingPlan.id);
+                onUpdatePlanId(pendingPlan.id);
             }
             setIsUpdatingPlan(false);
             setShowPlanChangeModal(false);
