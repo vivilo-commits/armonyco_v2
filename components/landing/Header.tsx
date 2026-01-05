@@ -110,7 +110,6 @@ export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp, onNavigateSol
                         <Button
                             variant="ghost"
                             fullWidth
-                            leftIcon={<LogIn size={18} />}
                             onClick={() => { onLogin(); setIsMobileMenuOpen(false); }}
                         >
                             Sign In
