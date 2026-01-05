@@ -70,8 +70,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                     </button>
                     <button onClick={() => onLogin()} className="w-full py-2.5 border border-[var(--color-border)] rounded-md font-medium text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] bg-[var(--color-surface)] transition-colors flex items-center justify-center gap-3 hover:border-[var(--color-border-hover)]">
                         {/* Original Apple SVG */}
-                        <svg className="w-5 h-5 mb-0.5" viewBox="0 0 384 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-11.7-111.9zM263 60.1C289 30.2 284.6 3.1 247.3 0c-4.1 36.9-29.3 64.1-52.7 89.1-30.8 28.3-56.9 29.8-56.9 31.8 40.5 2.2 68.4-31.5 86.3-55.9z" />
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z" />
                         </svg>
                         Sign in with Apple
                     </button>
