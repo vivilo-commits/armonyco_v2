@@ -197,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 ${isCollapsed ? 'justify-center h-12 w-12 mx-auto' : 'px-4 py-3 text-left'}
                                 ${isActive
                       ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-main)] shadow-inner'
-                      : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-main)]'
+                      : 'text-[var(--color-text-main)]/80 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-main)]'
                     }
                             `}
                   title={isCollapsed ? item.label : undefined}
@@ -237,7 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             w-full text-left py-2 px-3 rounded-lg text-xs transition-all flex justify-between items-center
                                             ${activeView === child.id
                             ? 'text-[var(--color-text-main)] bg-[var(--color-surface-active)] font-medium'
-                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)]'
+                            : 'text-[var(--color-text-main)]/70 hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-hover)]'
                           }
                                         `}
                       >
@@ -268,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-[var(--color-text-main)] truncate group-hover:text-[var(--color-brand-accent)] transition-colors">{userProfile.firstName} {userProfile.lastName}</div>
-                <div className="text-[10px] text-[var(--color-text-muted)] truncate">{organization.name}</div>
+                <div className="text-[10px] text-[var(--color-text-main)]/60 truncate uppercase font-bold tracking-widest">{organization.name}</div>
               </div>
             </button>
           ) : (
@@ -287,8 +287,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`
                     flex items-center justify-center gap-2 w-full rounded-xl transition-all duration-300 group
                     ${isCollapsed
-                ? 'h-10 w-10 mx-auto text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
-                : 'py-2.5 bg-[var(--color-surface-hover)] hover:bg-[var(--color-danger)] text-[var(--color-text-muted)] hover:text-white border border-[var(--color-border)] hover:border-transparent'
+                ? 'h-10 w-10 mx-auto text-[var(--color-text-main)]/70 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
+                : 'py-2.5 bg-white hover:bg-[var(--color-danger)] text-[var(--color-text-main)] hover:text-white border-2 border-[var(--color-border)] hover:border-transparent'
               }
                 `}
             title="Logout"
