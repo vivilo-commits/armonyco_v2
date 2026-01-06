@@ -136,13 +136,7 @@ export const Addendums: React.FC = () => {
         </ul>
       </AddendumCard>
 
-      <div className="mt-24 p-12 border border-[var(--color-brand-accent)]/30 bg-[var(--color-background)] rounded-xl text-center shadow-sm">
-        <h3 className="text-[var(--color-brand-accent)] uppercase tracking-widest text-sm mb-4">The Compass Line (Non-Negotiable Filter)</h3>
-        <p className="text-2xl text-[var(--color-text-main)] font-light italic mb-6">"If Armonyco solves a problem that can be bypassed by a human, it isn’t Armonyco."</p>
-        <p className="text-[var(--color-text-muted)]">
-          Armonyco exists only where: execution must be provable, value must be certifiable, risk must be measurable.
-        </p>
-      </div>
+
     </section>
   );
 };
