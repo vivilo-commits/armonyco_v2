@@ -80,11 +80,27 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             cta: "Deploy Decision OS for PM",
             products: [
                 { name: 'Pre-arrival Info', code: 'CC-01', agent: 'Lara + Amelia', category: 'GUEST', status: 'Governed' },
-                { name: 'Check-in + Access', code: 'CC-02', agent: 'James + Amelia', category: 'GUEST', status: 'Governed' },
-                { name: 'Arrival Support (WA)', code: 'CC-03', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
+                { name: 'Check-in Instructions + Access', code: 'CC-02', agent: 'James + Amelia', category: 'GUEST', status: 'Governed' },
+                { name: 'Wi-Fi & House Manual (Top FAQ)', code: 'CC-03', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
+                { name: 'Checkout + Deposits/Tax', code: 'CC-04', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
+                { name: 'Issue Triage', code: 'CC-05', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
+                { name: 'Multi-language + Brand Tone', code: 'CC-06', agent: 'Lara', category: 'GUEST', status: 'Governed' },
+                { name: 'Orphan Days / Stay Extension', code: 'CC-07', agent: 'James', category: 'REVENUE', status: 'Autonomous' },
                 { name: 'Late Check-out Upsell', code: 'CC-08', agent: 'James + Amelia', category: 'REVENUE', status: 'Autonomous' },
+                { name: 'Transfer / Experience Upsell', code: 'CC-09', agent: 'James', category: 'REVENUE', status: 'Autonomous' },
                 { name: 'Maintenance Triage', code: 'CC-10', agent: 'Amelia + Elon', category: 'OPS', status: 'Matrix Active' },
-                { name: 'Noise Triage', code: 'PB-03', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' }
+                { name: 'Housekeeping Exceptions', code: 'CC-11', agent: 'Amelia + Elon', category: 'OPS', status: 'Matrix Active' },
+                { name: 'Human Escalation Pack', code: 'CC-12', agent: 'Amelia', category: 'OPS', status: 'Governed' },
+                { name: 'Guest can’t enter (Smart Lock)', code: 'PB-01', agent: 'James', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Wi-Fi not working', code: 'PB-02', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Noise / complaint', code: 'PB-03', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'AC/Heating not working', code: 'PB-04', agent: 'Amelia + Elon', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'No hot water', code: 'PB-05', agent: 'Amelia + Elon', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Cleaning not satisfactory', code: 'PB-06', agent: 'Amelia + Elon', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Early check-in request', code: 'PB-07', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Late checkout request', code: 'PB-08', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Missing payment / city tax', code: 'PB-09', agent: 'James', category: 'INCIDENT', status: 'Rapid Dispatch' },
+                { name: 'Missing ID / document', code: 'PB-10', agent: 'Lara', category: 'INCIDENT', status: 'Rapid Dispatch' }
             ]
         } as IndustryData,
         ins: {
@@ -161,6 +177,54 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
     const renderRegistry = () => {
         if (!industry) return null;
         const products = industries[industry].products;
+
+        // Grouping for PM specifically for "Complete Registry" feel
+        if (industry === 'pm') {
+            const categories = ['GUEST', 'REVENUE', 'OPS', 'INCIDENT'];
+            return (
+                <div className="space-y-16">
+                    {categories.map(cat => (
+                        <div key={cat} className="space-y-8">
+                            <div className="flex items-center gap-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 shrink-0">
+                                    {cat === 'INCIDENT' ? 'Incident Response' :
+                                        cat === 'OPS' ? 'Operational Efficiency' :
+                                            cat === 'REVENUE' ? 'Revenue Generation' : 'Guest Experience'}
+                                </h4>
+                                <div className="h-px bg-zinc-100 flex-1"></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {products.filter(p => p.category === cat).map(item => (
+                                    <div key={item.code} className="p-6 rounded-[2rem] bg-white border-2 border-zinc-50 hover:border-[var(--color-brand-accent)]/20 hover:shadow-xl transition-all group flex flex-col justify-between h-full relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ArrowRight size={10} className="text-[var(--color-brand-accent)]" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className="text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-widest">{item.code}</span>
+                                                <span className={`text-[7px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest ${item.status === 'Governed' ? 'bg-emerald-500/10 text-emerald-600' :
+                                                    item.status === 'Autonomous' ? 'bg-[var(--color-brand-accent)]/10 text-[var(--color-brand-accent)]' :
+                                                        'bg-indigo-500/10 text-indigo-600'
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-[12px] font-bold text-zinc-900 mb-2 leading-tight group-hover:text-[var(--color-brand-accent)] transition-colors">{item.name}</h4>
+                                            <div className="flex items-center gap-2 mt-auto pt-4 border-t border-zinc-50/50">
+                                                <div className="w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center text-[8px] font-bold text-zinc-400">
+                                                    {item.agent.charAt(0)}
+                                                </div>
+                                                <p className="text-[9px] text-zinc-400 font-medium italic">by {item.agent}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
 
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -321,16 +385,46 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
                                     {industries[industry].bullets.map((bullet, i) => (
-                                        <div key={i} className="flex gap-4 p-6 rounded-2xl bg-zinc-50/50 border border-zinc-100 items-center">
+                                        <div key={i} className="flex gap-4 p-6 rounded-2xl bg-white border border-zinc-100 items-center shadow-sm">
                                             <div className="p-2 rounded-lg bg-[var(--color-brand-accent)]/10">
                                                 <CheckCircle className="text-[var(--color-brand-accent)]" size={18} />
                                             </div>
-                                            <span className="text-zinc-700 font-bold text-sm">{bullet}</span>
+                                            <span className="text-zinc-900 font-bold text-sm">{bullet}</span>
                                         </div>
                                     ))}
                                 </div>
+
+                                {industry === 'pm' && (
+                                    <div className="mb-24 p-12 rounded-[3rem] bg-zinc-50 border border-zinc-200">
+                                        <div className="flex flex-col lg:flex-row gap-12 items-center">
+                                            <div className="lg:w-1/3 text-center lg:text-left">
+                                                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--color-brand-accent)] mb-4">Protocol Standards</h3>
+                                                <h4 className="text-3xl font-light text-zinc-900 leading-tight mb-6">Built for scales where memory fails.</h4>
+                                                <p className="text-sm text-zinc-500 leading-relaxed">
+                                                    Institutional governance isn't about better tools; it's about immutable sequences that produce auditable truth every single day.
+                                                </p>
+                                            </div>
+                                            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-6 w-full">
+                                                {[
+                                                    { label: "AVG Response", value: "< 5m", sub: "Global SLA" },
+                                                    { label: "Gov. Accuracy", value: "99.9%", sub: "Audited cycles" },
+                                                    { label: "Data Retention", value: "7Y", sub: "Immutable Log" },
+                                                    { label: "Integration", value: "PMS", sub: "Real-time sync" },
+                                                    { label: "Dispatch", value: "Auto", sub: "Zero lag time" },
+                                                    { label: "Audit Trait", value: "Full", sub: "Legal evidence" }
+                                                ].map((spec, i) => (
+                                                    <div key={i} className="p-6 rounded-2xl bg-white border border-zinc-100 text-center">
+                                                        <div className="text-2xl font-light text-zinc-900 mb-1">{spec.value}</div>
+                                                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1">{spec.label}</div>
+                                                        <div className="text-[8px] text-zinc-400 italic">{spec.sub}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="mb-12 flex items-center justify-between border-b border-zinc-100 pb-8">
                                     <div>
