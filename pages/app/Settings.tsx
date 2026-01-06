@@ -24,7 +24,7 @@ interface SettingsViewProps {
 type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
 
 // --- Helper for Cost ---
-const COST_PER_CREDIT = 0.10; // Keeping for logic, but UI will not show Euros
+const COST_PER_CREDIT = 0.001; // €1 per 1,000 credits institutional rate
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
     activeView,
@@ -821,10 +821,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
-                            { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
-                            { id: 3, name: 'Elite', amt: 50000, price: 79, units: 'Up to 500' },
-                            { id: 4, name: 'VIP', amt: 100000, price: 129, units: '500+' }
+                            { id: 1, name: 'Starter', amt: 250000, price: 249, units: 'Up to 50' },
+                            { id: 2, name: 'Pro', amt: 1000000, price: 999, units: 'Up to 200' },
+                            { id: 3, name: 'Elite', amt: 2500000, price: 2499, units: 'Up to 500' },
+                            { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
                         ].map(plan => (
                             <button
                                 key={plan.id}
@@ -834,15 +834,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
                                 )}
                                 <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
-                                <span className={`text-[42px] font-bold leading-none mb-1 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
-                                    €{plan.price}<span className="text-[18px] opacity-60 font-medium">/mo</span>
-                                </span>
-                                <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-4">VAT Included</span>
+
+                                {plan.isCustom ? (
+                                    <div className="flex flex-col items-center my-3">
+                                        <span className={`text-[24px] font-bold leading-tight text-center ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>Contact Us</span>
+                                        <span className="text-[10px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span className={`text-[42px] font-bold leading-none mb-0 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
+                                            €{plan.price.toLocaleString('de-DE')}<span className="text-[18px] opacity-60 font-medium">/mo</span>
+                                        </span>
+                                        <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-1.5 leading-none">VAT Included</span>
+                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mb-4">~ €5/unit</span>
+                                    </>
+                                )}
+
                                 <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-8 mt-2 w-full">
                                     <div className="flex flex-col items-center">
-                                        <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">Includes</span>
-                                        <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
-                                        <span className="text-[10px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                        <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">
+                                            {plan.isCustom ? 'Scope' : 'Includes'}
+                                        </span>
+                                        {!plan.isCustom ? (
+                                            <>
+                                                <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
+                                                <span className="text-[10px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                            </>
+                                        ) : (
+                                            <span className="text-[12px] font-bold tracking-tight text-white/90 text-center px-4">Institutional Project</span>
+                                        )}
                                     </div>
                                     <span className="text-[11px] opacity-70 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
@@ -935,7 +955,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <p className="text-sm text-[var(--color-text-muted)] mb-6">Select a credit pack to add to your balance. Funds are available immediately.</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            {[10000, 20000, 50000, 100000].map(amount => (
+                            {[100000, 250000, 500000, 1000000].map(amount => (
                                 <button
                                     key={amount}
                                     onClick={() => setSelectedPack(amount)}
@@ -951,6 +971,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         {amount.toLocaleString('de-DE')}
                                     </span>
                                     <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-2">ArmoCredits©</span>
+                                    <span className="text-[11px] font-bold text-[var(--color-brand-primary)] mt-1">€{(amount / 1000).toLocaleString('de-DE')}</span>
                                 </button>
                             ))}
                         </div>
