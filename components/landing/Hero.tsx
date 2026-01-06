@@ -67,7 +67,7 @@ export const Hero = ({ onStartNow }: { onStartNow?: () => void }) => {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-8 justify-center lg:justify-start items-center pt-4">
-                                <AnimatedButton onClick={onStartNow} text="Understand the Decision OS →" width="320px" expanded={true} className="shadow-[0_0_30px_rgba(212,175,55,0.3)]" />
+                                <AnimatedButton onClick={onStartNow} text="Schedule a demo →" width="320px" expanded={true} className="shadow-[0_0_30px_rgba(212,175,55,0.3)]" />
                             </div>
 
                             <div className="pt-6 flex flex-col items-center lg:items-start gap-4 opacity-100 transition-all duration-500">

@@ -5,11 +5,12 @@ import { Button } from '../ui/Button';
 interface HeaderProps {
     onLogin: () => void;
     onSignUp: () => void;
+    onContact: () => void;
     onNavigateSolutions?: (industry?: 'pm' | 'ins' | 'inv' | 'ent') => void;
     onNavigateSection?: (sectionId: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp, onNavigateSolutions, onNavigateSection }) => {
+export const Header: React.FC<HeaderProps> = ({ onLogin, onSignUp, onContact, onNavigateSolutions, onNavigateSection }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (

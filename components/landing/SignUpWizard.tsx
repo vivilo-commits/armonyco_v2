@@ -3,15 +3,18 @@ import { ChevronLeft, ChevronRight, CheckCircle } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { authService } from '../../src/services/auth.service';
 
 interface SignUpWizardProps {
     isOpen: boolean;
     onClose: () => void;
+    onContact: () => void;
     onComplete: (data: any) => void;
 }
 
-export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onComplete }) => {
+export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onContact, onComplete }) => {
     const [step, setStep] = useState(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State Collection
     const [credits, setCredits] = useState(10000);
@@ -22,24 +25,33 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
     const nextStep = () => setStep(step + 1);
     const prevStep = () => setStep(step - 1);
 
-    const handleComplete = () => {
-        onComplete({
-            userProfile: {
-                firstName: profile.firstName,
-                lastName: profile.lastName,
-                email: profile.email,
-                phone: profile.phone,
-                photo: null
-            },
-            organization: {
-                name: org.name,
-                billingEmail: org.billingEmail,
-                language: org.language,
-                timezone: org.timezone
-            },
-            billingDetails: billing,
-            credits: credits
-        });
+    const handleComplete = async () => {
+        setIsSubmitting(true);
+        try {
+            const data = {
+                userProfile: {
+                    firstName: profile.firstName,
+                    lastName: profile.lastName,
+                    email: profile.email,
+                    phone: profile.phone,
+                    photo: null
+                },
+                organization: {
+                    name: org.name,
+                    billingEmail: org.billingEmail,
+                    language: org.language,
+                    timezone: org.timezone
+                },
+                billingDetails: billing,
+                credits: credits
+            };
+            const response = await authService.signUp(data);
+            onComplete(response);
+        } catch (error) {
+            console.error('Registration failed', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -139,10 +151,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                     ].map(plan => (
                                         <button
                                             key={plan.id}
-                                            onClick={() => setCredits(plan.amt)}
-                                            className={`py-6 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
+                                            onClick={() => {
+                                                if (plan.isCustom) {
+                                                    onContact();
+                                                } else {
+                                                    setCredits(plan.amt);
+                                                }
+                                            }}
+                                            className={`py-6 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${credits === plan.amt && !plan.isCustom ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
                                         >
-                                            <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'}`}>{plan.name}</span>
+                                            <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${credits === plan.amt && !plan.isCustom ? 'text-white' : 'text-[var(--color-brand-accent)]'}`}>{plan.name}</span>
                                             {plan.isCustom ? (
                                                 <div className="flex flex-col items-center my-3">
                                                     <span className="text-[18px] font-bold leading-tight text-center">Contact Us</span>
@@ -157,7 +175,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                             )}
                                             <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
                                                 <div className="flex flex-col items-center">
-                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>
+                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt && !plan.isCustom ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>
                                                         {plan.isCustom ? 'Scope' : 'Includes'}
                                                     </span>
                                                     {!plan.isCustom ? (
@@ -207,6 +225,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                             variant="primary"
                             rightIcon={<CheckCircle size={18} />}
                             onClick={handleComplete}
+                            isLoading={isSubmitting}
                         >
                             Activate
                         </Button>

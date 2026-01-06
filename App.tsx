@@ -1,20 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LandingPage } from './pages/LandingPage';
 import { SolutionsPage } from './pages/SolutionsPage';
 import { WebApp } from './pages/WebApp';
+import { validateConfig } from './src/config/api.config';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    validateConfig();
+    const token = localStorage.getItem('armonyco_token');
+    if (token) {
+      // In a real app, we would verify the token here
+      setIsAuthenticated(true);
+    }
+  }, []);
   type ViewState = 'landing' | 'solutions' | 'solutions-pm' | 'solutions-ins' | 'solutions-inv' | 'solutions-ent';
   const [currentView, setCurrentView] = useState<ViewState>('landing');
 
   const handleLogin = (data?: any) => {
-    setUserData(data);
+    if (data?.token) {
+      localStorage.setItem('armonyco_token', data.token);
+    }
+    setUserData(data?.user || data);
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('armonyco_token');
     setIsAuthenticated(false);
     setUserData(null);
     setCurrentView('landing');
