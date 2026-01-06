@@ -385,13 +385,13 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
 
                                         {industry === 'pm' && (
                                             <div className="mb-24 relative">
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                                                    <div className="order-2 lg:order-1">
-                                                        <div className="relative rounded-[3rem] overflow-hidden border border-zinc-200 shadow-2xl">
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
+                                                    <div className="order-2 lg:order-1 flex">
+                                                        <div className="relative rounded-[3rem] overflow-hidden border border-zinc-200 shadow-2xl w-full">
                                                             <img
-                                                                src="/brain/f3d84ce4-17db-417a-a95c-63b6722a202c/pm_operational_harmony_visual_1767692077385.png"
+                                                                src="/assets/solutions/decision-os-pm.png"
                                                                 alt="The Decision OS"
-                                                                className="w-full aspect-square object-cover"
+                                                                className="w-full h-full object-cover"
                                                             />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent"></div>
                                                             <div className="absolute bottom-10 left-10 right-10">
