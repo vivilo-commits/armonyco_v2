@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-6">
             <img src="/assets/logo-footer.png" alt="Armonyco" className="h-36 object-contain" />
             <p className="text-stone-400 text-sm leading-relaxed">
-              The AI Trust & Control Layer for operational governance.
+              The Operational Decision OS™ that governs flexible hospitality. Turning operational chaos into predictable cashflow.
             </p>
           </div>
 
