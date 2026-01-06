@@ -11,11 +11,11 @@ interface FAQItem {
 const faqData: FAQItem[] = [
     {
         question: "How does pricing work?",
-        answer: "Each Institutional Plan includes a guaranteed monthly ArmoCredits budget plus automatic top-up protection. Your plan is selected based on the maximum number of units you manage (50 / 200 / 500). Each plan includes a monthly ArmoCredits amount that corresponds to a minimum operational budget proportional to that unit range. Credits refresh monthly. If you exceed the included ArmoCredits, you continue with pay-per-use at €1 per 1,000 ArmoCredits. Auto top-up protection: when your balance drops below 10,000 ArmoCredits, the system automatically tops you up so operations never stop."
+        answer: "Your plan includes a monthly ArmoCredits budget to run Armonyco operations. Included budget: each plan comes with a fixed amount of ArmoCredits every month. Pay-per-use: if you exceed the included ArmoCredits, you keep running with top-ups. Rate: €1 = 100 ArmoCredits (i.e., €0.01 per ArmoCredit). Auto top-up: when your balance drops below 1,000 ArmoCredits, we automatically add +1,000 ArmoCredits so operations never stop. ArmoCredits are an operational usage unit. You only pay more when you use more."
     },
     {
         question: "Why don’t you charge a fixed price per unit?",
-        answer: "Because usage is not predictable per unit. One unit can generate very little activity, while another can generate much more (more guests, more messages, more events). A fixed €/unit price would either overcharge low-usage units or become unprofitable on high-usage units. ArmoCredits + pay-per-use aligns cost with real operational load, so the model remains fair and scalable."
+        answer: "Because usage per unit isn’t predictable. One unit can generate very little activity, while another can generate much more (more guests, more messages, more events). A fixed €/unit price would either overcharge low-usage units or become unprofitable on high-usage units. ArmoCredits align cost with real operational load — fair, scalable, and transparent."
     },
     // Core 8 FAQs (Disruptive)
     {

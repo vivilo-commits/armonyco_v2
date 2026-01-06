@@ -24,7 +24,7 @@ interface SettingsViewProps {
 type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
 
 // --- Helper for Cost ---
-const COST_PER_CREDIT = 0.001; // €1 per 1,000 credits institutional rate
+const COST_PER_CREDIT = 0.01; // €1 per 100 credits institutional rate
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
     activeView,
@@ -83,15 +83,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // -- Top Up State --
     const [showTopUpModal, setShowTopUpModal] = useState(false);
-    const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack
+    const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack 10k after rescale
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     // -- Auto Top Up State --
     const [autoTopUpEnabled, setAutoTopUpEnabled] = useState(false);
     const [showAutoTopUpModal, setShowAutoTopUpModal] = useState(false);
     const [isAcceptingTerms, setIsAcceptingTerms] = useState(false);
-    const AUTO_TOPUP_THRESHOLD = 10000;
-    const AUTO_TOPUP_AMOUNT = 10000;
+    const AUTO_TOPUP_THRESHOLD = 1000;
+    const AUTO_TOPUP_AMOUNT = 1000;
 
     // -- Subscription Plan State --
     const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
@@ -770,7 +770,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
                             {autoTopUpEnabled
-                                ? "If balance < 10.000 ArmoCredits©, trigger +10.000 ArmoCredits© top-up."
+                                ? "If balance < 1.000 ArmoCredits©, trigger +1.000 ArmoCredits© top-up."
                                 : "No automatic reloads configured. Services may pause on zero balance."
                             }
                         </p>
@@ -821,9 +821,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { id: 1, name: 'Starter', amt: 250000, price: 249, units: 'Up to 50' },
-                            { id: 2, name: 'Pro', amt: 1000000, price: 999, units: 'Up to 200' },
-                            { id: 3, name: 'Elite', amt: 2500000, price: 2499, units: 'Up to 500' },
+                            { id: 1, name: 'Starter', amt: 25000, price: 249, units: 'Up to 50' },
+                            { id: 2, name: 'Pro', amt: 100000, price: 999, units: 'Up to 200' },
+                            { id: 3, name: 'Elite', amt: 250000, price: 2499, units: 'Up to 500' },
                             { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
                         ].map(plan => (
                             <button
@@ -955,7 +955,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <p className="text-sm text-[var(--color-text-muted)] mb-6">Select a credit pack to add to your balance. Funds are available immediately.</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            {[100000, 250000, 500000, 1000000].map(amount => (
+                            {[10000, 25000, 50000, 100000].map(amount => (
                                 <button
                                     key={amount}
                                     onClick={() => setSelectedPack(amount)}
@@ -971,7 +971,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         {amount.toLocaleString('de-DE')}
                                     </span>
                                     <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-2">ArmoCredits©</span>
-                                    <span className="text-[11px] font-bold text-[var(--color-brand-primary)] mt-1">€{(amount / 1000).toLocaleString('de-DE')}</span>
+                                    <span className="text-[11px] font-bold text-[var(--color-brand-primary)] mt-1">€{(amount / 100).toLocaleString('de-DE')}</span>
                                 </button>
                             ))}
                         </div>
@@ -1001,8 +1001,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                         <h3 className="text-center font-medium text-lg mb-2">Never Run Out of Credits</h3>
                         <p className="text-center text-sm text-[var(--color-text-muted)] mb-6">
-                            When your balance falls below <strong className="text-[var(--color-text-main)]">10.000 ArmoCredits©</strong>,
-                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">10.000 ArmoCredits©</strong>.
+                            When your balance falls below <strong className="text-[var(--color-text-main)]">1.000 ArmoCredits©</strong>,
+                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">1.000 ArmoCredits©</strong>.
                         </p>
 
                         <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
@@ -1017,7 +1017,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="mb-6 flex justify-center">
                             <div className="text-center">
                                 <span className="text-xs text-[var(--color-text-muted)] uppercase font-bold">Top-up Amount</span>
-                                <div className="text-lg font-bold">10.000 ArmoCredits©</div>
+                                <div className="text-lg font-bold">1.000 ArmoCredits©</div>
                             </div>
                         </div>
 

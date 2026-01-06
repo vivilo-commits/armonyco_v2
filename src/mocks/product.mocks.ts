@@ -21,7 +21,7 @@ export const mockProductModules: ProductModule[] = baseModules.map((m: any, i: n
 
     return {
         ...m,
-        creditCost: 25000,
+        creditCost: 2500,
         isPurchased,
         isActive,
         isPaused,
