@@ -6,6 +6,7 @@ import { FloatingInput } from '../../components/ui/FloatingInput';
 import { Modal } from '../../components/ui/Modal';
 import { Card } from '../../components/ui/Card';
 import { UserProfile, Organization, BillingDetails } from '../../src/types';
+import { ContactModal } from '../../components/landing/ContactModal';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -40,6 +41,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdatePlanId
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
+    const [isContactOpen, setIsContactOpen] = useState(false);
 
     // Effect to sync prop activeView with internal state
     useEffect(() => {
@@ -827,6 +829,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
                         ].map(plan => (
                             <button
+                                onClick={() => {
+                                    if (plan.isCustom) {
+                                        setIsContactOpen(true);
+                                    } else {
+                                        onUpdatePlanId(plan.id);
+                                    }
+                                }}
                                 key={plan.id}
                                 className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === activePlanId ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
                             >
@@ -1137,6 +1146,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {activeTab === 'BILLING' && renderBilling()}
                 {activeTab === 'ACTIVATION' && renderActivation()}
             </div>
+            <ContactModal
+                isOpen={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
+            />
         </div>
     );
 };

@@ -6,12 +6,13 @@ import { Constructs } from '../components/landing/Constructs';
 import { Addendums } from '../components/landing/Addendums';
 import { FAQ } from '../components/landing/FAQ';
 import { Footer } from '../components/landing/Footer';
-import { ChevronDown, Menu, X, CheckCircle, CreditCard, User, Building, MapPin, Globe, ChevronRight, ChevronLeft, Lock, ArrowRight, LogIn, MessageCircle, TrendingUp, Activity, Shield, Cpu } from '../components/ui/Icons';
+import { ChevronDown, Menu, X, CheckCircle, CreditCard, User, Building, MapPin, Globe, ChevronRight, ChevronLeft, Lock, ArrowRight, LogIn, MessageCircle, TrendingUp, Activity, Shield, Cpu, Calendar } from '../components/ui/Icons';
 import { AiTeamStrip } from '../components/ui/AiTeamStrip';
 import { ModuleListModal, ModuleSuite } from '../components/landing/ModuleListModal';
 import { Card } from '../components/ui/Card';
 import { SignInModal } from '../components/landing/SignInModal';
 import { SignUpWizard } from '../components/landing/SignUpWizard';
+import { ContactModal } from '../components/landing/ContactModal';
 
 // --- Types ---
 interface LandingPageProps {
@@ -23,6 +24,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSolutions, onNavigateSection }) => {
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const [selectedSuite, setSelectedSuite] = useState<ModuleSuite | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -32,12 +34,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
             <Header
                 onLogin={() => setIsSignInOpen(true)}
                 onSignUp={() => setIsSignUpOpen(true)}
+                onContact={() => setIsContactOpen(true)}
                 onNavigateSolutions={onNavigateSolutions}
                 onNavigateSection={onNavigateSection}
             />
 
             <main>
-                <Hero onStartNow={() => setIsSignUpOpen(true)} />
+                <Hero onStartNow={() => setIsContactOpen(true)} />
                 <Pillars />
                 <Constructs />
 
@@ -106,9 +109,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
                 </section>
                 <Addendums />
                 <FAQ />
+
+                {/* Bottom CTA Section */}
+                <section className="py-32 px-6 md:px-24 bg-zinc-900 border-b border-white/5 text-center overflow-hidden relative">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[var(--color-brand-accent)]/10 via-transparent to-transparent opacity-50" />
+                    <div className="max-w-4xl mx-auto relative z-10">
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl text-white font-light mb-10 tracking-tight leading-tight">
+                            Governed operations are <br />
+                            <span className="text-[var(--color-brand-accent)] italic serif">non-negotiable at scale.</span>
+                        </h2>
+                        <p className="text-xl text-zinc-400 mb-12 max-w-2xl mx-auto italic font-light">
+                            Ready to transition from tools to a Decision OS? Choose how you want to start.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                            <button
+                                onClick={() => setIsContactOpen(true)}
+                                className="px-10 py-5 bg-[var(--color-brand-accent)] text-black font-black uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_40px_rgba(212,175,55,0.3)] flex items-center justify-center gap-3"
+                            >
+                                Schedule a demo
+                                <Calendar size={18} />
+                            </button>
+                            <button
+                                onClick={() => setIsContactOpen(true)}
+                                className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                            >
+                                Contact us
+                                <MessageCircle size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </main>
 
-            <Footer />
+            <Footer onContact={() => setIsContactOpen(true)} />
 
             <SignInModal
                 isOpen={isSignInOpen}
@@ -119,10 +152,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
             <SignUpWizard
                 isOpen={isSignUpOpen}
                 onClose={() => setIsSignUpOpen(false)}
+                onContact={() => setIsContactOpen(true)}
                 onComplete={(data) => {
                     setIsSignUpOpen(false);
                     onLogin(data);
                 }}
+            />
+
+            <ContactModal
+                isOpen={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
             />
 
             <ModuleListModal

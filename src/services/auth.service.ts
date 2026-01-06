@@ -3,6 +3,20 @@ import { mockUserProfile, mockOrganization, mockBillingDetails } from '../mocks/
 import { UserProfile, Organization, BillingDetails } from '../types';
 
 export const authService = {
+    signIn: (credentials: { email: string; password?: string }) => {
+        return apiClient.post('/auth/login', credentials, {
+            token: 'mock_token_abc_123',
+            user: mockUserProfile
+        });
+    },
+
+    signUp: (data: any) => {
+        return apiClient.post('/auth/register', data, {
+            token: 'mock_token_xyz_789',
+            user: { ...mockUserProfile, ...data.userProfile }
+        });
+    },
+
     getUserProfile: () => apiClient.get('/auth/me', mockUserProfile as unknown as UserProfile),
     getOrganization: () => apiClient.get('/auth/org', mockOrganization as unknown as Organization),
     getBillingDetails: () => apiClient.get('/auth/billing', mockBillingDetails as unknown as BillingDetails),

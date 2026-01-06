@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Footer: React.FC = () => {
+export const Footer: React.FC<{ onContact: () => void }> = ({ onContact }) => {
   return (
     <footer className="py-16 px-6 md:px-24 bg-[var(--color-brand-primary)] text-white">
       <div className="max-w-7xl mx-auto">
@@ -45,6 +45,14 @@ export const Footer: React.FC = () => {
               <li><a href="#products" className="hover:text-white transition-colors">Products</a></li>
               <li><a href="#manifesto" className="hover:text-white transition-colors">Manifesto</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
+              <li>
+                <button
+                  onClick={onContact}
+                  className="hover:text-white transition-colors text-left"
+                >
+                  Contact
+                </button>
+              </li>
             </ul>
           </div>
         </div>

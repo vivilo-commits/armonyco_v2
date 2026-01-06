@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { authService } from '../../src/services/auth.service';
 
 interface SignInModalProps {
     isOpen: boolean;
@@ -11,6 +12,22 @@ interface SignInModalProps {
 }
 
 export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLogin }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleEmailSignIn = async () => {
+        setIsLoading(true);
+        try {
+            const response = await authService.signIn({ email, password });
+            onLogin(response);
+        } catch (error) {
+            console.error('Login failed', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -25,11 +42,15 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                 <FloatingInput
                     label="Email"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     bgClass="bg-[var(--color-surface)]"
                 />
                 <FloatingInput
                     label="Password"
                     type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     bgClass="bg-[var(--color-surface)]"
                 />
                 <div className="flex justify-between items-center text-xs">
@@ -44,7 +65,8 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                     <Button
                         variant="primary"
                         rightIcon={<ArrowRight size={18} />}
-                        onClick={() => onLogin()}
+                        onClick={handleEmailSignIn}
+                        isLoading={isLoading}
                         className="w-full justify-center"
                     >
                         Sign In

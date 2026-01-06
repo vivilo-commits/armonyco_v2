@@ -1,4 +1,4 @@
-import { API_CONFIG, isMock } from '../config/api.config';
+import { API_CONFIG, isMock, getAuthToken } from '../config/api.config';
 
 /**
  * Simulates a network request with latency and potential random errors.
@@ -31,7 +31,7 @@ export const apiClient = {
                 signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('armonyco_token') || ''}`,
+                    'Authorization': `Bearer ${getAuthToken()}`,
                     ...options.headers,
                 }
             });
@@ -41,7 +41,8 @@ export const apiClient = {
             if (!response.ok) {
                 // Handle specific status codes if needed
                 if (response.status === 401) {
-                    // Logic for logout or refresh token
+                    localStorage.removeItem('armonyco_token');
+                    window.location.reload(); // Force re-authentication
                 }
                 throw new Error(`[API ERROR] ${response.status}: ${response.statusText}`);
             }

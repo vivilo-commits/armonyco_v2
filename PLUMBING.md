@@ -12,7 +12,7 @@ This project is prepared for real backend integration using a standardized servi
      // ...
    };
    ```
-3. Ensure `NEXT_PUBLIC_API_URL` is set in your `.env` file.
+3. Ensure `VITE_API_URL` is set in your `.env` file.
 
 ## Folder Structure
 
