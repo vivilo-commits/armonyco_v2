@@ -70,7 +70,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         if (!module) return { value: '0%', trend: 'No module' };
 
         switch (category) {
-            case 'REVENUE': return { value: '12.450 ArmoCredits©', trend: '+18% vs Target' };
+            case 'REVENUE': return { value: '12.450 €', trend: '+18% vs Target' };
             case 'OPS': return { value: '94.2%', trend: '420h Saved' };
             default: return { value: '99.9%', trend: 'Optimal' };
         }
