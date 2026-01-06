@@ -131,7 +131,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
                             </p>
                         </div>
 
-                        <p className="text-xl text-zinc-400 mb-12 max-w-2xl mx-auto italic font-light">
+                        <p className="text-xl text-zinc-400 mb-6 max-w-2xl mx-auto italic font-light">
                             Ready to transition from tools to a Decision OS? Choose how you want to start.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center">
