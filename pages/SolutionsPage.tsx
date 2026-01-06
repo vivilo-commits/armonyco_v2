@@ -56,8 +56,8 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             title: "Property Managers",
             desc: "Governing thousands of units with high-density labor orchestration and immutable proof of control.",
             image: "/assets/solutions/pm-bg.jpg",
-            heroTitle: "Armonyco turns daily operational chaos into predictable cashflow per unit.",
-            subHeadline: "At scale, that’s what a Decision OS really is. Move beyond manual tasks to governed operational decisions.",
+            heroTitle: "Stop Managing. Start Governing. The life-saver for the modern operator.",
+            subHeadline: "Armonyco is the silence in the storm. At scale, Decision OS turns daily operational trauma into predictable cashflow.",
             bullets: [
                 "Chaos → Predictable Cashflow",
                 "Scalable Decision Protocols",
@@ -365,23 +365,85 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                                         </div>
 
                                         {/* Row 2: The Outcome */}
-                                        <div className="p-12 rounded-[3rem] bg-zinc-900 border border-white/5 shadow-2xl relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-brand-accent)]/10 blur-[100px] rounded-full"></div>
-                                            <div className="relative z-10">
-                                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-12 text-center">The Outcome: Governing with ArmonycoOS™</h4>
+                                        <div className="p-12 rounded-[3rem] bg-zinc-900 border border-white/5 shadow-2xl relative overflow-hidden mb-24">
+                                            <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--color-brand-accent)]/10 blur-[120px] rounded-full"></div>
+                                            <div className="relative z-10 text-center">
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--color-brand-accent)] mb-12">The Outcome: Total Operational Harmony</h4>
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
                                                     {industries[industry].metrics.outcomes.map((m, i) => (
-                                                        <div key={i} className="flex flex-col items-center text-center group">
-                                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                                                <m.icon size={24} className="text-[var(--color-brand-accent)]" />
+                                                        <div key={i} className="flex flex-col items-center group">
+                                                            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[var(--color-brand-accent)]/10 group-hover:border-[var(--color-brand-accent)]/30 transition-all duration-500">
+                                                                <m.icon size={28} className="text-[var(--color-brand-accent)]" />
                                                             </div>
-                                                            <span className="text-5xl font-light text-white mb-2 tracking-tighter">{m.value}</span>
-                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{m.label}</span>
+                                                            <span className="text-6xl font-light text-white mb-2 tracking-tighter drop-shadow-[0_0_15px_rgba(197,165,114,0.3)]">{m.value}</span>
+                                                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-zinc-300 transition-colors">{m.label}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {industry === 'pm' && (
+                                            <div className="mb-24 relative">
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                                                    <div className="order-2 lg:order-1">
+                                                        <div className="relative rounded-[3rem] overflow-hidden border border-zinc-200 shadow-2xl">
+                                                            <img
+                                                                src="/brain/f3d84ce4-17db-417a-a95c-63b6722a202c/pm_operational_harmony_visual_1767692077385.png"
+                                                                alt="The Decision OS"
+                                                                className="w-full aspect-square object-cover"
+                                                            />
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent"></div>
+                                                            <div className="absolute bottom-10 left-10 right-10">
+                                                                <p className="text-white text-lg font-light italic leading-relaxed">
+                                                                    "Silence is the ultimate luxury for an operator. Armonyco delivers it through immutable governance."
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="order-1 lg:order-2 space-y-10">
+                                                        <div className="p-8 rounded-[2rem] bg-white border border-zinc-100 shadow-lg relative overflow-hidden">
+                                                            <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
+                                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-4">THE CHAOS (Before)</h5>
+                                                            <ul className="space-y-4">
+                                                                {[
+                                                                    "Fragmented data across WhatsApp & dynamic tools",
+                                                                    "Memory-dependent decision making",
+                                                                    "Operational trauma and burnout-level stress",
+                                                                    "Zero auditable proof of control for owners"
+                                                                ].map((p, i) => (
+                                                                    <li key={i} className="text-sm text-zinc-500 flex items-start gap-3">
+                                                                        <span className="text-red-400 mt-1">✕</span> {p}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <div className="p-8 rounded-[2rem] bg-zinc-900 border border-[var(--color-brand-accent)]/30 shadow-2xl relative overflow-hidden">
+                                                            <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-brand-accent)]"></div>
+                                                            <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-accent)] mb-4">THE HARMONY (With Armonyco)</h5>
+                                                            <ul className="space-y-4">
+                                                                {[
+                                                                    "Unified Decision OS (One Source of Truth)",
+                                                                    "Autonomous governance protocols",
+                                                                    "Predictable, auditable guest experiences",
+                                                                    "Full evidence logs for institutional audits"
+                                                                ].map((p, i) => (
+                                                                    <li key={i} className="text-sm text-zinc-300 flex items-start gap-3">
+                                                                        <span className="text-[var(--color-brand-accent)] mt-1">✓</span> {p}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <div className="pt-6">
+                                                            <h3 className="text-4xl text-zinc-900 font-light leading-tight mb-6">Your life back.<br /><span className="text-[var(--color-brand-accent)] font-medium">Your business governed.</span></h3>
+                                                            <button className="px-10 py-5 bg-zinc-900 text-white text-xs font-black uppercase tracking-[0.3em] rounded-full hover:bg-[var(--color-brand-accent)] transition-all transform hover:scale-105 shadow-xl">
+                                                                Deploy System Harmony
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
