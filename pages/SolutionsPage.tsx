@@ -42,6 +42,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             outcomes: Metric[];
         };
         cta: string;
+        badge?: string;
         products: {
             name: string;
             code: string;
@@ -56,6 +57,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             title: "Property Managers",
             desc: "Governing thousands of units with high-density labor orchestration and immutable proof of control.",
             image: "/assets/solutions/pm-bg.jpg",
+            badge: "- LAVORO + RICAVI",
             heroTitle: "Stop Managing. Start Governing. The life-saver for the modern operator.",
             subHeadline: "Armonyco is the silence in the storm. At scale, Decision OS turns daily operational trauma into predictable cashflow.",
             bullets: [
@@ -344,6 +346,14 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                                         ← Back to Showcase
                                     </button>
                                 </div>
+
+                                {industries[industry].badge && (
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-brand-accent)] text-white text-[10px] font-black uppercase tracking-[0.3em] mb-8 animate-fade-in shadow-lg shadow-[var(--color-brand-accent)]/20">
+                                        <Zap size={14} className="fill-current" />
+                                        {industries[industry].badge}
+                                    </div>
+                                )}
+
                                 <h2 className="text-5xl text-zinc-900 font-light mb-6 leading-tight">{industries[industry].heroTitle}</h2>
                                 <p className="text-zinc-500 max-w-3xl text-xl leading-relaxed mb-12">{industries[industry].subHeadline}</p>
 
