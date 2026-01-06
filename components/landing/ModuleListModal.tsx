@@ -33,66 +33,94 @@ export const ModuleListModal: React.FC<ModuleListModalProps> = ({ isOpen, onClos
           {/* Group A: Guest Experience */}
           {suite === 'GUEST' && (
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-main)] mb-4 pb-2 border-b border-[var(--color-border)]">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-zinc-100">
                 Guest Experience
               </h3>
-              <ul className="space-y-2.5 text-sm text-[var(--color-text-muted)] font-mono leading-relaxed">
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-01</span> Pre-arrival Info</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-02</span> Check-in Instructions + Access</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-03</span> Wi-Fi & House Manual (Top FAQ)</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-04</span> Checkout Instructions + Deposits/Tax</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-05</span> Issue Triage</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-06</span> Multi-language + Brand Tone of Voice</li>
-              </ul>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { code: 'CC-01', name: 'Pre-arrival Info' },
+                  { code: 'CC-02', name: 'Check-in Instructions + Access' },
+                  { code: 'CC-03', name: 'Wi-Fi & House Manual (Top FAQ)' },
+                  { code: 'CC-04', name: 'Checkout Instructions + Deposits/Tax' },
+                  { code: 'CC-05', name: 'Issue Triage' },
+                  { code: 'CC-06', name: 'Multi-language + Brand Tone of Voice' }
+                ].map(m => (
+                  <div key={m.code} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-zinc-100 group hover:border-[var(--color-brand-accent)]/30 transition-all">
+                    <span className="text-[10px] font-mono text-zinc-400 font-bold w-12">{m.code}</span>
+                    <span className="text-sm text-zinc-900 font-medium">{m.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Group B: Revenue Generation */}
           {suite === 'REVENUE' && (
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-main)] mb-4 pb-2 border-b border-[var(--color-border)]">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-zinc-100">
                 Revenue Generation
               </h3>
-              <ul className="space-y-2.5 text-sm text-[var(--color-text-muted)] font-mono leading-relaxed">
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-07</span> Orphan Days / Stay Extension Offer</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-08</span> Late Check-in / Late Check-out Upsell</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-09</span> Transfer / Experience Upsell (1–2 max)</li>
-              </ul>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { code: 'CC-07', name: 'Orphan Days / Stay Extension Offer' },
+                  { code: 'CC-08', name: 'Late Check-in / Late Check-out Upsell' },
+                  { code: 'CC-09', name: 'Transfer / Experience Upsell (1–2 max)' }
+                ].map(m => (
+                  <div key={m.code} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-zinc-100 group hover:border-[var(--color-brand-accent)]/30 transition-all">
+                    <span className="text-[10px] font-mono text-zinc-400 font-bold w-12">{m.code}</span>
+                    <span className="text-sm text-zinc-900 font-medium">{m.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Group C: Operational Efficiency */}
           {suite === 'OPS' && (
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-main)] mb-4 pb-2 border-b border-[var(--color-border)]">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-zinc-100">
                 Operational Efficiency
               </h3>
-              <ul className="space-y-2.5 text-sm text-[var(--color-text-muted)] font-mono leading-relaxed">
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-10</span> Maintenance Triage</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-11</span> Housekeeping Exceptions</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">CC-12</span> Human Escalation Pack</li>
-              </ul>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { code: 'CC-10', name: 'Maintenance Triage' },
+                  { code: 'CC-11', name: 'Housekeeping Exceptions' },
+                  { code: 'CC-12', name: 'Human Escalation Pack' }
+                ].map(m => (
+                  <div key={m.code} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-zinc-100 group hover:border-[var(--color-brand-accent)]/30 transition-all">
+                    <span className="text-[10px] font-mono text-zinc-400 font-bold w-12">{m.code}</span>
+                    <span className="text-sm text-zinc-900 font-medium">{m.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Group D: Incident Response */}
           {suite === 'RESPONSE' && (
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-main)] mb-4 pb-2 border-b border-[var(--color-border)]">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-6 pb-4 border-b border-zinc-100">
                 Incident Response
               </h3>
-              <ul className="space-y-2.5 text-sm text-[var(--color-text-muted)] font-mono leading-relaxed">
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-01</span> Guest can’t enter (smart lock/keybox)</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-02</span> Wi-Fi not working</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-03</span> Noise / complaint</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-04</span> AC/Heating not working</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-05</span> No hot water</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-06</span> Cleaning not satisfactory / missing towels</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-07</span> Early check-in request</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-08</span> Late checkout request</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-09</span> Missing payment / city tax</li>
-                <li><span className="text-[var(--color-text-subtle)] mr-2 select-none">PB-10</span> Missing ID / document not sent</li>
-              </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { code: 'PB-01', name: 'Guest can’t enter (smart lock/keybox)' },
+                  { code: 'PB-02', name: 'Wi-Fi not working' },
+                  { code: 'PB-03', name: 'Noise / complaint' },
+                  { code: 'PB-04', name: 'AC/Heating not working' },
+                  { code: 'PB-05', name: 'No hot water' },
+                  { code: 'PB-06', name: 'Cleaning not satisfactory' },
+                  { code: 'PB-07', name: 'Early check-in request' },
+                  { code: 'PB-08', name: 'Late checkout request' },
+                  { code: 'PB-09', name: 'Missing payment / city tax' },
+                  { code: 'PB-10', name: 'Missing ID / document' }
+                ].map(m => (
+                  <div key={m.code} className="flex items-center gap-4 p-4 rounded-xl bg-white border border-zinc-100 group hover:border-[var(--color-brand-accent)]/30 transition-all">
+                    <span className="text-[10px] font-mono text-zinc-400 font-bold w-12">{m.code}</span>
+                    <span className="text-sm text-zinc-900 font-medium leading-tight">{m.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

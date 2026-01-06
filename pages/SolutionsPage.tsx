@@ -23,6 +23,34 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
         window.scrollTo(0, 0);
     }, [industry]);
 
+    interface Metric {
+        label: string;
+        value: string;
+        desc?: string;
+        icon?: any;
+    }
+
+    interface IndustryData {
+        title: string;
+        desc: string;
+        image: string;
+        heroTitle: string;
+        subHeadline: string;
+        bullets: string[];
+        metrics?: {
+            friction: Metric[];
+            outcomes: Metric[];
+        };
+        cta: string;
+        products: {
+            name: string;
+            code: string;
+            agent: string;
+            category: string;
+            status: string;
+        }[];
+    }
+
     const industries = {
         pm: {
             title: "Property Managers",
@@ -35,6 +63,20 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 "Scalable Decision Protocols",
                 "Immutable Audit Trails"
             ],
+            metrics: {
+                friction: [
+                    { label: "Hosts with another job", value: "83%", desc: "Fragmented focus needs autonomous systems." },
+                    { label: "Work < 10h/week", value: "71%", desc: "But they stay 'on-call' 24/7. Stress is high." },
+                    { label: "Can't find reliable teams", value: "49%", desc: "Operational bottleneck for scaling." },
+                    { label: "Fear losing OTA rank", value: "63%", desc: "Directly impacts revenue stability." }
+                ],
+                outcomes: [
+                    { label: "Ops Automated", value: "+80%", icon: Zap },
+                    { label: "Time Saved", value: "+40%", icon: Activity },
+                    { label: "Revenue Increase", value: "+15%", icon: TrendingUp },
+                    { label: "Active Messages", value: "-85%", icon: Shield }
+                ]
+            },
             cta: "Deploy Decision OS for PM",
             products: [
                 { name: 'Pre-arrival Info', code: 'CC-01', agent: 'Lara + Amelia', category: 'GUEST', status: 'Governed' },
@@ -44,7 +86,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 { name: 'Maintenance Triage', code: 'CC-10', agent: 'Amelia + Elon', category: 'OPS', status: 'Matrix Active' },
                 { name: 'Noise Triage', code: 'PB-03', agent: 'Amelia', category: 'INCIDENT', status: 'Rapid Dispatch' }
             ]
-        },
+        } as IndustryData,
         ins: {
             title: "Insurance",
             desc: "Providing the data substrate for real-time risk modification and fiduciary accountability.",
@@ -69,7 +111,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 { name: 'Customer Communication', code: 'AS-09', agent: 'Amelia', category: 'GUEST', status: 'Governed' },
                 { name: 'Subrogation Detection', code: 'AS-10', agent: 'James', category: 'REVENUE', status: 'Autonomous' }
             ]
-        },
+        } as IndustryData,
         inv: {
             title: "Investment Funds",
             desc: "Securing institutional capital through standardized operational auditing and asset protection.",
@@ -94,7 +136,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 { name: 'Investor Reporting Pack', code: 'FI-09', agent: 'Amelia', category: 'REPORTING', status: 'Autonomous' },
                 { name: 'Risk Scenario Alerts', code: 'FI-10', agent: 'James', category: 'RISK', status: 'Rapid Dispatch' }
             ]
-        },
+        } as IndustryData,
         ent: {
             title: "Enterprise",
             desc: "Global governance layers for cross-border operations and complex stakeholder ecologies.",
@@ -113,7 +155,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 { name: 'Security & Audit Pack', code: 'ENT-03', agent: 'Lara + James', category: 'SECURITY', status: 'Governed' },
                 { name: 'SLA & Reliability Pack', code: 'ENT-04', agent: 'Elon + Amelia', category: 'RELIABILITY', status: 'Rapid Dispatch' }
             ]
-        }
+        } as IndustryData
     };
 
     const renderRegistry = () => {
@@ -121,20 +163,27 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
         const products = industries[industry].products;
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map(item => (
-                    <div key={item.code} className="p-4 rounded-2xl bg-white border border-zinc-100 hover:border-[var(--color-brand-accent)]/30 hover:shadow-xl transition-all group">
-                        <div className="flex justify-between items-start mb-3">
-                            <span className="text-[9px] font-mono text-zinc-400 font-bold">{item.code}</span>
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ${item.status === 'Governed' ? 'bg-emerald-500/10 text-emerald-600' :
-                                item.status === 'Autonomous' ? 'bg-[var(--color-brand-accent)]/10 text-[var(--color-brand-accent)]' :
-                                    'bg-indigo-500/10 text-indigo-600'
-                                }`}>
-                                {item.status}
-                            </span>
+                    <div key={item.code} className="p-6 rounded-[2rem] bg-white border border-zinc-100 hover:border-[var(--color-brand-accent)]/30 hover:shadow-2xl transition-all group flex flex-col justify-between h-full">
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-widest">{item.code}</span>
+                                <span className={`text-[9px] px-2 py-1 rounded-full font-black uppercase tracking-widest ${item.status === 'Governed' ? 'bg-emerald-500/10 text-emerald-600' :
+                                    item.status === 'Autonomous' ? 'bg-[var(--color-brand-accent)]/10 text-[var(--color-brand-accent)]' :
+                                        'bg-indigo-500/10 text-indigo-600'
+                                    }`}>
+                                    {item.status}
+                                </span>
+                            </div>
+                            <h4 className="text-lg font-bold text-zinc-900 mb-2 leading-tight">{item.name}</h4>
                         </div>
-                        <h4 className="text-sm font-bold text-zinc-900 mb-1">{item.name}</h4>
-                        <p className="text-[10px] text-zinc-500 italic">By {item.agent}</p>
+                        <div className="pt-4 border-t border-zinc-50 flex items-center justify-between">
+                            <p className="text-[11px] text-zinc-500 font-medium italic">Managed by {item.agent}</p>
+                            <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center group-hover:bg-[var(--color-brand-accent)]/10 transition-colors">
+                                <ArrowRight size={14} className="text-zinc-400 group-hover:text-[var(--color-brand-accent)]" />
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -234,19 +283,62 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                                 <h2 className="text-5xl text-zinc-900 font-light mb-6 leading-tight">{industries[industry].heroTitle}</h2>
                                 <p className="text-zinc-500 max-w-3xl text-xl leading-relaxed mb-12">{industries[industry].subHeadline}</p>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+                                {/* IMPACT METRICS (V0 Legacy Influence) */}
+                                {industries[industry].metrics && (
+                                    <div className="space-y-20 mb-32">
+                                        {/* Row 1: The Friction */}
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-10 text-center">The Friction: Why operators fail to scale</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                                {industries[industry].metrics.friction.map((m, i) => (
+                                                    <div key={i} className="p-8 rounded-[2rem] bg-zinc-50 border border-zinc-100 flex flex-col items-center text-center">
+                                                        <span className="text-4xl font-light text-zinc-900 mb-4">{m.value}</span>
+                                                        <h5 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-2">{m.label}</h5>
+                                                        <p className="text-[10px] text-zinc-500 leading-relaxed italic">{m.desc}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Row 2: The Outcome */}
+                                        <div className="p-12 rounded-[3rem] bg-zinc-900 border border-white/5 shadow-2xl relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-brand-accent)]/10 blur-[100px] rounded-full"></div>
+                                            <div className="relative z-10">
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-12 text-center">The Outcome: Governing with ArmonycoOS™</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+                                                    {industries[industry].metrics.outcomes.map((m, i) => (
+                                                        <div key={i} className="flex flex-col items-center text-center group">
+                                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                                                <m.icon size={24} className="text-[var(--color-brand-accent)]" />
+                                                            </div>
+                                                            <span className="text-5xl font-light text-white mb-2 tracking-tighter">{m.value}</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{m.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
                                     {industries[industry].bullets.map((bullet, i) => (
-                                        <div key={i} className="flex gap-3">
-                                            <CheckCircle className="text-[var(--color-brand-accent)] shrink-0" size={20} />
-                                            <span className="text-zinc-700 font-medium">{bullet}</span>
+                                        <div key={i} className="flex gap-4 p-6 rounded-2xl bg-zinc-50/50 border border-zinc-100 items-center">
+                                            <div className="p-2 rounded-lg bg-[var(--color-brand-accent)]/10">
+                                                <CheckCircle className="text-[var(--color-brand-accent)]" size={18} />
+                                            </div>
+                                            <span className="text-zinc-700 font-bold text-sm">{bullet}</span>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="mb-12 flex items-center justify-between">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Registry Modules</h3>
-                                    <button className="text-xs font-bold text-[var(--color-brand-accent)] uppercase tracking-widest hover:opacity-70 transition-opacity flex items-center gap-2">
-                                        {industries[industry].cta} <ArrowRight size={14} />
+                                <div className="mb-12 flex items-center justify-between border-b border-zinc-100 pb-8">
+                                    <div>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">Operational Registry</h3>
+                                        <p className="text-xs text-zinc-500">Certified modules for PM governance</p>
+                                    </div>
+                                    <button className="px-6 py-2.5 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-[var(--color-brand-accent)] transition-colors flex items-center gap-2 group">
+                                        {industries[industry].cta} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </div>
 

@@ -24,15 +24,15 @@ export const Constructs: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">The registry of institutional truth.</p>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+              <p className="text-[var(--color-text-main)] mb-3 font-medium italic text-xl leading-snug">The registry of institutional truth.</p>
+              <p className="text-[var(--color-text-muted)] text-base leading-relaxed max-w-2xl">
                 Registers every daily operational event as an immutable truth. It captures type, unit, guest, and channel, ensuring the organization no longer depends on memory or screenshots.
               </p>
             </div>
             <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
             <div className="lg:w-[300px] text-right">
-              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
-              <p className="text-[var(--color-text-muted)] text-xs italic">"Zero dependence on memory or prints."</p>
+              <p className="text-[var(--color-text-subtle)] text-[11px] font-black uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-sm italic font-medium">"Zero dependence on memory or prints."</p>
             </div>
           </div>
         </Card>
@@ -50,15 +50,15 @@ export const Constructs: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Transforming events into executable flow.</p>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+              <p className="text-[var(--color-text-main)] mb-3 font-medium italic text-xl leading-snug">Transforming events into executable flow.</p>
+              <p className="text-[var(--color-text-muted)] text-base leading-relaxed max-w-2xl">
                 Takes the institutional truth and renders it into a sequence: classification, context gathering, and execution planning. It turns a "loose message" into a governed operational cycle.
               </p>
             </div>
             <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
             <div className="lg:w-[300px] text-right">
-              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
-              <p className="text-[var(--color-text-muted)] text-xs italic">"Events follow a defined factory flow."</p>
+              <p className="text-[var(--color-text-subtle)] text-[11px] font-black uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-sm italic font-medium">"Events follow a defined factory flow."</p>
             </div>
           </div>
         </Card>
@@ -76,15 +76,15 @@ export const Constructs: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Autonomous execution workforce.</p>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+              <p className="text-[var(--color-text-main)] mb-3 font-medium italic text-xl leading-snug">Autonomous execution workforce.</p>
+              <p className="text-[var(--color-text-muted)] text-base leading-relaxed max-w-2xl">
                 Uses 4 collaborative AI agents: Intake (understanding), Planning (deciding), Execution (communicating), and Verification (closure). Each event is solved with mapped actions and agent-level accountability.
               </p>
             </div>
             <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
             <div className="lg:w-[300px] text-right">
-              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
-              <p className="text-[var(--color-text-muted)] text-xs italic">"Accountable execution per AI agent."</p>
+              <p className="text-[var(--color-text-subtle)] text-[11px] font-black uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-sm italic font-medium">"Accountable execution per AI agent."</p>
             </div>
           </div>
         </Card>
@@ -102,15 +102,15 @@ export const Constructs: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Reliability standard and escalation thresholds.</p>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+              <p className="text-[var(--color-text-main)] mb-3 font-medium italic text-xl leading-snug">Reliability standard and escalation thresholds.</p>
+              <p className="text-[var(--color-text-muted)] text-base leading-relaxed max-w-2xl">
                 Defines mandatory checks, prohibited actions, and evidence requirements. It identifies when to act autonomously and when to escalate to humans, ensuring total legal and operational safety.
               </p>
             </div>
             <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
             <div className="lg:w-[300px] text-right">
-              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
-              <p className="text-[var(--color-text-muted)] text-xs italic">"Secure boundaries for AI autonomy."</p>
+              <p className="text-[var(--color-text-subtle)] text-[11px] font-black uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-sm italic font-medium">"Secure boundaries for AI autonomy."</p>
             </div>
           </div>
         </Card>
@@ -128,15 +128,15 @@ export const Constructs: React.FC = () => {
               </div>
             </div>
             <div className="flex-1">
-              <p className="text-[var(--color-text-main)] mb-2 font-medium italic text-lg leading-snug">Consolidation of cycle proof.</p>
-              <p className="text-[var(--color-text-muted)] text-sm leading-relaxed max-w-2xl">
+              <p className="text-[var(--color-text-main)] mb-3 font-medium italic text-xl leading-snug">Consolidation of cycle proof.</p>
+              <p className="text-[var(--color-text-muted)] text-base leading-relaxed max-w-2xl">
                 Groups every event scorecard into metrics by unit, group, or product. It populates the Control Tower with the final evidence-backed numbers required by property leadership.
               </p>
             </div>
             <div className="hidden xl:block w-px h-16 bg-[var(--color-border)]"></div>
             <div className="lg:w-[300px] text-right">
-              <p className="text-[var(--color-text-subtle)] text-[10px] font-bold uppercase tracking-widest mb-2">Practical Result</p>
-              <p className="text-[var(--color-text-muted)] text-xs italic">"Evidence-backed proof of performance."</p>
+              <p className="text-[var(--color-text-subtle)] text-[11px] font-black uppercase tracking-widest mb-2">Practical Result</p>
+              <p className="text-[var(--color-text-muted)] text-sm italic font-medium">"Evidence-backed proof of performance."</p>
             </div>
           </div>
         </Card>
