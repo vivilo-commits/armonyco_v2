@@ -132,10 +132,10 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                 <label className="block text-[10px] font-bold text-[var(--color-text-subtle)] uppercase tracking-widest mb-3 text-center">Select Institutional Plan</label>
                                 <div className="grid grid-cols-4 gap-4 mb-2">
                                     {[
-                                        { id: 1, name: 'Starter', amt: 10000, price: 39, units: 'Up to 50' },
-                                        { id: 2, name: 'Pro', amt: 20000, price: 59, units: 'Up to 200' },
-                                        { id: 3, name: 'Elite', amt: 50000, price: 79, units: 'Up to 500' },
-                                        { id: 4, name: 'VIP', amt: 100000, price: 129, units: '500+' }
+                                        { id: 1, name: 'Starter', amt: 10000, price: 99, units: 'Up to 50' },
+                                        { id: 2, name: 'Pro', amt: 20000, price: 149, units: 'Up to 200' },
+                                        { id: 3, name: 'Elite', amt: 50000, price: 299, units: 'Up to 500' },
+                                        { id: 4, name: 'VIP', amt: 100000, price: 499, units: '500+' }
                                     ].map(plan => (
                                         <button
                                             key={plan.amt}
