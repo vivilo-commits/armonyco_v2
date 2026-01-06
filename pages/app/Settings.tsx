@@ -848,6 +848,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <div className="flex flex-col items-center my-3">
                                         <span className={`text-[24px] font-bold leading-tight text-center ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>Contact Us</span>
                                         <span className="text-[10px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
+                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mt-2">{plan.units} units</span>
                                     </div>
                                 ) : (
                                     <>
@@ -855,7 +856,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             €{plan.price.toLocaleString('de-DE')}<span className="text-[18px] opacity-60 font-medium">/mo</span>
                                         </span>
                                         <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-1.5 leading-none">VAT Included</span>
-                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mb-4">~ €5/unit</span>
+                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mb-4">€5/unit • {plan.units} units</span>
                                     </>
                                 )}
 
@@ -873,7 +874,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             <span className="text-[12px] font-bold tracking-tight text-white/90 text-center px-4">Institutional Project</span>
                                         )}
                                     </div>
-                                    <span className="text-[11px] opacity-70 uppercase tracking-[0.2em] font-bold mt-2 italic">{plan.units} units</span>
                                 </div>
                                 <div
                                     onClick={plan.id !== activePlanId ? () => handlePlanChange(plan) : undefined}
@@ -1101,7 +1101,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         )}
                     </div>
                 </Modal>
-            </div>
+            </div >
         );
     };
 
