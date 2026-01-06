@@ -3,6 +3,7 @@ import { Header } from '../components/landing/Header';
 import { Footer } from '../components/landing/Footer';
 import { SignInModal } from '../components/landing/SignInModal';
 import { SignUpWizard } from '../components/landing/SignUpWizard';
+import { ContactModal } from '../components/landing/ContactModal';
 import { ModuleListModal, ModuleSuite } from '../components/landing/ModuleListModal';
 import { ArrowRight, Building, Shield, TrendingUp, Globe, FileText, CheckCircle, Activity, Zap, AlertCircle } from '../components/ui/Icons';
 
@@ -17,6 +18,7 @@ interface SolutionsPageProps {
 export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, industry, onNavigateIndustry, onNavigateSection }) => {
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const [selectedSuite, setSelectedSuite] = useState<ModuleSuite | null>(null);
 
     useEffect(() => {
@@ -261,6 +263,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             <Header
                 onLogin={() => setIsSignInOpen(true)}
                 onSignUp={() => setIsSignUpOpen(true)}
+                onContact={() => setIsContactOpen(true)}
                 onNavigateSolutions={onNavigateIndustry}
                 onNavigateSection={onNavigateSection}
             />
@@ -515,7 +518,7 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
                 </section>
             </main>
 
-            <Footer />
+            <Footer onContact={() => setIsContactOpen(true)} />
 
             <SignInModal
                 isOpen={isSignInOpen}
@@ -526,10 +529,16 @@ export const SolutionsPage: React.FC<SolutionsPageProps> = ({ onLogin, onBack, i
             <SignUpWizard
                 isOpen={isSignUpOpen}
                 onClose={() => setIsSignUpOpen(false)}
+                onContact={() => setIsContactOpen(true)}
                 onComplete={(data) => {
                     setIsSignUpOpen(false);
                     onLogin(data);
                 }}
+            />
+
+            <ContactModal
+                isOpen={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
             />
 
             <ModuleListModal
