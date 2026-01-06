@@ -132,24 +132,42 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
                                 <label className="block text-[10px] font-bold text-[var(--color-text-subtle)] uppercase tracking-widest mb-3 text-center">Select Institutional Plan</label>
                                 <div className="grid grid-cols-4 gap-4 mb-2">
                                     {[
-                                        { id: 1, name: 'Starter', amt: 10000, price: 99, units: 'Up to 50' },
-                                        { id: 2, name: 'Pro', amt: 20000, price: 149, units: 'Up to 200' },
-                                        { id: 3, name: 'Elite', amt: 50000, price: 299, units: 'Up to 500' },
-                                        { id: 4, name: 'VIP', amt: 100000, price: 499, units: '500+' }
+                                        { id: 1, name: 'Starter', amt: 250000, price: 249, units: 'Up to 50' },
+                                        { id: 2, name: 'Pro', amt: 1000000, price: 999, units: 'Up to 200' },
+                                        { id: 3, name: 'Elite', amt: 2500000, price: 2499, units: 'Up to 500' },
+                                        { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
                                     ].map(plan => (
                                         <button
-                                            key={plan.amt}
+                                            key={plan.id}
                                             onClick={() => setCredits(plan.amt)}
                                             className={`py-6 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${credits === plan.amt ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]' : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'}`}
                                         >
                                             <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'}`}>{plan.name}</span>
-                                            <span className="text-[32px] font-bold leading-none mb-0">€{plan.price}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
-                                            <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mb-1.5">VAT Incl.</span>
+                                            {plan.isCustom ? (
+                                                <div className="flex flex-col items-center my-3">
+                                                    <span className="text-[18px] font-bold leading-tight text-center">Contact Us</span>
+                                                    <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span className="text-[30px] font-bold leading-none mb-0">€{plan.price.toLocaleString('de-DE')}<span className="text-[14px] opacity-60 font-medium">/mo</span></span>
+                                                    <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mb-0.5">VAT Incl.</span>
+                                                    <span className="text-[9px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic">~ €5/unit</span>
+                                                </>
+                                            )}
                                             <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
                                                 <div className="flex flex-col items-center">
-                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>Includes</span>
-                                                    <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
-                                                    <span className="text-[9px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${credits === plan.amt ? 'text-white' : 'text-[var(--color-brand-accent)]'} mb-1`}>
+                                                        {plan.isCustom ? 'Scope' : 'Includes'}
+                                                    </span>
+                                                    {!plan.isCustom ? (
+                                                        <>
+                                                            <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
+                                                            <span className="text-[9px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-[11px] font-bold tracking-tight text-center px-2">Institutional Project</span>
+                                                    )}
                                                 </div>
                                                 <span className="text-[10px] opacity-60 uppercase tracking-[0.2em] font-bold mt-1 italic">{plan.units} units</span>
                                             </div>

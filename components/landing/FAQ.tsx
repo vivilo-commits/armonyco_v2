@@ -9,6 +9,14 @@ interface FAQItem {
 }
 
 const faqData: FAQItem[] = [
+    {
+        question: "How does pricing work?",
+        answer: "Each Institutional Plan includes a guaranteed monthly ArmoCredits budget plus automatic top-up protection. Your plan is selected based on the maximum number of units you manage (50 / 200 / 500). Each plan includes a monthly ArmoCredits amount that corresponds to a minimum operational budget proportional to that unit range. Credits refresh monthly. If you exceed the included ArmoCredits, you continue with pay-per-use at €1 per 1,000 ArmoCredits. Auto top-up protection: when your balance drops below 10,000 ArmoCredits, the system automatically tops you up so operations never stop."
+    },
+    {
+        question: "Why don’t you charge a fixed price per unit?",
+        answer: "Because usage is not predictable per unit. One unit can generate very little activity, while another can generate much more (more guests, more messages, more events). A fixed €/unit price would either overcharge low-usage units or become unprofitable on high-usage units. ArmoCredits + pay-per-use aligns cost with real operational load, so the model remains fair and scalable."
+    },
     // Core 8 FAQs (Disruptive)
     {
         question: "Is it just a WhatsApp chatbot?",
