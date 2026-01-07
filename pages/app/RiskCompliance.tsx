@@ -66,6 +66,54 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
         }));
     }, [executions]);
 
+    // Calculate intervention reasons from failed executions
+    const interventionReasons = React.useMemo(() => {
+        if (!executions?.length) return [];
+        const agentFailures: Record<string, number> = {};
+        executions.filter(e => e.status !== 'success').forEach(exec => {
+            const agent = exec.agent_name || 'OTHER';
+            agentFailures[agent] = (agentFailures[agent] || 0) + 1;
+        });
+        const total = Object.values(agentFailures).reduce((a, b) => a + b, 0) || 1;
+        return Object.entries(agentFailures).map(([agent, count]) => ({
+            label: agent === 'AMELIA' ? 'Guest Communication Issue' : agent === 'JAMES' ? 'Reservation Lookup Error' : agent === 'ELON' ? 'Revenue Calculation' : 'System Error',
+            val: `${Math.round((count / total) * 100)}%`,
+            color: agent === 'AMELIA' ? 'bg-[var(--color-danger)]' : agent === 'JAMES' ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-text-muted)]',
+        })).slice(0, 3);
+    }, [executions]);
+
+    // Human intervention log from failed executions
+    const humanInterventionLog = React.useMemo(() => {
+        if (!executions?.length) return [];
+        return executions.filter(e => e.status !== 'success').slice(0, 5).map(exec => ({
+            id: exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 12),
+            time: new Date(exec.started_at).toLocaleTimeString('it-IT'),
+            actor: exec.agent_name || 'SYSTEM',
+            reason: exec.workflow_name?.toUpperCase().replace(/ /g, '_').slice(0, 15) || 'WORKFLOW_ERROR',
+            action: exec.status === 'error' ? 'Error Logged' : 'Review Required',
+            risk: exec.duration_ms && exec.duration_ms > 30000 ? 'HIGH' : exec.duration_ms && exec.duration_ms > 10000 ? 'MED' : 'LOW',
+            credits: exec.duration_ms ? Math.round(exec.duration_ms / 1000) : 1,
+        }));
+    }, [executions]);
+
+    // Ungoverned signals (simulated from executions with unusual patterns)
+    const ungovernedSignals = React.useMemo(() => {
+        if (!executions?.length) return [];
+        // Use failed or long-running executions as "ungoverned signals"
+        return executions.filter(e => e.status !== 'success' || (e.duration_ms && e.duration_ms > 60000)).slice(0, 5).map(exec => ({
+            id: `TRC-${exec.n8n_execution_id.slice(-5)}`,
+            source: `${exec.agent_name || 'System'} (${exec.perimeter || 'Unknown'})`,
+            content: exec.workflow_name || 'Workflow execution',
+            cat: exec.status !== 'success' ? 'FAILED_EXEC' : 'LONG_RUNNING',
+            action: exec.status === 'success' ? 'Monitored' : 'Alert Sent',
+            credits: exec.duration_ms ? Math.round(exec.duration_ms / 60000) : 1,
+        }));
+    }, [executions]);
+
+    // Calculated ungoverned counts
+    const ungovernedSignalsCount = failedCount || 0;
+    const shadowChannels = Math.max(0, Math.floor(failedCount / 3));
+
     // --- COMPLIANCE VIEW ---
     const renderCompliance = () => (
         <div className="flex flex-col h-full">

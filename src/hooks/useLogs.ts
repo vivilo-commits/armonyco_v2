@@ -108,11 +108,13 @@ export const useN8nExecutions = () => {
 
         const channel = supabase
             .channel('n8n_executions_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'n8n_executions' }, () => {
-                console.log('[Realtime] N8n executions updated');
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'n8n_executions' }, (payload) => {
+                console.log('[Realtime] N8n executions updated:', payload.eventType);
                 setTrigger(prev => prev + 1);
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[Realtime] Subscription status:', status);
+            });
 
         return () => { supabase.removeChannel(channel); };
     }, []);
@@ -123,14 +125,14 @@ export const useN8nExecutions = () => {
         const { data, error } = await supabase
             .from('n8n_executions')
             .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('[N8n Executions] Error:', error);
             return [];
         }
 
+        console.log('[N8n Executions] Fetched:', data?.length, 'records');
         return data || [];
     }, [trigger]);
 
