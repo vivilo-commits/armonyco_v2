@@ -181,7 +181,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                     <th className="px-10 py-6">Policy Applied</th>
                                     <th className="px-10 py-6">Agent</th>
                                     <th className="px-10 py-6">Verdict</th>
-                                    <th className="px-10 py-6 text-right">Value (€)</th>
+                                    <th className="px-10 py-6 text-right">ArmoCredits©</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
@@ -197,7 +197,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                                     'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20'
                                                 }`}>{row.verdict}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits || 0} €</td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits || 0} ⌬</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -282,7 +282,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                     <th className="px-6 py-4">Reason Code</th>
                                     <th className="px-6 py-4">Action</th>
                                     <th className="px-6 py-4">Risk Level</th>
-                                    <th className="px-6 py-4 text-right">Value (€)</th>
+                                    <th className="px-6 py-4 text-right">ArmoCredits©</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
@@ -298,7 +298,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                                 row.risk === 'MED' ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20' : 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20'
                                                 }`}>{row.risk}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits} €</td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits} ⌬</td>
                                     </tr>
                                 ))}
                                 {humanInterventionLog.length === 0 && (
@@ -381,7 +381,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                     <th className="px-6 py-4">Content Snippet</th>
                                     <th className="px-6 py-4">Likely Category</th>
                                     <th className="px-6 py-4">Action</th>
-                                    <th className="px-6 py-4 text-right">Value (€)</th>
+                                    <th className="px-6 py-4 text-right">ArmoCredits©</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
@@ -396,7 +396,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.action}</td>
-                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{row.credits} €</td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{row.credits} ⌬</td>
                                     </tr>
                                 ))}
                                 {ungovernedSignals.length === 0 && (
