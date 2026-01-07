@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info } from '../../components/ui/Icons';
+import React, { useState, useEffect } from 'react';
+import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info, Loader } from '../../components/ui/Icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { useAgents } from '../../src/hooks/useLogs';
+import { useConversations } from '../../src/hooks/useChat';
 import { Modal } from '../../components/ui/Modal';
+import { Conversation, Message } from '../../src/models/chat.model';
 
 const performanceData = [
     { time: '00:00', load: 20, latency: 120 },
@@ -17,8 +19,38 @@ const performanceData = [
 
 export const AOSView: React.FC = () => {
     const { data: agentsData } = useAgents();
+    const { data: conversations, status: convStatus } = useConversations();
     const agents = agentsData || [];
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+    const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Filter conversations by phone number
+    const filteredConversations = conversations?.filter(c =>
+        c.guestPhone.includes(searchTerm)
+    ) || [];
+
+    // Select first conversation on load
+    useEffect(() => {
+        if (conversations && conversations.length > 0 && !selectedConvId) {
+            setSelectedConvId(conversations[0].id);
+        }
+    }, [conversations, selectedConvId]);
+
+    const selectedConversation = conversations?.find(c => c.id === selectedConvId);
+
+    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    const formatTime = (timestamp: string) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 60) return `${diffMins}m`;
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m`;
+        return date.toLocaleDateString();
+    };
 
     return (
         <div className="p-8 animate-fade-in flex flex-col min-h-screen">
@@ -122,50 +154,61 @@ export const AOSView: React.FC = () => {
                         <div className="col-span-3 flex flex-col h-full bg-white/[0.02] overflow-hidden">
                             <div className="p-4 border-b border-white/5 space-y-4 shrink-0">
                                 <div className="relative">
-                                    <input type="text" placeholder="Search Guest Name or ID..." className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-[11px] text-white outline-none focus:border-[var(--color-brand-accent)]/40 italic" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by phone number..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-[11px] text-white outline-none focus:border-[var(--color-brand-accent)]/40"
+                                    />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto scrollbar-hide py-2">
-                                {[
-                                    { name: 'Szewczyk Donata', unit: 'Muggia 21 Suites', status: 'Active', icon: 'bg-emerald-500', time: '1h 29m', source: 'WhatsApp' },
-                                    { name: 'Asia Pigneto', unit: 'Patio Apt', status: 'Pending', icon: 'bg-amber-500', time: '1h 13m', source: 'PMS' },
-                                    { name: 'Kadyrka Kiryll', unit: 'Navona Loft', status: 'Active', icon: 'bg-emerald-500', time: '2h 14m', source: 'WhatsApp' },
-                                    { name: 'Vadim Molinches', unit: 'Campo dei Fiori', status: 'Resolved', icon: 'bg-zinc-500', time: '4h 05m', source: 'WhatsApp' },
-                                    { name: 'Elena Petrova', unit: 'Trastevere Cozy', status: 'Active', icon: 'bg-emerald-500', time: '5m', source: 'PMS' },
-                                    { name: 'John Smith', unit: 'Vatican View', status: 'Active', icon: 'bg-emerald-500', time: '42m', source: 'WhatsApp' },
-                                    { name: 'Marco Rossi', unit: 'Spanish Steps', status: 'Attention', icon: 'bg-red-500', time: '12m', source: 'WhatsApp' },
-                                    { name: 'Lucia Bianco', unit: 'Monti Loft', status: 'Active', icon: 'bg-emerald-500', time: '3h 10m', source: 'PMS' },
-                                    { name: 'Robert Green', unit: 'Colosseum Suite', status: 'Pending', icon: 'bg-amber-500', time: '6h 22m', source: 'WhatsApp' }
-                                ].map((chat, i) => (
-                                    <div key={i} className={`p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-all ${i === 0 ? 'bg-white/5 border-l-2 border-l-[var(--color-brand-accent)]' : ''}`}>
-                                        <div className="flex justify-between items-start mb-1.5">
-                                            <span className="text-[13px] font-bold text-white tracking-tight">{chat.name}</span>
-                                            <span className="text-[9px] text-white/20 font-black uppercase shrink-0">{chat.time}</span>
-                                        </div>
-                                        <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-2.5">{chat.unit}</p>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${chat.icon}`}></div>
-                                                <span className="text-[9px] text-zinc-400 font-black uppercase tracking-tighter italic">{chat.status}</span>
-                                            </div>
-                                            <span className="text-[8px] text-[var(--color-brand-accent)] font-black uppercase tracking-widest opacity-40">{chat.source}</span>
-                                        </div>
+                                {convStatus === 'pending' ? (
+                                    <div className="flex items-center justify-center p-8">
+                                        <Loader size={20} className="animate-spin text-white/20" />
                                     </div>
-                                ))}
+                                ) : filteredConversations.length > 0 ? (
+                                    filteredConversations.map((conv) => (
+                                        <div
+                                            key={conv.id}
+                                            onClick={() => setSelectedConvId(conv.id)}
+                                            className={`p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-all ${selectedConvId === conv.id ? 'bg-white/5 border-l-2 border-l-[var(--color-brand-accent)]' : ''}`}
+                                        >
+                                            <div className="flex justify-between items-start mb-1.5 gap-2">
+                                                <span className="text-[12px] font-bold text-white tracking-tight truncate">{conv.guestPhone}</span>
+                                                <span className="text-[9px] text-white/40 font-medium shrink-0">{formatTime(conv.lastMessageTime)}</span>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-500 truncate mb-2">{conv.messages.length} mensagens</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                <span className="text-[9px] text-zinc-400 font-medium">WhatsApp</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center">
+                                        <p className="text-[10px] text-white/20 uppercase tracking-widest">No conversations</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* 2. Neural Thread (6 cols) */}
-                        <div className="col-span-6 flex flex-col h-full bg-black/20 overflow-hidden">
+                        <div className="col-span-9 flex flex-col h-full bg-black/20 overflow-hidden">
                             {/* Chat Header */}
                             <div className="p-5 border-b border-white/5 bg-white/[0.01] flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[12px] font-black text-white shadow-lg">SD</div>
+                                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[12px] font-black text-white shadow-lg">
+                                        {selectedConversation ? getInitials(selectedConversation.guestName) : '??'}
+                                    </div>
                                     <div>
-                                        <div className="text-[14px] font-bold text-white leading-none mb-1">Szewczyk Donata</div>
+                                        <div className="text-[14px] font-bold text-white leading-none mb-1">
+                                            {selectedConversation?.guestName || 'Select a conversation'}
+                                        </div>
                                         <div className="text-[9px] text-emerald-500 font-black uppercase tracking-widest italic flex items-center gap-2">
                                             <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                                            Active via Neural Channel — WhatsApp
+                                            {selectedConversation?.guestPhone || 'No phone'}
                                         </div>
                                     </div>
                                 </div>
@@ -176,141 +219,46 @@ export const AOSView: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Messages Area - FIXED SCROLLING */}
-                            <div className="flex-1 overflow-y-auto p-8 scrollbar-hide space-y-10 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
-                                <div className="flex flex-col items-center">
-                                    <span className="px-4 py-1.5 bg-white/5 border border-white/5 rounded-full text-[9px] text-white/30 font-black uppercase tracking-[0.25em] mb-4">Monday, Dec 31</span>
-                                </div>
-
-                                {/* Flow closure label */}
-                                <div className="flex flex-col items-center">
-                                    <span className="px-4 py-1.5 bg-[var(--color-brand-accent)]/5 border border-[var(--color-brand-accent)]/10 rounded-full text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.25em] mb-4">Event Synchronized with PMS</span>
-                                </div>
-
-                                {/* AI Message */}
-                                <div className="flex flex-col items-start max-w-[85%]">
-                                    <div className="flex items-center gap-2 mb-2.5 font-black text-[var(--color-brand-accent)] text-[9px] uppercase tracking-widest italic">
-                                        <Zap size={10} /> AMELIA AI Node
-                                    </div>
-                                    <div className="p-5 bg-zinc-900/95 border border-white/10 rounded-2xl rounded-tl-none shadow-2xl">
-                                        <p className="text-[13px] text-white/90 leading-relaxed italic pr-4">
-                                            Hi Donata! I'm Amelia, your Armonyco Risk Guardian. I've noticed your reservation for December 31st doesn't have a confirmed arrival time yet.
-                                        </p>
-                                        <div className="text-right mt-3 opacity-30 text-[9px] font-black uppercase tracking-widest">
-                                            15:30 • Read
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Guest Message */}
-                                <div className="flex flex-col items-end self-end max-w-[85%]">
-                                    <div className="p-5 bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 rounded-2xl rounded-tr-none shadow-2xl backdrop-blur-sm">
-                                        <p className="text-[13px] text-white/95 leading-relaxed italic pl-4">
-                                            Hi Amelia, glad you reached out. Yes, we arrive on the 31st around 10:00 AM. Is it possible to drop off luggage or check in early?
-                                        </p>
-                                        <div className="text-right mt-3 opacity-40 text-[9px] font-black uppercase">
-                                            15:32
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* AI Message */}
-                                <div className="flex flex-col items-start max-w-[85%]">
-                                    <div className="flex items-center gap-2 mb-2.5 font-black text-[var(--color-brand-accent)] text-[9px] uppercase tracking-widest italic">
-                                        <Zap size={10} /> AMELIA AI Node
-                                    </div>
-                                    <div className="p-5 bg-zinc-900/95 border border-white/10 rounded-2xl rounded-tl-none shadow-2xl">
-                                        <p className="text-[13px] text-white/90 leading-relaxed italic">
-                                            To better assist you, I need to verify one more detail. Could you please confirm the number of nights for your stay? This will help me locate your reservation accurately in our system.
-                                        </p>
-                                        <div className="text-right mt-3 opacity-30 text-[9px] font-black">
-                                            15:38
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Guest Message */}
-                                <div className="flex flex-col items-end self-end max-w-[85%]">
-                                    <div className="p-5 bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 rounded-2xl rounded-tr-none shadow-2xl backdrop-blur-sm">
-                                        <p className="text-[13px] text-white/95 leading-relaxed italic pl-4">
-                                            Of course, we are staying for 5 nights. The Booking.com code is 17722/2025.
-                                        </p>
-                                        <div className="text-right mt-3 opacity-40 text-[9px] font-black uppercase">
-                                            15:40
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* LARA Message */}
-                                <div className="flex flex-col items-start max-w-[85%]">
-                                    <div className="flex items-center gap-2 mb-2.5 font-black text-emerald-500 text-[9px] uppercase tracking-widest italic">
-                                        <Activity size={10} /> LARA Planning Node
-                                    </div>
-                                    <div className="p-5 bg-emerald-500/[0.02] border border-emerald-500/20 rounded-2xl rounded-tl-none shadow-xl">
-                                        <p className="text-[13px] text-emerald-500/80 leading-relaxed italic">
-                                            Perfect, Donata. I've checked the calendar and we have availability for an Early Check-in at 10:00 AM. There is an additional charge of €25. Would you like us to proceed with the automatic charge to your registered card?
-                                        </p>
-                                        <div className="text-right mt-3 opacity-30 text-[9px] font-black">
-                                            15:42
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Chat Footer / Input */}
-                            <div className="p-5 border-t border-white/5 bg-black/40 shrink-0">
-                                <div className="relative group">
-                                    <input type="text" placeholder="Neural Override: Direct intervention as Human Admin..." className="w-full bg-white/5 border border-white/10 rounded-xl px-14 py-4 text-[13px] text-white outline-none focus:border-[var(--color-brand-accent)]/40 italic transition-all group-hover:bg-white/[0.08]" />
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20"><MessageCircle size={18} /></div>
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[var(--color-brand-accent)] cursor-pointer hover:scale-110 transition-transform"><TrendingUp size={18} /></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. Contextual Intelligence (3 cols) */}
-                        <div className="col-span-3 flex flex-col h-full bg-black/40 p-6 overflow-hidden">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-8 italic flex items-center gap-3 shrink-0">
-                                <Shield size={14} className="opacity-40" />
-                                Reservation Topology
-                            </h4>
-
-                            <div className="flex-1 overflow-y-auto scrollbar-hide space-y-8">
-                                <div
-                                    onClick={() => setIsReservationModalOpen(true)}
-                                    className="p-5 bg-white/[0.03] border border-white/10 rounded-2xl relative overflow-hidden group hover:border-[var(--color-brand-accent)]/30 transition-all cursor-pointer"
-                                >
-                                    <div className="relative z-10">
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="w-10 h-10 rounded-lg bg-blue-600 shadow-lg shadow-blue-600/20 flex items-center justify-center text-white font-black text-sm">B.</div>
-                                            <div className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-md flex items-center gap-2">
-                                                <CheckCircle size={12} className="text-emerald-500" />
-                                                <span className="text-[10px] text-emerald-500 font-black uppercase">Active</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-[14px] font-bold text-white mb-1">Szewczyk Donata</div>
-                                        <div className="text-[10px] text-zinc-500 font-black mb-6 uppercase tracking-widest">Code: 17722 / 2025</div>
-
-                                        <div className="space-y-3 shrink-0">
-                                            <div className="flex flex-col p-3 bg-black/40 rounded-xl border border-white/5">
-                                                <span className="text-[9px] text-white/40 font-black uppercase tracking-widest mb-1">Check-in Sequence</span>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[12px] text-white font-bold italic tracking-tight">Wed 12/31/2025</span>
-                                                    <span className="text-[11px] text-[var(--color-brand-accent)] font-black">10:00</span>
+                            {/* Messages Area */}
+                            <div className="flex-1 overflow-y-auto p-8 scrollbar-hide space-y-6 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                                {selectedConversation?.messages && selectedConversation.messages.length > 0 ? (
+                                    selectedConversation.messages.map((msg) => (
+                                        <div key={msg.id} className={`flex flex-col ${msg.senderId === 'me' ? 'items-end self-end' : 'items-start'} max-w-[85%]`}>
+                                            {msg.senderId === 'me' ? null : (
+                                                <div className="flex items-center gap-2 mb-2.5 font-black text-[var(--color-brand-accent)] text-[9px] uppercase tracking-widest italic">
+                                                    <Zap size={10} /> Guest
+                                                </div>
+                                            )}
+                                            <div className={`p-5 rounded-2xl shadow-2xl ${msg.senderId === 'me'
+                                                ? 'bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 rounded-tr-none'
+                                                : 'bg-zinc-900/95 border border-white/10 rounded-tl-none'
+                                                }`}>
+                                                <p className={`text-[13px] leading-relaxed italic ${msg.senderId === 'me' ? 'text-white/95 pl-4' : 'text-white/90 pr-4'}`}>
+                                                    {msg.text}
+                                                </p>
+                                                <div className="text-right mt-3 opacity-30 text-[9px] font-black uppercase tracking-widest">
+                                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {msg.isRead && ' • Read'}
                                                 </div>
                                             </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                        <p className="text-[10px] text-white/20 uppercase tracking-widest">No messages</p>
                                     </div>
-                                </div>
+                                )}
+                            </div>
 
-                                <Card variant="dark" padding="md" className="border-amber-500/30 bg-amber-500/[0.03] shrink-0">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
-                                        <span className="text-[9px] text-amber-500 font-black uppercase tracking-[0.25em]">Staff Intelligence</span>
+                            {/* Chat Footer / Input - Disabled */}
+                            <div className="p-5 border-t border-white/5 bg-black/40 shrink-0">
+                                <div className="relative group opacity-50 cursor-not-allowed">
+                                    <div className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-14 py-4 text-[13px] text-white/30 italic select-none">
+                                        Neural Override: Direct human intervention not permitted
                                     </div>
-                                    <p className="text-[12px] text-amber-500/80 leading-relaxed italic font-medium">
-                                        "Charged via Stripe 12/03 nath must pay €30 tax."
-                                    </p>
-                                </Card>
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/10"><MessageCircle size={18} /></div>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-white/10"><Shield size={18} /></div>
+                                </div>
                             </div>
                         </div>
                     </div>

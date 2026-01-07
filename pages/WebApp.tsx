@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '../components/app/Sidebar';
-import { AppHeader } from '../components/app/AppHeader';
 import { Dashboard } from './app/Dashboard';
 import { DecisionLog } from './app/DecisionLog';
 import { GovernedValueView } from './app/GovernedValue';
@@ -16,8 +15,10 @@ import { RoleManagement } from './app/RoleManagement';
 import { SettingsView } from './app/Settings';
 import { DocumentationView } from './app/Documentation';
 import { SupportView } from './app/Support';
-import { UserRole, Notification } from '../src/types';
+import { UserRole, Notification, UserProfile, Organization, BillingDetails } from '../src/types';
 import { Menu } from '../components/ui/Icons';
+import { authService } from '../src/services/auth.service';
+import { AdminUsersView } from './app/AdminUsers';
 
 interface WebAppProps {
   onLogout: () => void;
@@ -30,29 +31,44 @@ interface WebAppProps {
 }
 
 export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
-  const [activeView, setActiveView] = useState('dashboard');
+  // Persist view in localStorage
+  const [activeView, setActiveView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('armonyco_active_view') || 'dashboard';
+    }
+    return 'dashboard';
+  });
   const [currentRole, setCurrentRole] = useState<UserRole>(UserRole.EXECUTIVE);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Shared State for User & Organization (Source of Truth)
-  // Initialize with initialData if present, otherwise default mock data
-  const [userProfile, setUserProfile] = useState(initialData?.userProfile || {
-    firstName: 'First',
-    lastName: 'Name',
-    email: 'admin@armonyco.com',
-    phone: '+1 (555) 0123-4567',
-    photo: null as string | null
+  // Save view to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('armonyco_active_view', activeView);
+  }, [activeView]);
+
+  // State for User, Organization, Billing (loaded from database)
+  const [userProfile, setUserProfile] = useState<UserProfile>(initialData?.userProfile || {
+    id: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    photo: null,
+    role: 'Executive',
+    credits: 0
   });
 
-  const [organization, setOrganization] = useState(initialData?.organization || {
-    name: 'Acme Hospitality Group',
-    billingEmail: 'billing@acme.com',
+  const [organization, setOrganization] = useState<Organization>(initialData?.organization || {
+    id: '',
+    name: '',
+    billingEmail: '',
     language: 'EN',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   });
 
-  const [billingDetails, setBillingDetails] = useState(initialData?.billingDetails || {
+  const [billingDetails, setBillingDetails] = useState<BillingDetails>(initialData?.billingDetails || {
     legalName: '',
     vatNumber: '',
     fiscalCode: '',
@@ -64,10 +80,77 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
     pecEmail: ''
   });
 
-  const [currentCredits, setCurrentCredits] = useState(initialData?.credits || 12500);
+  const [currentCredits, setCurrentCredits] = useState(initialData?.userProfile?.credits || 0);
   const [activePlanId, setActivePlanId] = useState(1);
 
-  // Mock Notifications
+  // Load data from database on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const [profile, org, billing] = await Promise.all([
+          authService.getUserProfile(),
+          authService.getOrganization(),
+          authService.getBillingDetails()
+        ]);
+
+        setUserProfile(profile);
+        setOrganization(org);
+        setBillingDetails(billing);
+        setCurrentCredits(profile.credits);
+      } catch (error) {
+        console.error('[WebApp] Failed to load user data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // Handlers that save to database
+  const handleUpdateProfile = useCallback(async (data: Partial<UserProfile>) => {
+    try {
+      const updated = await authService.updateProfile(data);
+      setUserProfile(prev => ({ ...prev, ...updated }));
+      console.log('[WebApp] Profile updated');
+    } catch (error) {
+      console.error('[WebApp] Failed to update profile:', error);
+    }
+  }, []);
+
+  const handleUpdateOrganization = useCallback(async (data: Partial<Organization>) => {
+    try {
+      const updated = await authService.updateOrganization(data);
+      setOrganization(prev => ({ ...prev, ...updated }));
+      console.log('[WebApp] Organization updated');
+    } catch (error) {
+      console.error('[WebApp] Failed to update organization:', error);
+    }
+  }, []);
+
+  const handleUpdateBillingDetails = useCallback(async (data: Partial<BillingDetails>) => {
+    try {
+      const updated = await authService.updateBillingDetails(data);
+      setBillingDetails(prev => ({ ...prev, ...updated }));
+      console.log('[WebApp] Billing details updated');
+    } catch (error) {
+      console.error('[WebApp] Failed to update billing:', error);
+    }
+  }, []);
+
+  const handleUpdateCredits = useCallback(async (newAmount: number) => {
+    try {
+      const diff = newAmount - currentCredits;
+      if (diff > 0) {
+        await authService.addCredits(diff);
+      }
+      setCurrentCredits(newAmount);
+    } catch (error) {
+      console.error('[WebApp] Failed to update credits:', error);
+    }
+  }, [currentCredits]);
+
+  // Notifications (still local for now)
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: '1', type: 'ALERT', message: 'Armonyco AGS - Governance Scorecard™ drop detected', timestamp: '10m ago', read: false, metric: '94.2%' },
     { id: '2', type: 'WARNING', message: 'Armonyco Human Risk™ spike > 5%', timestamp: '1h ago', read: false, metric: 'Risk' },
@@ -99,8 +182,6 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
       case 'aim': return 'AIM - Armonyco Intelligence Matrix™';
       case 'products': return 'My Services';
       case 'conversations': return 'Conversations';
-      // Settings Sub-menus
-      // Settings Sub-menus
       case 'settings-profile':
       case 'settings-company':
       case 'settings-billing':
@@ -113,6 +194,18 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   };
 
   const renderView = () => {
+    // Show loading while fetching data
+    if (isLoadingData) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+            <span className="text-zinc-500 text-sm">Loading data...</span>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeView) {
       case 'dashboard': return <Dashboard onNavigate={setActiveView} />;
       case 'value': return <GovernedValueView />;
@@ -129,26 +222,26 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
       case 'conversations': return <ConversationsView />;
       case 'roles': return <RoleManagement />;
 
-      // Settings sub-routes all go to SettingsView with activeView prop to switch internal tabs
       case 'settings-profile':
       case 'settings-company':
       case 'settings-billing':
         return <SettingsView
           activeView={activeView}
           userProfile={userProfile}
-          onUpdateProfile={(p) => setUserProfile({ ...userProfile, ...p })}
+          onUpdateProfile={handleUpdateProfile}
           organization={organization}
-          onUpdateOrganization={(o) => setOrganization({ ...organization, ...o })}
+          onUpdateOrganization={handleUpdateOrganization}
           billingDetails={billingDetails}
-          onUpdateBillingDetails={(b) => setBillingDetails({ ...billingDetails, ...b })}
+          onUpdateBillingDetails={handleUpdateBillingDetails}
           currentCredits={currentCredits}
-          onUpdateCredits={setCurrentCredits}
+          onUpdateCredits={handleUpdateCredits}
           activePlanId={activePlanId}
           onUpdatePlanId={setActivePlanId}
         />;
 
       case 'documentation': return <DocumentationView />;
       case 'support': return <SupportView />;
+      case 'admin-users': return <AdminUsersView />;
       default: return <Dashboard />;
     }
   };
@@ -184,8 +277,6 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
           </div>
           <img src="/assets/logo-icon.png" alt="Armonyco" className="w-10 h-10 object-contain" />
         </div>
-
-        {/* AppHeader Removed */}
 
         <main className="flex-1 overflow-y-auto relative bg-[var(--color-background)] p-4 md:p-6 lg:p-8">
           {/* Premium Application Shell */}
