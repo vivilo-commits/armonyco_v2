@@ -47,13 +47,15 @@ function parseMessage(raw: MessageContent | string): { type: 'ai' | 'human'; tex
 
     // Filter ONLY tool traces - be very specific
     const isToolTrace =
-        content.startsWith('Calling Think') ||
-        content.startsWith('Calling Reservations') ||
-        content.startsWith('Calling Find') ||
-        content.startsWith('Calling Send') ||
+        content.startsWith('[{') || // JSON arrays are tool traces
+        content.startsWith('Calling ') || // All "Calling X" are tool traces
+        content.includes('"response":"Guest message:') || // Tool response format
         content.includes('; Tool: Think, Input:') ||
         content.includes('Tools needed:') ||
         content.includes('Conversation history:') ||
+        content.includes('Review conversation history:') ||
+        content.includes('Identity verification required') ||
+        content.includes('Safest next step:') ||
         (content.startsWith('{') && content.includes('"id":"call_'));
 
     if (isToolTrace) return null;
