@@ -21,10 +21,32 @@ export const logService = {
     getNotifications: (): Promise<Notification[]> => logsService.getNotifications(),
     getUsage: (): Promise<UsageRecord[]> => Promise.resolve([]),
     getValueVelocity: (): Promise<{ period: string; value: number }[]> => logsService.getUsageMetrics(30),
-    getDomainPerformance: (): Promise<PerformanceItem[]> => Promise.resolve([
-        { id: 'guest', label: 'Guest Experience', icon: Users, color: 'text-emerald-500', metric: 'Compliance', value: '94%', trend: '+2.1%' },
-        { id: 'revenue', label: 'Revenue Ops', icon: TrendingUp, color: 'text-[var(--color-brand-accent)]', metric: 'Governed', value: '€12.4k', trend: '+18%' },
-        { id: 'ops', label: 'Operations', icon: Settings, color: 'text-blue-500', metric: 'Automation', value: '91%', trend: '+4%' },
-        { id: 'playbook', label: 'Playbooks', icon: FileText, color: 'text-purple-500', metric: 'Resolution', value: '89%', trend: '+6%' },
-    ]),
+    getN8nExecutions: (limit?: number) => logsService.getN8nExecutions(limit),
+    getAgentStats: () => logsService.getAgentStats(),
+    getExecutionVelocity: () => logsService.getExecutionVelocity(),
+
+    getDomainPerformance: async (): Promise<PerformanceItem[]> => {
+        // Get real stats from n8n_executions
+        const stats = await logsService.getAgentStats();
+
+        const agentConfig: Record<string, { label: string; icon: any; color: string; metric: string }> = {
+            'AMELIA': { label: 'Guest Communication', icon: Users, color: 'text-white', metric: 'WhatsApp' },
+            'JAMES': { label: 'Reservation Lookup', icon: FileText, color: 'text-emerald-500', metric: 'Lookups' },
+            'ELON': { label: 'Revenue Optimization', icon: TrendingUp, color: 'text-[var(--color-brand-accent)]', metric: 'Orphan Days' },
+            'LARA': { label: 'Operations', icon: Settings, color: 'text-blue-500', metric: 'Planning' },
+        };
+
+        return stats.map((s: any) => {
+            const config = agentConfig[s.name] || { label: s.name, icon: Users, color: 'text-white', metric: 'Executions' };
+            return {
+                id: s.name.toLowerCase(),
+                label: config.label,
+                icon: config.icon,
+                color: config.color,
+                metric: config.metric,
+                value: s.count.toString(),
+                trend: `${s.successRate} success | ${s.avgDuration} avg`,
+            };
+        });
+    },
 };

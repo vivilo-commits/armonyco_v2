@@ -180,4 +180,103 @@ export const logsService = {
     getNotifications,
     markNotificationRead,
     getUsageMetrics,
+    getN8nExecutions,
+    getAgentStats,
+    getExecutionVelocity,
 };
+
+/**
+ * Get N8n executions for Truth Ledger
+ */
+export async function getN8nExecutions(limit: number = 100): Promise<any[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('n8n_executions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('[Logs] Get n8n executions failed:', error);
+        return [];
+    }
+
+    return data || [];
+}
+
+/**
+ * Get agent stats from n8n_executions
+ */
+export async function getAgentStats(): Promise<any[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('n8n_executions')
+        .select('agent_name, status, duration_ms, governance_verdict')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[Logs] Get agent stats failed:', error);
+        return [];
+    }
+
+    // Aggregate by agent
+    const agentMap: Record<string, { count: number; success: number; totalDuration: number }> = {};
+
+    (data || []).forEach((exec: any) => {
+        if (!agentMap[exec.agent_name]) {
+            agentMap[exec.agent_name] = { count: 0, success: 0, totalDuration: 0 };
+        }
+        agentMap[exec.agent_name].count++;
+        if (exec.status === 'success') agentMap[exec.agent_name].success++;
+        agentMap[exec.agent_name].totalDuration += exec.duration_ms || 0;
+    });
+
+    return Object.entries(agentMap).map(([name, stats]) => ({
+        name,
+        count: stats.count,
+        successRate: ((stats.success / stats.count) * 100).toFixed(1) + '%',
+        avgDuration: Math.round(stats.totalDuration / stats.count / 1000) + 's',
+    }));
+}
+
+/**
+ * Get execution velocity for charts (hourly)
+ */
+export async function getExecutionVelocity(): Promise<{ time: string; value: number }[]> {
+    if (!supabase) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+        .from('n8n_executions')
+        .select('created_at')
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('[Logs] Get velocity failed:', error);
+        return [];
+    }
+
+    // Group by hour
+    const hourlyCount: Record<string, number> = {};
+    (data || []).forEach((exec: any) => {
+        const hour = new Date(exec.created_at).getHours();
+        const timeKey = `${hour.toString().padStart(2, '0')}:00`;
+        hourlyCount[timeKey] = (hourlyCount[timeKey] || 0) + 1;
+    });
+
+    // Generate all hours
+    const result: { time: string; value: number }[] = [];
+    let cumulative = 0;
+    for (let h = 8; h <= 22; h += 2) {
+        const timeKey = `${h.toString().padStart(2, '0')}:00`;
+        cumulative += hourlyCount[timeKey] || 0;
+        result.push({ time: timeKey, value: cumulative });
+    }
+
+    return result;
+}
