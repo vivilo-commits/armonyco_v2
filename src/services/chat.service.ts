@@ -16,26 +16,8 @@ interface AmeliaMessage {
 }
 
 /**
- * Check if message is a tool trace (should be hidden)
- */
-function isToolTrace(text: string): boolean {
-    // Only filter specific tool trace patterns
-    return (
-        text.startsWith('{') ||
-        text.startsWith('[{') ||
-        text.includes('Calling Think with Input') ||
-        text.includes('Tool: Think, Input:') ||
-        text.includes('"tool_calls":') ||
-        text.includes('"additional_kwargs":{"tool_calls"') ||
-        text.includes('Conversation history:') ||
-        text.includes('Tools needed:') ||
-        text.includes('; Tool: Think') ||
-        text.includes('call_') && text.includes('function')
-    );
-}
-
-/**
  * Parse the message from amelia_whatsapp_history
+ * SIMPLE: Only show messages where type is exactly "human" or "ai"
  */
 function parseMessageContent(message: MessageContent | string): { type: 'ai' | 'human'; text: string } | null {
     let parsed: MessageContent;
@@ -44,39 +26,28 @@ function parseMessageContent(message: MessageContent | string): { type: 'ai' | '
         try {
             parsed = JSON.parse(message);
         } catch {
-            // Plain text
-            const trimmed = message.trim();
-            if (!trimmed || isToolTrace(trimmed)) return null;
-            return { type: 'human', text: trimmed };
+            return null; // Not a valid JSON, skip
         }
     } else {
         parsed = message;
     }
 
-    if (!parsed) return null;
+    if (!parsed || !parsed.type || !parsed.content) return null;
 
-    // Determine type
-    let messageType: 'ai' | 'human' = 'human';
-    if (parsed.type) {
-        const typeStr = String(parsed.type).toLowerCase();
-        if (typeStr === 'ai' || typeStr === 'assistant' || typeStr === 'aimessage') {
-            messageType = 'ai';
-        }
+    // Only accept "human" or "ai" types - nothing else
+    const typeStr = String(parsed.type).toLowerCase();
+
+    if (typeStr !== 'human' && typeStr !== 'ai') {
+        return null; // Skip any other types (tool calls, etc)
     }
 
-    // Get content
-    const text = parsed.content?.trim() || '';
+    const text = parsed.content.trim();
+    if (!text) return null;
 
-    if (!text) {
-        return null;
-    }
-
-    // Only filter tool traces, allow everything else
-    if (isToolTrace(text)) {
-        return null;
-    }
-
-    return { type: messageType, text };
+    return {
+        type: typeStr === 'ai' ? 'ai' : 'human',
+        text
+    };
 }
 
 /**
@@ -100,7 +71,6 @@ async function getConversations(): Promise<Conversation[]> {
     }
 
     if (!data || data.length === 0) {
-        console.log('[Chat] No data returned from query');
         return [];
     }
 
