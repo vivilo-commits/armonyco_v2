@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatCard } from '../../components/app/StatCard';
 import { ActionToggle } from '../../components/ui/ActionToggle';
+import { useN8nExecutions } from '../../src/hooks/useLogs';
 
 interface NotificationsProps {
     notifications: Notification[];
@@ -13,6 +14,12 @@ interface NotificationsProps {
 
 export const NotificationsView: React.FC<NotificationsProps> = ({ notifications, markAsRead }) => {
     const [activeTab, setActiveTab] = useState<'ALERTS' | 'SETTINGS'>('ALERTS');
+    const { data: executions } = useN8nExecutions();
+
+    // Calculate system health from executions
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const systemHealth = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(0) : '0';
 
     // Mock Settings State
     const [settings, setSettings] = useState({
@@ -73,7 +80,7 @@ export const NotificationsView: React.FC<NotificationsProps> = ({ notifications,
                 />
                 <StatCard
                     label="System Health"
-                    value="98%"
+                    value={`${systemHealth}%`}
                     icon={Activity}
                     iconColor="text-[var(--color-success)]"
                 />

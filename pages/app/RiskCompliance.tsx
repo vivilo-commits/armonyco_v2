@@ -4,6 +4,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { FloatingInput } from '../../components/ui/FloatingInput';
 import { useCompliance, useRecentDecisions } from '../../src/hooks/useCompliance';
+import { useN8nExecutions } from '../../src/hooks/useLogs';
 import { DecisionRecord } from '../../src/types';
 
 interface RiskComplianceProps {
@@ -39,9 +40,31 @@ const FilterBar = ({ title }: { title: string }) => (
 export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'overview' }) => {
     const { data: metrics } = useCompliance();
     const { data: decisions } = useRecentDecisions();
+    const { data: executions } = useN8nExecutions();
 
     const history = metrics?.history || [];
     const recentDecisions = decisions || [];
+
+    // Calculate real metrics from n8n_executions
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const failedCount = executions?.filter(e => e.status !== 'success').length || 0;
+    const complianceRate = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(1) : '0';
+    const humanRisk = totalExecutions > 0 ? ((failedCount / totalExecutions) * 100).toFixed(1) : '0';
+    const residualRisk = totalExecutions > 0 ? (Math.max(0, parseFloat(humanRisk) * 0.5)).toFixed(1) : '0';
+
+    // Convert executions to recent decisions format
+    const executionDecisions = React.useMemo(() => {
+        if (!executions?.length) return [];
+        return executions.slice(0, 10).map(exec => ({
+            id: exec.truth_identity || exec.n8n_execution_id,
+            timestamp: new Date(exec.started_at).toLocaleTimeString('it-IT'),
+            policy: exec.perimeter || 'INSTITUTIONAL',
+            verdict: exec.status === 'success' ? 'ALLOW' : 'DENY',
+            responsible: exec.agent_name || 'SYSTEM',
+            credits: exec.duration_ms ? Math.round(exec.duration_ms / 1000) : 0,
+        }));
+    }, [executions]);
 
     // --- COMPLIANCE VIEW ---
     const renderCompliance = () => (
@@ -71,8 +94,8 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                         <div>
                             <h3 className="text-[var(--color-text-muted)] text-xs uppercase font-bold tracking-wider mb-2">COMPLIANCE RATE™</h3>
                             <div className="flex items-baseline gap-3">
-                                <span className="text-6xl font-numbers text-[var(--color-text-main)] tracking-tighter">96.8%</span>
-                                <span className="text-[var(--color-success)] text-sm font-bold bg-[var(--color-success)]/10 px-2 py-1 rounded border border-[var(--color-success)]/20 font-numbers ml-2">↑ 1.2%</span>
+                                <span className="text-6xl font-numbers text-[var(--color-text-main)] tracking-tighter">{complianceRate}%</span>
+                                <span className="text-[var(--color-success)] text-sm font-bold bg-[var(--color-success)]/10 px-2 py-1 rounded border border-[var(--color-success)]/20 font-numbers ml-2">Live</span>
                             </div>
                             <p className="text-[var(--color-text-muted)] text-sm mt-4 leading-relaxed">
                                 Percentage of governed events resolved within policy, without human intervention.
@@ -114,7 +137,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
-                                {(recentDecisions.length > 0 ? recentDecisions : []).map((row, i) => (
+                                {(executionDecisions.length > 0 ? executionDecisions : recentDecisions).map((row, i) => (
                                     <tr key={row.id || i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
                                         <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.timestamp?.split(' ')[1] || row.timestamp}</td>
@@ -168,7 +191,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                             <div className="p-2 bg-[var(--color-danger)]/10 rounded-lg text-[var(--color-danger)]"><AlertTriangle size={20} /></div>
                             <h3 className="text-[var(--color-text-main)] font-medium">Human Risk Exposure</h3>
                         </div>
-                        <div className="text-5xl font-numbers text-[var(--color-danger)] mb-2">3.2%</div>
+                        <div className="text-5xl font-numbers text-[var(--color-danger)] mb-2">{humanRisk}%</div>
                         <p className="text-[var(--color-text-muted)] text-sm mt-4">The fraction of critical operations still dependent on human judgment.</p>
                     </Card>
 
@@ -275,7 +298,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                             <div className="p-2 bg-[var(--color-surface-hover)] rounded-lg text-[var(--color-brand-accent)]"><Activity size={20} /></div>
                             <h3 className="text-[var(--color-text-main)] font-medium">Residual Risk Rate</h3>
                         </div>
-                        <div className="text-5xl font-numbers text-[var(--color-warning)] mb-2">1.8%</div>
+                        <div className="text-5xl font-numbers text-[var(--color-warning)] mb-2">{residualRisk}%</div>
                         <p className="text-[var(--color-text-muted)] text-sm mt-4">Events and communications happening outside the governance perimeter.</p>
                     </Card>
 

@@ -4,19 +4,38 @@ import { Search, Filter, Calendar, TrendingUp, Shield, Activity, CheckCircle } f
 import { FloatingInput } from '../../components/ui/FloatingInput';
 import { Card } from '../../components/ui/Card';
 import { Tooltip } from '../../components/ui/Tooltip';
-
-const data = [
-    { name: 'Jan', value: 4000 },
-    { name: 'Feb', value: 12000 },
-    { name: 'Mar', value: 18000 },
-    { name: 'Apr', value: 27000 },
-    { name: 'May', value: 32000 },
-    { name: 'Jun', value: 41000 },
-    { name: 'Jul', value: 47832 },
-];
+import { useN8nExecutions } from '../../src/hooks/useLogs';
 
 export const GovernedValueView: React.FC = () => {
     const [minAmount, setMinAmount] = useState('');
+    const { data: executions, status } = useN8nExecutions();
+    const loading = status === 'pending';
+
+    // Calculate chart data from executions (cumulative by date)
+    const chartData = React.useMemo(() => {
+        if (!executions?.length) return [];
+
+        const dateMap: Record<string, number> = {};
+        executions.forEach(exec => {
+            const date = new Date(exec.started_at);
+            const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+            dateMap[monthKey] = (dateMap[monthKey] || 0) + 1;
+        });
+
+        let cumulative = 0;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months.map(month => {
+            cumulative += (dateMap[month] || 0) * 100; // Simulate value per execution
+            return { name: month, value: cumulative };
+        }).filter(d => d.value > 0);
+    }, [executions]);
+
+    const totalValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
+    const largestAccumulation = Math.max(...(chartData.map(d => d.value) || [0]));
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const governanceDensity = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(0) : '0';
+
 
     return (
         <div className="p-8 animate-fade-in flex flex-col min-h-[calc(100vh-64px)] overflow-y-auto overflow-x-hidden bg-black text-white">
@@ -69,7 +88,7 @@ export const GovernedValueView: React.FC = () => {
                         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--color-brand-accent)]/30 to-transparent"></div>
 
                         <div className="absolute top-8 right-10 z-10 text-right animate-slide-up">
-                            <span className="text-[var(--color-brand-accent)] font-numbers text-5xl font-black block mb-2 tracking-tighter italic drop-shadow-[0_0_20px_rgba(212,175,55,0.2)]">47,832 €</span>
+                            <span className="text-[var(--color-brand-accent)] font-numbers text-5xl font-black block mb-2 tracking-tighter italic drop-shadow-[0_0_20px_rgba(212,175,55,0.2)]">{totalValue.toLocaleString('de-DE')} €</span>
                             <span className="text-white/30 text-[10px] uppercase tracking-[0.3em] font-black flex items-center justify-end gap-2">
                                 <Activity size={12} className="animate-pulse" /> Cumulative Institutional Value
                             </span>
@@ -77,7 +96,7 @@ export const GovernedValueView: React.FC = () => {
 
                         <div className="h-full pt-10">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                                <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.15} />
@@ -118,7 +137,7 @@ export const GovernedValueView: React.FC = () => {
                     <Card padding="lg" className="flex flex-col justify-between h-36 bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all group rounded-2xl">
                         <div>
                             <h3 className="text-white/20 text-[9px] uppercase font-black tracking-[0.3em] mb-3 group-hover:text-white/40 transition-colors">Largest Accumulation</h3>
-                            <p className="text-white text-3xl font-numbers font-black italic tracking-tighter">12,450 €</p>
+                            <p className="text-white text-3xl font-numbers font-black italic tracking-tighter">{largestAccumulation.toLocaleString('de-DE')} €</p>
                         </div>
                         <div className="text-emerald-500/60 text-[10px] flex items-center gap-2 font-bold uppercase tracking-widest">
                             <TrendingUp size={14} className="text-emerald-500" /> Contract_Renewal_V2
@@ -128,7 +147,7 @@ export const GovernedValueView: React.FC = () => {
                     <Card padding="lg" className="flex flex-col justify-between h-36 bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03] transition-all group rounded-2xl">
                         <div>
                             <h3 className="text-white/20 text-[9px] uppercase font-black tracking-[0.3em] mb-3 group-hover:text-white/40 transition-colors">Governance Density</h3>
-                            <p className="text-white text-3xl font-numbers font-black italic tracking-tighter">100%</p>
+                            <p className="text-white text-3xl font-numbers font-black italic tracking-tighter">{governanceDensity}%</p>
                         </div>
                         <div className="text-white/40 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 italic">
                             <Shield size={14} className="text-[var(--color-brand-accent)]" /> Institutional Fidelity
