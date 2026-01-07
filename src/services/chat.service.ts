@@ -16,8 +16,26 @@ interface AmeliaMessage {
 }
 
 /**
+ * Check if message is a tool trace (should be hidden)
+ */
+function isToolTrace(text: string): boolean {
+    // Only filter specific tool trace patterns
+    return (
+        text.startsWith('{') ||
+        text.startsWith('[{') ||
+        text.includes('Calling Think with Input') ||
+        text.includes('Tool: Think, Input:') ||
+        text.includes('"tool_calls":') ||
+        text.includes('"additional_kwargs":{"tool_calls"') ||
+        text.includes('Conversation history:') ||
+        text.includes('Tools needed:') ||
+        text.includes('; Tool: Think') ||
+        text.includes('call_') && text.includes('function')
+    );
+}
+
+/**
  * Parse the message from amelia_whatsapp_history
- * NO FILTERS - show all messages
  */
 function parseMessageContent(message: MessageContent | string): { type: 'ai' | 'human'; text: string } | null {
     let parsed: MessageContent;
@@ -26,7 +44,10 @@ function parseMessageContent(message: MessageContent | string): { type: 'ai' | '
         try {
             parsed = JSON.parse(message);
         } catch {
-            return { type: 'human', text: message.trim() };
+            // Plain text
+            const trimmed = message.trim();
+            if (!trimmed || isToolTrace(trimmed)) return null;
+            return { type: 'human', text: trimmed };
         }
     } else {
         parsed = message;
@@ -43,10 +64,15 @@ function parseMessageContent(message: MessageContent | string): { type: 'ai' | '
         }
     }
 
-    // Get content - no filtering at all
+    // Get content
     const text = parsed.content?.trim() || '';
 
     if (!text) {
+        return null;
+    }
+
+    // Only filter tool traces, allow everything else
+    if (isToolTrace(text)) {
         return null;
     }
 
