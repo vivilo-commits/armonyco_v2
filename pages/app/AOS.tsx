@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info, Loader } from '../../components/ui/Icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../../components/ui/Card';
@@ -24,6 +24,7 @@ export const AOSView: React.FC = () => {
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Filter conversations by phone number
     const filteredConversations = conversations?.filter(c =>
@@ -36,6 +37,13 @@ export const AOSView: React.FC = () => {
             setSelectedConvId(conversations[0].id);
         }
     }, [conversations, selectedConvId]);
+
+    // Auto-scroll to bottom when conversation changes or new messages arrive
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [selectedConvId, conversations]);
 
     const selectedConversation = conversations?.find(c => c.id === selectedConvId);
 
@@ -248,6 +256,7 @@ export const AOSView: React.FC = () => {
                                         <p className="text-[10px] text-white/20 uppercase tracking-widest">No messages</p>
                                     </div>
                                 )}
+                                <div ref={messagesEndRef} />
                             </div>
 
                             {/* Chat Footer / Input - Disabled */}
