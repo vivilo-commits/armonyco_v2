@@ -11,27 +11,24 @@ interface MessageContent {
 interface AmeliaMessage {
     session_id: string;
     id: number;
-    message: MessageContent | string; // Can be object (JSONB) or string
+    message: MessageContent | string;
     created_at?: string;
 }
 
 /**
  * Parse the message from amelia_whatsapp_history
- * Message can be either a JSONB object or a JSON string
+ * NO FILTERS - show all messages
  */
 function parseMessageContent(message: MessageContent | string): { type: 'ai' | 'human'; text: string } | null {
     let parsed: MessageContent;
 
-    // If it's a string, try to parse it
     if (typeof message === 'string') {
         try {
             parsed = JSON.parse(message);
         } catch {
-            // Plain text message
             return { type: 'human', text: message.trim() };
         }
     } else {
-        // Already an object (JSONB from Supabase)
         parsed = message;
     }
 
@@ -46,28 +43,10 @@ function parseMessageContent(message: MessageContent | string): { type: 'ai' | '
         }
     }
 
-    // Get content
+    // Get content - no filtering at all
     const text = parsed.content?.trim() || '';
 
     if (!text) {
-        return null;
-    }
-
-    // Skip messages that look like JSON, code, or complex tool output
-    // Only filter specific tool patterns, not general responses
-    if (
-        text.startsWith('{') ||
-        text.startsWith('[') ||
-        text.includes('"content":[') ||
-        text.includes('"startIndex":') ||
-        text.includes('body":{"content"') ||
-        text.includes('Calling Think with Input') ||
-        text.includes('Tool: Think') ||
-        text.includes('call_') ||
-        text.includes('Conversation history:') ||
-        text.includes('Tools needed:') ||
-        text.length > 1500 // Increased limit to allow longer AI responses
-    ) {
         return null;
     }
 
@@ -87,7 +66,7 @@ async function getConversations(): Promise<Conversation[]> {
         .from('amelia_whatsapp_history')
         .select('*')
         .order('id', { ascending: true })
-        .limit(500);
+        .limit(1000);
 
     if (error) {
         console.error('[Chat] Query error:', error);
