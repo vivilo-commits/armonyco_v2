@@ -24,8 +24,8 @@ import { StatCard } from '../../components/app/StatCard';
 import { RecentActivity } from '../../components/app/RecentActivity';
 import { Card } from '../../components/ui/Card';
 import { authService } from '../../src/services/auth.service';
-import { logService } from '../../src/services/log.service';
 import { productService } from '../../src/services/product.service';
+import { useN8nExecutions } from '../../src/hooks/useLogs';
 import { UserProfile, ProductModule, DecisionRecord } from '../../src/types';
 
 interface DashboardProps {
@@ -35,46 +35,99 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
     const [modules, setModules] = React.useState<ProductModule[]>([]);
-    const [activities, setActivities] = React.useState<DecisionRecord[]>([]);
-    const [valueVelocity, setValueVelocity] = React.useState<any[]>([]);
-    const [performance, setPerformance] = React.useState<any[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
+
+    // Real data from n8n_executions
+    const { data: executions, status } = useN8nExecutions();
+    const loading = status === 'pending';
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const [profile, allModules, logs, velocity, perf] = await Promise.all([
+                const [profile, allModules] = await Promise.all([
                     authService.getUserProfile(),
                     productService.getModules(),
-                    logService.getLogs(),
-                    logService.getValueVelocity(),
-                    logService.getDomainPerformance()
                 ]);
                 setUserProfile(profile);
                 setModules(allModules);
-                setActivities(logs);
-                setValueVelocity(velocity);
-                setPerformance(perf);
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error);
-            } finally {
-                setIsLoading(false);
             }
         };
         fetchData();
     }, []);
 
-    // Helper to get module metric (mock simulation)
-    const getModuleMetric = (category: string) => {
-        const module = modules.find(m => m.category === category && m.isPurchased);
-        if (!module) return { value: '0%', trend: 'No module' };
+    // Calculate real metrics from executions
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const failedCount = executions?.filter(e => e.status !== 'success').length || 0;
+    const complianceRate = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(1) : '0';
+    const humanRisk = totalExecutions > 0 ? ((failedCount / totalExecutions) * 100).toFixed(1) : '0';
+    const residualRisk = totalExecutions > 0 ? (Math.max(0, parseFloat(humanRisk) - 1.4)).toFixed(1) : '0';
 
-        switch (category) {
-            case 'REVENUE': return { value: '12.450 €', trend: '+18% vs Target' };
-            case 'OPS': return { value: '94.2%', trend: '420h Saved' };
-            default: return { value: '99.9%', trend: 'Optimal' };
+    // Calculate velocity chart data (hourly cumulative)
+    const valueVelocity = React.useMemo(() => {
+        if (!executions?.length) return [];
+
+        const hourlyCount: Record<string, number> = {};
+        executions.forEach(exec => {
+            const hour = new Date(exec.started_at).getHours();
+            const timeKey = `${hour.toString().padStart(2, '0')}:00`;
+            hourlyCount[timeKey] = (hourlyCount[timeKey] || 0) + 1;
+        });
+
+        const result: { time: string; value: number }[] = [];
+        let cumulative = 0;
+        for (let h = 8; h <= 22; h += 2) {
+            const timeKey = `${h.toString().padStart(2, '0')}:00`;
+            cumulative += hourlyCount[timeKey] || 0;
+            result.push({ time: timeKey, value: cumulative });
         }
-    };
+        return result;
+    }, [executions]);
+
+    // Calculate performance by agent
+    const performance = React.useMemo(() => {
+        if (!executions?.length) return [];
+
+        const agentMap: Record<string, { count: number; success: number }> = {};
+        executions.forEach(exec => {
+            const agent = exec.agent_name || 'OTHER';
+            if (!agentMap[agent]) agentMap[agent] = { count: 0, success: 0 };
+            agentMap[agent].count++;
+            if (exec.status === 'success') agentMap[agent].success++;
+        });
+
+        const iconMap: Record<string, { icon: any; color: string; label: string }> = {
+            'AMELIA': { icon: Users, color: 'text-white', label: 'Guest Communication' },
+            'JAMES': { icon: Shield, color: 'text-emerald-500', label: 'Reservation Lookup' },
+            'ELON': { icon: TrendingUp, color: 'text-[var(--color-brand-accent)]', label: 'Revenue Optimization' },
+            'LARA': { icon: Activity, color: 'text-blue-500', label: 'Operations' },
+        };
+
+        return Object.entries(agentMap).map(([name, data]) => ({
+            id: name.toLowerCase(),
+            label: iconMap[name]?.label || name,
+            icon: iconMap[name]?.icon || Users,
+            color: iconMap[name]?.color || 'text-white',
+            metric: name,
+            value: data.count.toString(),
+            trend: `${((data.success / data.count) * 100).toFixed(0)}% success`,
+        }));
+    }, [executions]);
+
+    // Convert executions to activities for RecentActivity
+    const activities: DecisionRecord[] = React.useMemo(() => {
+        if (!executions?.length) return [];
+        return executions.slice(0, 10).map(exec => ({
+            id: exec.truth_identity || exec.n8n_execution_id,
+            timestamp: exec.started_at,
+            policy: exec.perimeter || 'INSTITUTIONAL',
+            verdict: exec.status === 'success' ? 'ALLOW' : 'DENY',
+            responsible: exec.agent_name || 'SYSTEM',
+            credits: exec.duration_ms ? Math.round(exec.duration_ms / 1000) : 0,
+        }));
+    }, [executions]);
+
     return (
         <div className="p-8 animate-fade-in text-white">
             <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
@@ -84,6 +137,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">Control Tower™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ institutional truth</span></h1>
                     </div>
                     <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Consolidated overview of operational events and governed decision protocols.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">Live</span>
                 </div>
             </header>
 
@@ -106,7 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('log')}>
                     <StatCard
                         label="Decision Log"
-                        value="1.492"
+                        value={totalExecutions.toLocaleString()}
                         icon={Zap}
                         iconColor="text-white"
                         subtext={<span className="text-[var(--color-text-muted)] opacity-60">Truth Ledger: Decisions Registered</span>}
@@ -116,12 +173,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('compliance')}>
                     <StatCard
                         label="Compliance Rate™"
-                        value="96.8%"
+                        value={`${complianceRate}%`}
                         icon={Shield}
                         iconColor="text-emerald-500"
                     >
                         <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-1">
-                            <div className="bg-emerald-500 w-[96.8%] h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
+                            <div className="bg-emerald-500 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]" style={{ width: `${complianceRate}%` }}></div>
                         </div>
                     </StatCard>
                 </div>
@@ -129,20 +186,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('human-risk')}>
                     <StatCard
                         label="Human Risk"
-                        value="1.8%"
+                        value={`${humanRisk}%`}
                         icon={AlertTriangle}
-                        iconColor="text-red-500"
-                        subtext={<span className="text-emerald-500 font-black uppercase tracking-widest text-[9px] italic">Target: {'<'} 3%</span>}
+                        iconColor={parseFloat(humanRisk) > 3 ? "text-red-500" : "text-emerald-500"}
+                        subtext={<span className={`${parseFloat(humanRisk) < 3 ? 'text-emerald-500' : 'text-red-500'} font-black uppercase tracking-widest text-[9px] italic`}>Target: {'<'} 3%</span>}
                     />
                 </div>
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('residual-risk')}>
                     <StatCard
                         label="Residual Risk"
-                        value="0.4%"
+                        value={`${residualRisk}%`}
                         icon={Activity}
-                        iconColor="text-amber-500"
-                        subtext={<span className="text-emerald-500 font-black uppercase tracking-widest text-[9px] italic">Target: {'<'} 1%</span>}
+                        iconColor={parseFloat(residualRisk) > 1 ? "text-amber-500" : "text-emerald-500"}
+                        subtext={<span className={`${parseFloat(residualRisk) < 1 ? 'text-emerald-500' : 'text-amber-500'} font-black uppercase tracking-widest text-[9px] italic`}>Target: {'<'} 1%</span>}
                     />
                 </div>
             </div>
@@ -153,61 +210,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {/* Main Chart Area */}
                 <Card padding="lg" className="lg:col-span-2 min-h-[400px]">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-[var(--color-text-main)] font-medium">Governed Cashflow™ Velocity</h3>
+                        <h3 className="text-[var(--color-text-main)] font-medium">Execution Velocity</h3>
                         <div className="flex gap-2">
                             <span className="px-2 py-1 bg-white/5 text-[var(--color-text-muted)] rounded text-[10px] uppercase font-bold tracking-widest border border-white/10">Today</span>
                         </div>
                     </div>
                     <div className="h-80 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={valueVelocity}>
-                                <defs>
-                                    <linearGradient id="colorValueMain" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#d4af37" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#d4af37" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                <XAxis
-                                    dataKey="time"
-                                    stroke="var(--color-text-subtle)"
-                                    fontSize={10}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    stroke="var(--color-text-subtle)"
-                                    fontSize={10}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dx={-10}
-                                />
-                                <RechartsTooltip
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                                        backdropFilter: 'blur(8px)',
-                                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                                        color: '#fff',
-                                        borderRadius: '12px',
-                                        fontSize: '10px',
-                                        fontWeight: 'bold',
-                                        textTransform: 'uppercase'
-                                    }}
-                                />
-                                <Area type="monotone" dataKey="value" stroke="var(--color-brand-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorValueMain)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {loading ? (
+                            <div className="h-full flex items-center justify-center text-white/40">Loading...</div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={valueVelocity}>
+                                    <defs>
+                                        <linearGradient id="colorValueMain" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#d4af37" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#d4af37" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                    <XAxis
+                                        dataKey="time"
+                                        stroke="var(--color-text-subtle)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        stroke="var(--color-text-subtle)"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        dx={-10}
+                                    />
+                                    <RechartsTooltip
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                            backdropFilter: 'blur(8px)',
+                                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            borderRadius: '12px',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    />
+                                    <Area type="monotone" dataKey="value" stroke="var(--color-brand-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorValueMain)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </Card>
 
                 {/* Product Domain Performance */}
                 <Card padding="md" className="flex flex-col min-h-[400px]">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[var(--color-text-main)] font-medium text-sm">Product Domain Performance</h3>
+                        <h3 className="text-[var(--color-text-main)] font-medium text-sm">Agent Performance</h3>
                         <Package size={20} className="text-[var(--color-text-muted)]" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between gap-3">
+                        {performance.length === 0 && !loading && (
+                            <div className="text-center text-white/40 py-8">No agent data yet</div>
+                        )}
                         {performance.map((product) => (
                             <div
                                 key={product.id}

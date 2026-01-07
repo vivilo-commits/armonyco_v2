@@ -3,22 +3,74 @@ import { Cpu, Zap, Activity, Shield, MessageCircle, Clock, TrendingUp } from '..
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/app/StatCard';
 import { AgentCard } from '../../components/ui/AgentCard';
-import { useAgents } from '../../src/hooks/useLogs';
+import { useAgents, useN8nExecutions } from '../../src/hooks/useLogs';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-
-const cognitiveLoadData = [
-    { time: '08:00', load: 30 },
-    { time: '10:00', load: 45 },
-    { time: '12:00', load: 85 },
-    { time: '14:00', load: 70 },
-    { time: '16:00', load: 90 },
-    { time: '18:00', load: 55 },
-    { time: '20:00', load: 40 },
-];
 
 export const AIMView: React.FC = () => {
     const { data: agentsData } = useAgents();
+    const { data: executions, status } = useN8nExecutions();
     const agents = agentsData || [];
+    const loading = status === 'pending';
+
+    // Calculate real metrics from executions
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const complianceRate = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(0) : '0';
+
+    // Calculate cognitive load from executions (hourly distribution)
+    const cognitiveLoadData = React.useMemo(() => {
+        if (!executions?.length) return [];
+
+        const hourlyCount: Record<string, number> = {};
+        executions.forEach(exec => {
+            const hour = new Date(exec.started_at).getHours();
+            const timeKey = `${hour.toString().padStart(2, '0')}:00`;
+            hourlyCount[timeKey] = (hourlyCount[timeKey] || 0) + 1;
+        });
+
+        // Normalize to percentage (max load = 100%)
+        const maxCount = Math.max(...Object.values(hourlyCount), 1);
+        const result: { time: string; load: number }[] = [];
+        for (let h = 8; h <= 20; h += 2) {
+            const timeKey = `${h.toString().padStart(2, '0')}:00`;
+            const count = hourlyCount[timeKey] || 0;
+            result.push({ time: timeKey, load: Math.round((count / maxCount) * 100) });
+        }
+        return result;
+    }, [executions]);
+
+    // Calculate average cognitive load
+    const avgLoad = cognitiveLoadData.length > 0
+        ? Math.round(cognitiveLoadData.reduce((acc, item) => acc + item.load, 0) / cognitiveLoadData.length)
+        : 0;
+
+    // Calculate decisions per hour
+    const decisionsPerHour = totalExecutions > 0 ? Math.round(totalExecutions / 24) : 0;
+
+    // Get recent feed from executions
+    const recentFeed = React.useMemo(() => {
+        if (!executions?.length) return [];
+        return executions.slice(0, 4).map(exec => {
+            const agent = exec.agent_name || 'SYSTEM';
+            const colors: Record<string, string> = {
+                'AMELIA': 'bg-[var(--color-brand-accent)]',
+                'JAMES': 'bg-white',
+                'ELON': 'bg-zinc-700',
+                'LARA': 'bg-emerald-500',
+            };
+            const timeDiff = Date.now() - new Date(exec.started_at).getTime();
+            const timeAgo = timeDiff < 60000 ? 'just now'
+                : timeDiff < 3600000 ? `${Math.round(timeDiff / 60000)}m ago`
+                    : `${Math.round(timeDiff / 3600000)}h ago`;
+
+            return {
+                node: agent,
+                text: `${exec.workflow_name || 'Workflow'} execution ${exec.status}. Duration: ${exec.duration_ms ? Math.round(exec.duration_ms / 1000) : 0}s`,
+                time: timeAgo,
+                color: colors[agent] || 'bg-zinc-700',
+            };
+        });
+    }, [executions]);
 
     return (
         <div className="p-8 animate-fade-in flex flex-col min-h-[calc(100vh-64px)] overflow-y-auto">
@@ -34,7 +86,7 @@ export const AIMView: React.FC = () => {
                 <div className="flex gap-2">
                     <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[9px] font-black flex items-center gap-2 shadow-sm uppercase tracking-widest">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                        Matrix v4.2 Nominal
+                        {loading ? 'Loading' : 'Live Data'}
                     </span>
                 </div>
             </header>
@@ -43,28 +95,28 @@ export const AIMView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 shrink-0">
                 <StatCard
                     label="Active Nodes"
-                    value="4"
+                    value={agents.length.toString()}
                     icon={Cpu}
                     trend={{ value: "Stable", isPositive: true, label: "nodes" }}
                 />
                 <StatCard
                     label="Cognitive Load"
-                    value="68%"
+                    value={`${avgLoad}%`}
                     icon={Zap}
-                    trend={{ value: "↑ 12%", isPositive: false, label: "demand" }}
+                    trend={{ value: avgLoad > 70 ? "High" : "Normal", isPositive: avgLoad <= 70, label: "demand" }}
                 />
                 <StatCard
-                    label="Decisions/Hour"
-                    value="1.240"
+                    label="Total Decisions"
+                    value={totalExecutions.toLocaleString()}
                     icon={Activity}
-                    trend={{ value: "↑ 402", isPositive: true, label: "velocity" }}
+                    trend={{ value: `${decisionsPerHour}/h`, isPositive: true, label: "avg" }}
                 />
                 <StatCard
                     label="Policy Index™"
-                    value="100%"
+                    value={`${complianceRate}%`}
                     icon={Shield}
                     iconColor="text-emerald-500"
-                    trend={{ value: "Absolute", isPositive: true, label: "compliance" }}
+                    trend={{ value: parseInt(complianceRate) >= 95 ? "Optimal" : "Review", isPositive: parseInt(complianceRate) >= 95, label: "compliance" }}
                 />
             </div>
 
@@ -93,32 +145,36 @@ export const AIMView: React.FC = () => {
                         <h3 className="text-white font-light text-sm uppercase tracking-tight opacity-80">Matrix Load Topology <span className="text-white/20 text-xs lowercase italic tracking-normal ml-2">/ system distribution</span></h3>
                     </div>
                     <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={cognitiveLoadData}>
-                                <defs>
-                                    <linearGradient id="colorLoadAIM" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="var(--color-brand-accent)" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                                <XAxis dataKey="time" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} dy={10} fontWeight="900" />
-                                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} dx={-10} fontWeight="900" />
-                                <RechartsTooltip
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                                        backdropFilter: 'blur(8px)',
-                                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                                        color: '#fff',
-                                        borderRadius: '12px',
-                                        fontSize: '10px',
-                                        fontWeight: 'bold',
-                                        textTransform: 'uppercase'
-                                    }}
-                                />
-                                <Area type="monotone" dataKey="load" stroke="var(--color-brand-accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorLoadAIM)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {cognitiveLoadData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={cognitiveLoadData}>
+                                    <defs>
+                                        <linearGradient id="colorLoadAIM" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="var(--color-brand-accent)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                    <XAxis dataKey="time" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} dy={10} fontWeight="900" />
+                                    <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} dx={-10} fontWeight="900" />
+                                    <RechartsTooltip
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                            backdropFilter: 'blur(8px)',
+                                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                                            color: '#fff',
+                                            borderRadius: '12px',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    />
+                                    <Area type="monotone" dataKey="load" stroke="var(--color-brand-accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorLoadAIM)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-white/40">Loading matrix...</div>
+                        )}
                     </div>
                 </Card>
 
@@ -129,12 +185,7 @@ export const AIMView: React.FC = () => {
                             <h3 className="text-white/60 text-[10px] uppercase font-black tracking-widest italic">Intelligence Feed</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto p-5 scrollbar-hide space-y-6">
-                            {[
-                                { node: 'AMELIA', text: 'WhatsApp Interpretation (U42): Early Check-in requested.', time: '2m ago', color: 'bg-[var(--color-brand-accent)]' },
-                                { node: 'LARA', text: 'Early Check-in Protocol active. Availability verify complete.', time: '15m ago', color: 'bg-emerald-500' },
-                                { node: 'ELON', text: 'Offer accepted (€25). Cleaning coordination synchronized.', time: '1h ago', color: 'bg-zinc-700' },
-                                { node: 'JAMES', text: 'Evidence verification complete (Screenshot + PMS). Event closed.', time: '2h ago', color: 'bg-white' }
-                            ].map((item, i) => (
+                            {recentFeed.length > 0 ? recentFeed.map((item, i) => (
                                 <div key={i} className="flex gap-3">
                                     <div className={`w-0.5 h-auto ${item.color} rounded-full shrink-0`}></div>
                                     <div>
@@ -145,7 +196,9 @@ export const AIMView: React.FC = () => {
                                         <p className="text-[10px] text-zinc-400 italic leading-tight">{item.text}</p>
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-center text-white/40 text-xs py-4">No recent activity</div>
+                            )}
                         </div>
                     </Card>
 
