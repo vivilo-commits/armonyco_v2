@@ -76,7 +76,7 @@ export const useNotifications = () => {
 };
 
 /**
- * N8n Execution type for Truth Ledger
+ * N8n Execution type for Truth Ledger - Enriched with full execution data
  */
 export interface N8nExecution {
     id: number;
@@ -95,7 +95,44 @@ export interface N8nExecution {
     input_preview: string;
     error_message: string | null;
     created_at: string;
+
+    // Trigger Context
+    trigger_source?: string;           // 'webhook', 'manual', 'schedule', 'subworkflow'
+    trigger_node_name?: string;        // 'New WhatsApp Message1'
+    trigger_node_type?: string;        // 'n8n-nodes-base.whatsAppTrigger'
+    parent_execution_id?: string;      // Parent execution ID
+    parent_workflow_id?: string;       // Parent workflow ID
+
+    // Business Data
+    reservation_id?: string;           // '18113/2026'
+    customer_name?: string;            // 'Guerrera Mario'
+    customer_phone?: string;           // Phone number
+    reservation_value?: number;        // 128.22
+    reservation_channel?: string;      // 'Booking', 'Airbnb', 'Direct'
+    check_in_date?: string;
+    check_out_date?: string;
+    nights?: number;
+    property_name?: string;            // 'MARCHE 54 APT'
+
+    // Execution Metrics
+    nodes_executed?: number;
+    total_api_calls?: number;
+    slowest_node?: string;
+    slowest_node_time_ms?: number;
+
+    // AI/LLM Data
+    ai_model_used?: string;
+    ai_tokens_used?: number;
+    ai_response_preview?: string;
+
+    // Full Data
+    execution_data?: Record<string, any>;
+    execution_trace?: Array<{ node: string; time_ms: number; status: string }>;
+
+    // ArmoCredits
+    armo_credits_used?: number;
 }
+
 
 /**
  * Hook to get N8n executions for Truth Ledger with realtime updates
