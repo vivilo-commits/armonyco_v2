@@ -76,14 +76,14 @@ export const useNotifications = () => {
 };
 
 /**
- * N8n Execution type for Truth Ledger - Enriched with full execution data
+ * Execution type for Truth Ledger - Enriched with full execution data
  */
 export interface N8nExecution {
     id: number;
     truth_identity: string;
-    n8n_execution_id: string;
-    workflow_id: string;
-    workflow_name: string;
+    n8n_execution_id: string;          // Internal reference only
+    workflow_id: string;               // Internal reference only
+    workflow_name: string;             // Maps to agent_name for display
     agent_name: string;
     perimeter: string;
     status: string;
@@ -97,41 +97,45 @@ export interface N8nExecution {
     created_at: string;
 
     // Trigger Context
-    trigger_source?: string;           // 'webhook', 'manual', 'schedule', 'subworkflow'
-    trigger_node_name?: string;        // 'New WhatsApp Message1'
-    trigger_node_type?: string;        // 'n8n-nodes-base.whatsAppTrigger'
-    parent_execution_id?: string;      // Parent execution ID
-    parent_workflow_id?: string;       // Parent workflow ID
+    trigger_source?: string;           // 'message', 'schedule', 'manual', 'cascade'
+    trigger_channel?: string;          // 'WhatsApp', 'Email', 'Booking.com'
+    trigger_context?: string;          // Human-readable description
+    parent_execution_id?: string;      // For cascading actions
+    parent_agent?: string;             // Parent agent name
 
-    // Business Data
+    // Guest & Reservation Data
     reservation_id?: string;           // '18113/2026'
-    customer_name?: string;            // 'Guerrera Mario'
-    customer_phone?: string;           // Phone number
-    reservation_value?: number;        // 128.22
-    reservation_channel?: string;      // 'Booking', 'Airbnb', 'Direct'
+    guest_name?: string;               // 'Mario Guerrera'
+    guest_phone?: string;              // Phone number
+    guest_email?: string;              // Email
+    booking_value?: number;            // 128.22 €
+    booking_channel?: string;          // 'Booking.com', 'Airbnb', 'Direct'
     check_in_date?: string;
     check_out_date?: string;
     nights?: number;
     property_name?: string;            // 'MARCHE 54 APT'
+    room_type?: string;                // 'Suite', 'Standard'
 
     // Execution Metrics
-    nodes_executed?: number;
-    total_api_calls?: number;
-    slowest_node?: string;
-    slowest_node_time_ms?: number;
+    actions_count?: number;            // Number of actions
+    api_calls_count?: number;          // External API calls
+    bottleneck_action?: string;        // Slowest action
+    bottleneck_time_ms?: number;       // Time of slowest action
 
-    // AI/LLM Data
-    ai_model_used?: string;
-    ai_tokens_used?: number;
+    // AI/Intelligence Data
+    ai_model?: string;                 // 'GPT-4', 'Gemini Pro'
+    ai_tokens?: number;
     ai_response_preview?: string;
+    intelligence_score?: number;       // 0.00 to 1.00
 
-    // Full Data
-    execution_data?: Record<string, any>;
-    execution_trace?: Array<{ node: string; time_ms: number; status: string }>;
+    // Governance & Audit
+    execution_trace?: Array<{ action: string; time_ms: number; status: string }>;
+    evidence_data?: Record<string, any>;
 
-    // ArmoCredits
-    armo_credits_used?: number;
+    // ArmoCredits©
+    armo_credits?: number;
 }
+
 
 
 /**

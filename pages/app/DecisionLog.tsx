@@ -160,7 +160,7 @@ export const DecisionLog: React.FC = () => {
                                 <th className="px-6 py-6">Stream ID</th>
                                 <th className="px-6 py-6">Trigger</th>
                                 <th className="px-6 py-6">Reservation</th>
-                                <th className="px-6 py-6">Customer</th>
+                                <th className="px-6 py-6">Guest</th>
                                 <th className="px-6 py-6">Verdict</th>
                                 <th className="px-6 py-6 text-right">ArmoCredits©</th>
                                 <th className="px-6 py-6 text-right">Agent</th>
@@ -176,29 +176,29 @@ export const DecisionLog: React.FC = () => {
                                         {exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 8)}
                                     </td>
                                     <td className="px-6 py-5">
-                                        <span className={`px-2 py-1 rounded text-[9px] font-bold border ${exec.trigger_source === 'webhook' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                exec.trigger_source === 'schedule' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                    exec.trigger_source === 'subworkflow' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
-                                                        'bg-white/5 text-white/40 border-white/10'
+                                        <span className={`px-2 py-1 rounded text-[9px] font-bold border ${exec.trigger_source === 'message' || exec.trigger_channel === 'WhatsApp' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                            exec.trigger_source === 'schedule' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                exec.trigger_source === 'cascade' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
+                                                    'bg-white/5 text-white/40 border-white/10'
                                             }`}>
-                                            {exec.trigger_source || exec.mode || 'manual'}
+                                            {exec.trigger_channel || exec.trigger_source || 'Manual'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-5 text-white/60 font-bold">
                                         {exec.reservation_id || '-'}
                                     </td>
-                                    <td className="px-6 py-5 text-white/80 font-medium truncate max-w-[150px]" title={exec.customer_name || ''}>
-                                        {exec.customer_name || '-'}
+                                    <td className="px-6 py-5 text-white/80 font-medium truncate max-w-[150px]" title={exec.guest_name || ''}>
+                                        {exec.guest_name || '-'}
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className={`px-2.5 py-1 rounded-full text-[9px] font-black border tracking-widest uppercase shadow-sm ${exec.status === 'success' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                exec.status === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                                                    'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                            exec.status === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                'bg-amber-500/10 text-amber-500 border-amber-500/20'
                                             }`}>
                                             {exec.status === 'success' ? 'ALLOW' : exec.status === 'error' ? 'DENY' : 'PENDING'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-5 text-right text-white font-numbers">-{exec.armo_credits_used || 50} ⌬</td>
+                                    <td className="px-6 py-5 text-right text-white font-numbers">-{exec.armo_credits || 50} ⌬</td>
                                     <td className="px-6 py-5 text-right">
                                         <span className="text-white/80 font-black px-2 py-0.5 bg-white/5 rounded border border-white/5 group-hover:border-white/10 transition-colors uppercase tracking-widest text-[9px]">
                                             {exec.agent_name || exec.workflow_name?.split(' ')[0] || 'AOS'}
