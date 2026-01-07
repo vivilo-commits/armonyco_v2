@@ -265,15 +265,9 @@ export const AOSView: React.FC = () => {
                             {/* Chat Footer / Input - Disabled */}
                             <div className="p-5 border-t border-white/10 bg-black/60 shrink-0">
                                 <div className="relative group cursor-not-allowed">
-                                    <div className="w-full bg-red-500/5 border border-red-500/30 rounded-xl px-6 py-4 select-none">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <AlertTriangle size={16} className="text-red-500" />
-                                            <span className="text-[11px] font-bold text-red-500 uppercase tracking-widest">Human Risk Exposure Detected</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 pl-7">
-                                            <Shield size={14} className="text-white/30" />
-                                            <span className="text-[12px] text-white/40 italic">Direct Human Intervention Not Permitted</span>
-                                        </div>
+                                    <div className="w-full bg-white/5 border border-white/20 rounded-xl px-6 py-4 select-none flex items-center justify-center gap-3">
+                                        <AlertTriangle size={16} className="text-red-500" />
+                                        <span className="text-[12px] text-white/50 italic">Human Risk Exposure Detected — Direct Human Intervention Not Permitted</span>
                                     </div>
                                 </div>
                             </div>
