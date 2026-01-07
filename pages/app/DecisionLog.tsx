@@ -156,34 +156,52 @@ export const DecisionLog: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-white/[0.01] text-white/30 font-black uppercase text-[9px] tracking-[0.2em] border-b border-white/5">
                             <tr>
-                                <th className="px-10 py-6">Event Temporal Coord</th>
-                                <th className="px-10 py-6">Stream ID</th>
-                                <th className="px-10 py-6">Policy Topology</th>
-                                <th className="px-10 py-6">Verdict</th>
-                                <th className="px-10 py-6 text-right">ArmoCredits©</th>
-                                <th className="px-10 py-6">Evidence Proof</th>
-                                <th className="px-10 py-6 text-right">Entity</th>
+                                <th className="px-6 py-6">Timestamp</th>
+                                <th className="px-6 py-6">Stream ID</th>
+                                <th className="px-6 py-6">Trigger</th>
+                                <th className="px-6 py-6">Reservation</th>
+                                <th className="px-6 py-6">Customer</th>
+                                <th className="px-6 py-6">Verdict</th>
+                                <th className="px-6 py-6 text-right">ArmoCredits©</th>
+                                <th className="px-6 py-6 text-right">Agent</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5 font-mono text-[10px]">
-                            {filteredLogs.length > 0 ? filteredLogs.map((log) => (
-                                <tr key={log.id} className="hover:bg-white/[0.03] transition-all duration-200 group cursor-default">
-                                    <td className="px-8 py-5 text-white/30 group-hover:text-white/60 transition-colors uppercase tracking-widest">{log.timestamp}</td>
-                                    <td className="px-8 py-5 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">{log.id}</td>
-                                    <td className="px-8 py-5 font-sans text-white/60 font-bold uppercase tracking-tight">{log.policy}</td>
-                                    <td className="px-8 py-5">
-                                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black border tracking-widest uppercase shadow-sm ${log.verdict === 'ALLOW' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                            log.verdict === 'DENY' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                                                'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            {executions && executions.length > 0 ? executions.slice(0, 50).map((exec) => (
+                                <tr key={exec.id} className="hover:bg-white/[0.03] transition-all duration-200 group cursor-default">
+                                    <td className="px-6 py-5 text-white/30 group-hover:text-white/60 transition-colors uppercase tracking-widest">
+                                        {new Date(exec.started_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </td>
+                                    <td className="px-6 py-5 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">
+                                        {exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 8)}
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <span className={`px-2 py-1 rounded text-[9px] font-bold border ${exec.trigger_source === 'webhook' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                exec.trigger_source === 'schedule' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                    exec.trigger_source === 'subworkflow' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' :
+                                                        'bg-white/5 text-white/40 border-white/10'
                                             }`}>
-                                            {log.verdict}
+                                            {exec.trigger_source || exec.mode || 'manual'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-5 text-right text-white font-numbers">-{log.credits} ⌬</td>
-                                    <td className="px-8 py-5 text-white/20 group-hover:text-white/40 transition-colors italic truncate max-w-[120px]">{log.evidenceHash}</td>
-                                    <td className="px-8 py-5 text-right">
+                                    <td className="px-6 py-5 text-white/60 font-bold">
+                                        {exec.reservation_id || '-'}
+                                    </td>
+                                    <td className="px-6 py-5 text-white/80 font-medium truncate max-w-[150px]" title={exec.customer_name || ''}>
+                                        {exec.customer_name || '-'}
+                                    </td>
+                                    <td className="px-6 py-5">
+                                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black border tracking-widest uppercase shadow-sm ${exec.status === 'success' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                                exec.status === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                    'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                            }`}>
+                                            {exec.status === 'success' ? 'ALLOW' : exec.status === 'error' ? 'DENY' : 'PENDING'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-5 text-right text-white font-numbers">-{exec.armo_credits_used || 50} ⌬</td>
+                                    <td className="px-6 py-5 text-right">
                                         <span className="text-white/80 font-black px-2 py-0.5 bg-white/5 rounded border border-white/5 group-hover:border-white/10 transition-colors uppercase tracking-widest text-[9px]">
-                                            {log.responsible}
+                                            {exec.agent_name || exec.workflow_name?.split(' ')[0] || 'AOS'}
                                         </span>
                                     </td>
                                 </tr>
@@ -191,13 +209,14 @@ export const DecisionLog: React.FC = () => {
                                 <tr>
                                     <td colSpan={8} className="p-20 text-center">
                                         <Search size={32} className="mx-auto mb-4 text-white/10 animate-pulse" />
-                                        <p className="text-[10px] text-white/20 uppercase font-black tracking-[0.3em]">No matching operational events within the decrypted stream.</p>
+                                        <p className="text-[10px] text-white/20 uppercase font-black tracking-[0.3em]">No execution data in the decrypted stream.</p>
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
+
             </Card>
             <div className="mt-12 flex flex-col items-center gap-4">
                 <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
