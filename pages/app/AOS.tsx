@@ -51,13 +51,17 @@ export const AOSView: React.FC = () => {
 
     const formatTime = (timestamp: string) => {
         const date = new Date(timestamp);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 60) return `${diffMins}m`;
-        const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m`;
-        return date.toLocaleDateString();
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+
+        if (isToday) {
+            // Show time only for today
+            return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            // Show date and time for other days
+            return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' +
+                date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        }
     };
 
     return (
