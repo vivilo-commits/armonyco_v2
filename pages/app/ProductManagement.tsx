@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity } from '../../components/ui/Icons';
+import React, { useState, useCallback } from 'react';
+import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity, Loader } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -7,6 +7,7 @@ import { useProducts } from '../../src/hooks/useProducts';
 import { useUserProfile } from '../../src/hooks/useAuth';
 import { units, unitGroups, Unit, UnitGroup } from '../../data/portfolio';
 import { ProductModule } from '../../src/types';
+import { productService } from '../../src/services/product.service';
 
 export const ProductManagement: React.FC = () => {
     const { data: modules, status: modulesStatus } = useProducts();
@@ -20,6 +21,54 @@ export const ProductManagement: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
     const [selectedModule, setSelectedModule] = useState<ProductModule | null>(null);
     const [showActivationModal, setShowActivationModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Reload products after changes
+    const reloadProducts = useCallback(() => {
+        window.location.reload(); // Simple reload for now
+    }, []);
+
+    const handleActivateProduct = async () => {
+        if (!selectedModule) return;
+        setIsSaving(true);
+        try {
+            await productService.purchaseModule(selectedModule.id, selectedModule.creditCost || 0);
+            setShowActivationModal(false);
+            reloadProducts();
+        } catch (error) {
+            console.error('Failed to activate:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handlePauseResume = async () => {
+        if (!selectedModule) return;
+        setIsSaving(true);
+        try {
+            await productService.toggleModule(selectedModule.id);
+            setShowActivationModal(false);
+            reloadProducts();
+        } catch (error) {
+            console.error('Failed to toggle:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeactivate = async () => {
+        if (!selectedModule) return;
+        setIsSaving(true);
+        try {
+            await productService.deactivateModule(selectedModule.id);
+            setShowActivationModal(false);
+            reloadProducts();
+        } catch (error) {
+            console.error('Failed to deactivate:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const filteredModules = modules?.filter(m => {
         const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -214,8 +263,38 @@ export const ProductManagement: React.FC = () => {
                                 <Activity size={12} /> Global Perimeter Control
                             </h4>
                             <div className="flex gap-3">
-                                <Button variant="primary" fullWidth className="!bg-emerald-500 !text-black border-0">Activate All Units</Button>
-                                <Button variant="secondary" fullWidth className="border-red-500/20 text-red-500 hover:bg-red-500/5">Disable Everywhere</Button>
+                                {!selectedModule?.isPurchased ? (
+                                    <Button
+                                        variant="primary"
+                                        fullWidth
+                                        className="!bg-emerald-500 !text-black border-0"
+                                        onClick={handleActivateProduct}
+                                        isLoading={isSaving}
+                                    >
+                                        Activate Service
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant="primary"
+                                            fullWidth
+                                            className={selectedModule?.isPaused ? "!bg-emerald-500 !text-black border-0" : "!bg-amber-500 !text-black border-0"}
+                                            onClick={handlePauseResume}
+                                            isLoading={isSaving}
+                                        >
+                                            {selectedModule?.isPaused ? 'Resume Service' : 'Pause Service'}
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            fullWidth
+                                            className="border-red-500/20 text-red-500 hover:bg-red-500/5"
+                                            onClick={handleDeactivate}
+                                            isLoading={isSaving}
+                                        >
+                                            Deactivate
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
 

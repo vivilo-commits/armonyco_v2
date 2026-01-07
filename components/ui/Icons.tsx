@@ -75,7 +75,8 @@ import {
   ShoppingCart,
   Play,
   Send,
-  Headphones
+  Headphones,
+  Ban
 } from 'lucide-react';
 
 export {
@@ -155,7 +156,8 @@ export {
   Play,
   Send,
   Headphones,
-  Loader
+  Loader,
+  Ban
 };
 
 export const IconSizes = {

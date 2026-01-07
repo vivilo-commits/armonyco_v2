@@ -11,13 +11,13 @@ import { ContactModal } from '../../components/landing/ContactModal';
 interface SettingsViewProps {
     activeView?: string;
     userProfile: UserProfile;
-    onUpdateProfile: (data: Partial<UserProfile>) => void;
+    onUpdateProfile: (data: Partial<UserProfile>) => void | Promise<void>;
     organization: Organization;
-    onUpdateOrganization: (data: Partial<Organization>) => void;
+    onUpdateOrganization: (data: Partial<Organization>) => void | Promise<void>;
     billingDetails: BillingDetails;
-    onUpdateBillingDetails: (data: Partial<BillingDetails>) => void;
+    onUpdateBillingDetails: (data: Partial<BillingDetails>) => void | Promise<void>;
     currentCredits: number;
-    onUpdateCredits: (amount: number) => void;
+    onUpdateCredits: (amount: number) => void | Promise<void>;
     activePlanId: number;
     onUpdatePlanId: (id: number) => void;
 }
@@ -82,6 +82,38 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // -- Org Billing Details State --
     const [showBillingModal, setShowBillingModal] = useState(false);
+
+    // -- Save Loading States --
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isSavingOrg, setIsSavingOrg] = useState(false);
+    const [isSavingBilling, setIsSavingBilling] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+    const handleSaveProfile = async () => {
+        setIsSavingProfile(true);
+        try {
+            await onUpdateProfile(localProfile);
+            setSaveSuccess('Profile saved!');
+            setTimeout(() => setSaveSuccess(null), 2000);
+        } catch (error) {
+            console.error('Failed to save profile:', error);
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
+    const handleSaveOrg = async () => {
+        setIsSavingOrg(true);
+        try {
+            await onUpdateOrganization(localOrg);
+            setSaveSuccess('Organization saved!');
+            setTimeout(() => setSaveSuccess(null), 2000);
+        } catch (error) {
+            console.error('Failed to save organization:', error);
+        } finally {
+            setIsSavingOrg(false);
+        }
+    };
 
     // -- Top Up State --
     const [showTopUpModal, setShowTopUpModal] = useState(false);
@@ -310,7 +342,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="flex justify-end pt-4 border-t border-white/5 mt-10">
-                    <Button size="lg" leftIcon={<Save size={18} />} onClick={() => onUpdateProfile(localProfile)}>Save Identity Changes</Button>
+                    <Button size="lg" leftIcon={<Save size={18} />} onClick={handleSaveProfile} isLoading={isSavingProfile}>{isSavingProfile ? 'Saving...' : 'Save Identity Changes'}</Button>
                 </div>
             </div>
         );
@@ -438,7 +470,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="mt-6 flex justify-end pt-8 border-t border-white/5">
-                    <Button leftIcon={<Save size={18} />} onClick={() => onUpdateOrganization(localOrg)}>Update Organization Infrastructure</Button>
+                    <Button leftIcon={<Save size={18} />} onClick={handleSaveOrg} isLoading={isSavingOrg}>{isSavingOrg ? 'Saving...' : 'Update Organization Infrastructure'}</Button>
                 </div>
             </div>
         )

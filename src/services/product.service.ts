@@ -1,28 +1,65 @@
-import { apiClient } from './api';
-import { mockProductModules } from '../mocks/product.mocks';
 import { ProductModule } from '../types';
+import {
+    getProductsWithStatus,
+    activateProduct,
+    pauseProduct,
+    resumeProduct,
+    deactivateProduct
+} from './products.service';
 
+/**
+ * Product service - public API using Supabase backend
+ */
 export const productService = {
-    getModules: (): Promise<ProductModule[]> => {
-        return apiClient.get('/products', mockProductModules as unknown as ProductModule[]);
+    /**
+     * Get all modules with user's activation status
+     */
+    getModules: async (): Promise<ProductModule[]> => {
+        return getProductsWithStatus();
     },
 
-    purchaseModule: async (id: string, cost: number): Promise<{ success: boolean; module?: ProductModule }> => {
-        const mockModule = (mockProductModules as unknown as ProductModule[]).find(m => m.id === id);
-        const result = {
-            success: true,
-            module: mockModule ? { ...mockModule, isPurchased: true, isPaused: true } : undefined
-        };
-        return apiClient.post(`/products/${id}/purchase`, { cost }, result);
+    /**
+     * Activate/purchase a module
+     */
+    purchaseModule: async (id: string, _cost: number): Promise<{ success: boolean; module?: ProductModule }> => {
+        const success = await activateProduct(id);
+        if (success) {
+            const modules = await getProductsWithStatus();
+            const module = modules.find(m => m.id === id);
+            return { success: true, module };
+        }
+        return { success: false };
     },
 
+    /**
+     * Toggle module pause/active status
+     */
     toggleModule: async (id: string): Promise<{ success: boolean; module?: ProductModule }> => {
-        const mockModule = (mockProductModules as unknown as ProductModule[]).find(m => m.id === id);
-        const result = {
-            success: true,
-            module: mockModule ? { ...mockModule, isPaused: !mockModule.isPaused } : undefined
-        };
-        return apiClient.post(`/products/${id}/toggle`, {}, result);
+        const modules = await getProductsWithStatus();
+        const module = modules.find(m => m.id === id);
+
+        if (!module) return { success: false };
+
+        let success: boolean;
+        if (module.isPaused) {
+            success = await resumeProduct(id);
+        } else {
+            success = await pauseProduct(id);
+        }
+
+        if (success) {
+            const updatedModules = await getProductsWithStatus();
+            const updatedModule = updatedModules.find(m => m.id === id);
+            return { success: true, module: updatedModule };
+        }
+        return { success: false };
+    },
+
+    /**
+     * Deactivate a module
+     */
+    deactivateModule: async (id: string): Promise<{ success: boolean }> => {
+        const success = await deactivateProduct(id);
+        return { success };
     }
 };
-

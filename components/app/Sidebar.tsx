@@ -116,6 +116,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Settings,
       children: [],
       action: () => setView('settings-profile')
+    },
+    {
+      id: 'admin',
+      label: 'Administration',
+      icon: Shield,
+      children: [
+        { id: 'admin-users', label: 'User Management' },
+      ]
     }
   ], [setView]);
 
