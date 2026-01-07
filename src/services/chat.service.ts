@@ -54,24 +54,19 @@ function parseMessageContent(message: MessageContent | string): { type: 'ai' | '
     }
 
     // Skip messages that look like JSON, code, or complex tool output
+    // Only filter specific tool patterns, not general responses
     if (
         text.startsWith('{') ||
         text.startsWith('[') ||
-        text.includes('"content":') ||
+        text.includes('"content":[') ||
         text.includes('"startIndex":') ||
         text.includes('body":{"content"') ||
-        text.includes('Calling Think') ||
-        text.includes('Tool:') ||
-        text.includes('Result:') ||
-        text.includes('Input:') ||
-        text.includes('"id":') ||
+        text.includes('Calling Think with Input') ||
+        text.includes('Tool: Think') ||
         text.includes('call_') ||
-        text.includes('Rule 1') ||
         text.includes('Conversation history:') ||
         text.includes('Tools needed:') ||
-        text.includes('No match possible') ||
-        text.includes('Identity verification') ||
-        text.length > 500 // Messages longer than 500 chars are likely tool output
+        text.length > 1500 // Increased limit to allow longer AI responses
     ) {
         return null;
     }
