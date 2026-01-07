@@ -286,11 +286,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
-                                {[
-                                    { id: 'EVT-90018', time: '10:15:00', actor: 'Marco Verratti', reason: 'PRICE_OVERRIDE', action: 'Modified Quote', risk: 'HIGH', credits: 2 },
-                                    { id: 'EVT-90015', time: '09:45:22', actor: 'Sarah Jenkins', reason: 'PO_ENTRY_ERR', action: 'Corrected Field', risk: 'MED', credits: 1 },
-                                    { id: 'EVT-89940', time: '09:12:05', actor: 'System Admin', reason: 'CONFIG_CHANGE', action: 'Updated Policy', risk: 'LOW', credits: 1 },
-                                ].map((row, i) => (
+                                {(humanInterventionLog.length > 0 ? humanInterventionLog : []).map((row, i) => (
                                     <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
                                         <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.time}</td>
@@ -305,6 +301,9 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                         <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">-{row.credits} €</td>
                                     </tr>
                                 ))}
+                                {humanInterventionLog.length === 0 && (
+                                    <tr><td colSpan={7} className="px-6 py-8 text-center text-[var(--color-text-muted)]">No intervention data available</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -354,11 +353,11 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg text-center border border-[var(--color-border)]">
-                                <div className="text-2xl font-bold text-[var(--color-text-main)] mb-1">421</div>
+                                <div className="text-2xl font-bold text-[var(--color-warning)] mb-1">{ungovernedSignalsCount}</div>
                                 <div className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">Ungoverned Signals</div>
                             </div>
                             <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg text-center border border-[var(--color-border)]">
-                                <div className="text-2xl font-bold text-[var(--color-text-main)] mb-1">12</div>
+                                <div className="text-2xl font-bold text-[var(--color-warning)] mb-1">{shadowChannels}</div>
                                 <div className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">Shadow Channels</div>
                             </div>
                         </div>
@@ -386,11 +385,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 font-mono text-xs">
-                                {[
-                                    { id: 'TRC-10082', source: 'Slack Connector (Private)', content: '"Can we approve this manually?"', cat: 'SHADOW_REVIEW', action: 'Alert Sent', credits: 0.150 },
-                                    { id: 'TRC-10083', source: 'Email Gateway (External)', content: 'Attached invoice_final_v2.pdf', cat: 'UNGOVERNED_INV', action: 'Ingested', credits: 0.150 },
-                                    { id: 'TRC-10084', source: 'API Traffic (Unknown IP)', content: 'POST /v1/supplier/create', cat: 'SHADOW_IT', action: 'Blocked', credits: 0.050 },
-                                ].map((row, i) => (
+                                {(ungovernedSignals.length > 0 ? ungovernedSignals : []).map((row, i) => (
                                     <tr key={i} className="hover:bg-[var(--color-surface-hover)] transition-colors">
                                         <td className="px-6 py-4 text-[var(--color-text-main)] font-medium">{row.id}</td>
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.source}</td>
@@ -401,9 +396,12 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-[var(--color-text-muted)]">{row.action}</td>
-                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{Math.ceil(row.credits)} €</td>
+                                        <td className="px-6 py-4 text-right text-[var(--color-text-muted)] font-numbers">{row.credits} €</td>
                                     </tr>
                                 ))}
+                                {ungovernedSignals.length === 0 && (
+                                    <tr><td colSpan={6} className="px-6 py-8 text-center text-[var(--color-text-muted)]">No ungoverned signals detected</td></tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
