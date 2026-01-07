@@ -4,11 +4,9 @@ import { supabase } from '../lib/supabase';
 interface MessageContent {
     type?: string;
     content?: string;
-    additional_kwargs?: Record<string, any>;
-    response_metadata?: Record<string, any>;
 }
 
-interface AmeliaMessage {
+interface AmeliaRow {
     session_id: string;
     id: number;
     message: MessageContent | string;
@@ -16,77 +14,58 @@ interface AmeliaMessage {
 }
 
 /**
- * Check if message is a tool trace (should be hidden)
+ * Parse a single message and return type + text
  */
-function isToolTrace(text: string): boolean {
-    // Only filter specific tool trace patterns
-    return (
-        text.startsWith('{') ||
-        text.startsWith('[{') ||
-        text.startsWith('Calling ') || // Filter all "Calling X with input" patterns
-        text.includes('Tool: Think, Input:') ||
-        text.includes('"tool_calls":') ||
-        text.includes('"additional_kwargs":{"tool_calls"') ||
-        text.includes('Conversation history:') ||
-        text.includes('Tools needed:') ||
-        text.includes('; Tool: Think') ||
-        (text.includes('"id":"call_') && text.includes('input'))
-    );
-}
+function parseMessage(raw: MessageContent | string): { type: 'ai' | 'human'; text: string } | null {
+    let msgType: 'ai' | 'human' = 'human';
+    let content = '';
 
-/**
- * Parse the message from amelia_whatsapp_history
- */
-function parseMessageContent(message: MessageContent | string): { type: 'ai' | 'human'; text: string } | null {
-    let parsed: MessageContent;
-
-    if (typeof message === 'string') {
+    // Handle object (JSONB from Supabase)
+    if (typeof raw === 'object' && raw !== null) {
+        const typeStr = (raw.type || '').toLowerCase();
+        if (typeStr === 'ai' || typeStr === 'assistant') {
+            msgType = 'ai';
+        }
+        content = raw.content || '';
+    }
+    // Handle string
+    else if (typeof raw === 'string') {
         try {
-            parsed = JSON.parse(message);
+            const parsed = JSON.parse(raw);
+            const typeStr = (parsed.type || '').toLowerCase();
+            if (typeStr === 'ai' || typeStr === 'assistant') {
+                msgType = 'ai';
+            }
+            content = parsed.content || '';
         } catch {
-            // Plain text
-            const trimmed = message.trim();
-            if (!trimmed || isToolTrace(trimmed)) return null;
-            return { type: 'human', text: trimmed };
-        }
-    } else {
-        parsed = message;
-    }
-
-    if (!parsed) return null;
-
-    // Determine type
-    let messageType: 'ai' | 'human' = 'human';
-    if (parsed.type) {
-        const typeStr = String(parsed.type).toLowerCase();
-        if (typeStr === 'ai' || typeStr === 'assistant' || typeStr === 'aimessage') {
-            messageType = 'ai';
+            content = raw;
         }
     }
 
-    // Get content
-    const text = parsed.content?.trim() || '';
+    content = content.trim();
+    if (!content) return null;
 
-    if (!text) {
-        return null;
-    }
+    // Filter ONLY tool traces - be very specific
+    const isToolTrace =
+        content.startsWith('Calling Think') ||
+        content.startsWith('Calling Reservations') ||
+        content.startsWith('Calling Find') ||
+        content.startsWith('Calling Send') ||
+        content.includes('; Tool: Think, Input:') ||
+        content.includes('Tools needed:') ||
+        content.includes('Conversation history:') ||
+        (content.startsWith('{') && content.includes('"id":"call_'));
 
-    // Only filter tool traces, allow everything else
-    if (isToolTrace(text)) {
-        return null;
-    }
+    if (isToolTrace) return null;
 
-    return { type: messageType, text };
+    return { type: msgType, text: content };
 }
 
 /**
- * Get conversations from amelia_whatsapp_history
+ * Fetch all conversations grouped by phone
  */
 async function getConversations(): Promise<Conversation[]> {
-    if (!supabase) {
-        console.error('[Chat] Supabase client not initialized');
-        return [];
-    }
+    if (!supabase) return [];
 
     const { data, error } = await supabase
         .from('amelia_whatsapp_history')
@@ -94,68 +73,59 @@ async function getConversations(): Promise<Conversation[]> {
         .order('id', { ascending: true })
         .limit(1000);
 
-    if (error) {
-        console.error('[Chat] Query error:', error);
+    if (error || !data) {
+        console.error('[Chat] Error:', error);
         return [];
     }
 
-    if (!data || data.length === 0) {
-        console.log('[Chat] No data returned from query');
-        return [];
-    }
+    const convMap = new Map<string, Conversation>();
 
-    console.log('[Chat] Fetched', data.length, 'messages');
+    for (const row of data as AmeliaRow[]) {
+        const phone = row.session_id;
+        if (!phone) continue;
 
-    // Group by session_id
-    const conversationsMap = new Map<string, Conversation>();
+        const parsed = parseMessage(row.message);
+        if (!parsed) continue;
 
-    (data as AmeliaMessage[]).forEach((row) => {
-        const sessionId = row.session_id;
-        if (!sessionId) return;
-
-        const parsed = parseMessageContent(row.message);
-        if (!parsed) return;
-
-        if (!conversationsMap.has(sessionId)) {
-            conversationsMap.set(sessionId, {
-                id: sessionId,
-                guestName: sessionId,
-                guestPhone: sessionId,
+        if (!convMap.has(phone)) {
+            convMap.set(phone, {
+                id: phone,
+                guestName: phone,
+                guestPhone: phone,
                 lastMessageTime: row.created_at || new Date().toISOString(),
                 unreadCount: 0,
                 messages: [],
             });
         }
 
-        const conv = conversationsMap.get(sessionId)!;
+        const conv = convMap.get(phone)!;
 
         if (row.created_at && row.created_at > conv.lastMessageTime) {
             conv.lastMessageTime = row.created_at;
         }
 
         conv.messages.push({
-            id: row.id.toString(),
+            id: String(row.id),
             senderId: parsed.type === 'ai' ? 'me' : 'guest',
             text: parsed.text,
             timestamp: row.created_at || new Date().toISOString(),
             isRead: true,
         });
-    });
+    }
 
-    const conversations = Array.from(conversationsMap.values());
-    conversations.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+    const result = Array.from(convMap.values());
+    result.sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
 
-    console.log('[Chat] Processed', conversations.length, 'conversations');
-
-    return conversations;
+    console.log('[Chat] Loaded', result.length, 'conversations');
+    return result;
 }
 
 async function getConversationById(id: string): Promise<Conversation | undefined> {
-    const conversations = await getConversations();
-    return conversations.find(c => c.id === id);
+    const all = await getConversations();
+    return all.find(c => c.id === id);
 }
 
-async function sendMessage(_conversationId: string, _content: string): Promise<{ success: boolean }> {
+async function sendMessage(): Promise<{ success: boolean }> {
     return { success: false };
 }
 
