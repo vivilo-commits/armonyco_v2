@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info, Loader } from '../../components/ui/Icons';
+import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info, Loader, AlertTriangle } from '../../components/ui/Icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { useAgents } from '../../src/hooks/useLogs';
@@ -265,11 +265,16 @@ export const AOSView: React.FC = () => {
                             {/* Chat Footer / Input - Disabled */}
                             <div className="p-5 border-t border-white/10 bg-black/60 shrink-0">
                                 <div className="relative group cursor-not-allowed">
-                                    <div className="w-full bg-white/5 border border-white/20 rounded-xl px-14 py-4 text-[13px] text-white/50 italic select-none">
-                                        🔒 Neural Override: Direct human intervention not permitted
+                                    <div className="w-full bg-red-500/5 border border-red-500/30 rounded-xl px-6 py-4 select-none">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <AlertTriangle size={16} className="text-red-500" />
+                                            <span className="text-[11px] font-bold text-red-500 uppercase tracking-widest">Human Risk Exposure Detected</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 pl-7">
+                                            <Shield size={14} className="text-white/30" />
+                                            <span className="text-[12px] text-white/40 italic">Direct Human Intervention Not Permitted</span>
+                                        </div>
                                     </div>
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30"><MessageCircle size={18} /></div>
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-white/30"><Shield size={18} /></div>
                                 </div>
                             </div>
                         </div>
