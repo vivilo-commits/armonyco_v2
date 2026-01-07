@@ -160,7 +160,7 @@ export const DecisionLog: React.FC = () => {
                                 <th className="px-10 py-6">Stream ID</th>
                                 <th className="px-10 py-6">Policy Topology</th>
                                 <th className="px-10 py-6">Verdict</th>
-                                <th className="px-10 py-6 text-right">Value (€)</th>
+                                <th className="px-10 py-6 text-right">ArmoCredits©</th>
                                 <th className="px-10 py-6">Evidence Proof</th>
                                 <th className="px-10 py-6 text-right">Entity</th>
                             </tr>
@@ -179,7 +179,7 @@ export const DecisionLog: React.FC = () => {
                                             {log.verdict}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-5 text-right text-white font-numbers">-{log.credits} €</td>
+                                    <td className="px-8 py-5 text-right text-white font-numbers">-{log.credits} ⌬</td>
                                     <td className="px-8 py-5 text-white/20 group-hover:text-white/40 transition-colors italic truncate max-w-[120px]">{log.evidenceHash}</td>
                                     <td className="px-8 py-5 text-right">
                                         <span className="text-white/80 font-black px-2 py-0.5 bg-white/5 rounded border border-white/5 group-hover:border-white/10 transition-colors uppercase tracking-widest text-[9px]">

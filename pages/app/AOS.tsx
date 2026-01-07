@@ -2,29 +2,49 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Network, Zap, Cpu, Server, Activity, Clock, TrendingUp, CheckCircle, FileText, MessageCircle, Link, Shield, Calendar, Mail, User, Phone, MapPin, Search, ChevronDown, Plus, Info, Loader, AlertTriangle } from '../../components/ui/Icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '../../components/ui/Card';
-import { useAgents } from '../../src/hooks/useLogs';
+import { useAgents, useN8nExecutions } from '../../src/hooks/useLogs';
 import { useConversations } from '../../src/hooks/useChat';
 import { Modal } from '../../components/ui/Modal';
 import { Conversation, Message } from '../../src/models/chat.model';
 
-const performanceData = [
-    { time: '00:00', load: 20, latency: 120 },
-    { time: '04:00', load: 15, latency: 115 },
-    { time: '08:00', load: 45, latency: 140 },
-    { time: '12:00', load: 85, latency: 180 },
-    { time: '16:00', load: 70, latency: 160 },
-    { time: '20:00', load: 50, latency: 130 },
-    { time: '23:59', load: 30, latency: 125 },
-];
-
 export const AOSView: React.FC = () => {
     const { data: agentsData } = useAgents();
     const { data: conversations, status: convStatus } = useConversations();
+    const { data: executions } = useN8nExecutions();
     const agents = agentsData || [];
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    // Calculate performance data from executions
+    const performanceData = React.useMemo(() => {
+        if (!executions?.length) return [];
+        const hourlyData: Record<string, { load: number; latency: number; count: number }> = {};
+
+        executions.forEach(exec => {
+            const hour = new Date(exec.started_at).getHours();
+            const timeKey = `${hour.toString().padStart(2, '0')}:00`;
+            if (!hourlyData[timeKey]) hourlyData[timeKey] = { load: 0, latency: 0, count: 0 };
+            hourlyData[timeKey].count++;
+            hourlyData[timeKey].latency += exec.duration_ms || 0;
+        });
+
+        const maxCount = Math.max(...Object.values(hourlyData).map(d => d.count), 1);
+
+        return Object.entries(hourlyData).map(([time, data]) => ({
+            time,
+            load: Math.round((data.count / maxCount) * 100),
+            latency: data.count > 0 ? Math.round(data.latency / data.count / 1000) : 0,
+        })).sort((a, b) => a.time.localeCompare(b.time));
+    }, [executions]);
+
+    // Calculate cluster value from executions
+    const clusterValue = (executions?.length || 0) * 50; // 50 ArmoCredits per execution
+    const totalExecutions = executions?.length || 0;
+    const successRate = totalExecutions > 0
+        ? ((executions?.filter(e => e.status === 'success').length || 0) / totalExecutions * 100).toFixed(2)
+        : '0';
 
     // Filter conversations by phone number
     const filteredConversations = conversations?.filter(c =>
@@ -85,8 +105,8 @@ export const AOSView: React.FC = () => {
                     {/* Primary System Status */}
                     <Card variant="dark" padding="lg" className="relative overflow-hidden group border border-white/10 bg-black/40 backdrop-blur-md">
                         <div className="relative z-10">
-                            <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] mb-4 font-black opacity-60">System Uptime</div>
-                            <div className="text-6xl font-numbers text-white leading-none pb-2 font-black tracking-tighter italic">99.99%</div>
+                            <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] mb-4 font-black opacity-60">Success Rate</div>
+                            <div className="text-6xl font-numbers text-white leading-none pb-2 font-black tracking-tighter italic">{successRate}%</div>
                             <div className="text-emerald-500 text-[10px] mt-4 flex items-center gap-2 font-black uppercase tracking-[0.2em] italic">
                                 <Activity size={14} className="animate-pulse" /> Cluster Health: Optimal
                             </div>
@@ -95,8 +115,8 @@ export const AOSView: React.FC = () => {
 
                     {/* Operational Value */}
                     <Card padding="md" className="bg-white/[0.01] border-white/5">
-                        <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] mb-3 font-black opacity-60">Cluster Value Growth</div>
-                        <div className="text-3xl font-numbers text-[var(--color-brand-accent)] h-[50px] flex items-center font-black tracking-tight italic">12,500 <span className="text-xs ml-2 opacity-40 font-numbers uppercase tracking-widest not-italic">€</span></div>
+                        <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] mb-3 font-black opacity-60">Cluster ArmoCredits</div>
+                        <div className="text-3xl font-numbers text-[var(--color-brand-accent)] h-[50px] flex items-center font-black tracking-tight italic">{clusterValue.toLocaleString('de-DE')} <span className="text-xs ml-2 opacity-40 font-numbers uppercase tracking-widest not-italic">⌬</span></div>
                         <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-3">
                             <div className="bg-[var(--color-brand-accent)] w-[75%] h-full rounded-full shadow-[0_0_10px_rgba(212,175,55,0.3)]"></div>
                         </div>
