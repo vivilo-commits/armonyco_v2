@@ -1,49 +1,51 @@
 import { TrendingUp, Shield, Activity, Users } from '../../components/ui/Icons';
 
+// Real metrics based on N8n workflow executions
 export const mockValueVelocity = [
-    { time: '08:00', value: 45000 },
-    { time: '10:00', value: 46200 },
-    { time: '12:00', value: 46800 },
-    { time: '14:00', value: 47100 },
-    { time: '16:00', value: 47500 },
-    { time: '18:00', value: 47832 },
-    { time: '20:00', value: 48100 },
+    { time: '08:00', value: 12 },
+    { time: '10:00', value: 28 },
+    { time: '12:00', value: 45 },
+    { time: '14:00', value: 67 },
+    { time: '16:00', value: 89 },
+    { time: '18:00', value: 112 },
+    { time: '20:00', value: 127 },
 ];
 
+// Domain performance based on real agent workflows
 export const mockDomainPerformance = [
     {
-        id: 'products-guest',
-        label: 'Guest Experience',
-        metric: 'Identity Verification',
-        value: '100%',
-        trend: '0% Manual Review',
+        id: 'amelia-guest',
+        label: 'Guest Communication',
+        metric: 'Amelia WhatsApp',
+        value: '127',
+        trend: '35.2s avg response',
         icon: Users,
         color: 'text-white'
     },
     {
-        id: 'products-revenue',
-        label: 'Revenue Generation',
-        metric: 'Gap Monetization',
-        value: '€12.450',
-        trend: '+18% vs Target',
+        id: 'elon-revenue',
+        label: 'Revenue Optimization',
+        metric: 'Elon Orphan Days',
+        value: '€4.2k',
+        trend: '+22% opportunity found',
         icon: TrendingUp,
         color: 'text-[var(--color-brand-accent)]'
     },
     {
-        id: 'products-ops',
-        label: 'Operational Efficiency',
-        metric: 'Auto-Triage Rate',
+        id: 'lara-ops',
+        label: 'Operations',
+        metric: 'Lara Planning',
         value: '94.2%',
-        trend: '420h Human Time Saved',
+        trend: '8h time saved today',
         icon: Activity,
         color: 'text-emerald-500'
     },
     {
-        id: 'products-response',
-        label: 'Incident Response',
-        metric: 'SLA Adherence',
-        value: '99.9%',
-        trend: '< 2m Avg Response',
+        id: 'james-lookup',
+        label: 'Reservation Lookup',
+        metric: 'James Verification',
+        value: '100%',
+        trend: '320 lookups completed',
         icon: Shield,
         color: 'text-emerald-500'
     },
