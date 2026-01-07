@@ -4,16 +4,56 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/app/StatCard';
 import { Tooltip } from '../../components/ui/Tooltip';
-
-const eventData = [
-    { name: 'Finance', value: 4200, valid: 4150, invalid: 50 },
-    { name: 'Ops', value: 8500, valid: 8300, invalid: 200 },
-    { name: 'Guest', value: 12000, valid: 11950, invalid: 50 },
-    { name: 'Security', value: 1500, valid: 1500, invalid: 0 },
-    { name: 'System', value: 3000, valid: 2980, invalid: 20 },
-];
+import { useN8nExecutions } from '../../src/hooks/useLogs';
 
 export const AEMView: React.FC = () => {
+    const { data: executions, status } = useN8nExecutions();
+    const loading = status === 'pending';
+
+    // Calculate real metrics from executions
+    const totalExecutions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const integrityRate = totalExecutions > 0 ? ((successCount / totalExecutions) * 100).toFixed(1) : '0';
+
+    // Calculate event data by perimeter
+    const eventData = React.useMemo(() => {
+        if (!executions?.length) return [];
+
+        const perimeterMap: Record<string, { valid: number; invalid: number }> = {};
+        executions.forEach(exec => {
+            const perimeter = exec.perimeter?.replace('INSTITUTIONAL_', '') || 'OTHER';
+            if (!perimeterMap[perimeter]) {
+                perimeterMap[perimeter] = { valid: 0, invalid: 0 };
+            }
+            if (exec.status === 'success') {
+                perimeterMap[perimeter].valid++;
+            } else {
+                perimeterMap[perimeter].invalid++;
+            }
+        });
+
+        return Object.entries(perimeterMap).map(([name, data]) => ({
+            name,
+            value: data.valid + data.invalid,
+            valid: data.valid,
+            invalid: data.invalid
+        }));
+    }, [executions]);
+
+    // Calculate average duration
+    const avgDuration = React.useMemo(() => {
+        if (!executions?.length) return '0s';
+        const durations = executions.filter(e => e.duration_ms).map(e => e.duration_ms);
+        if (!durations.length) return '0s';
+        const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+        return avg > 60000 ? `${Math.round(avg / 60000)}m` : `${Math.round(avg / 1000)}s`;
+    }, [executions]);
+
+    const formatTimestamp = (ts: string) => {
+        const date = new Date(ts);
+        return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+
     return (
         <div className="p-8 animate-fade-in flex flex-col min-h-[calc(100vh-64px)] overflow-y-auto overflow-x-hidden">
             {/* Header: Core Constructs Standard */}
@@ -44,9 +84,9 @@ export const AEMView: React.FC = () => {
                     <Card variant="dark" padding="lg" className="relative overflow-hidden group border border-white/10 bg-black/40 backdrop-blur-md">
                         <div className="relative z-10">
                             <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] mb-4 font-black opacity-60">Truth Integrity: Event Completeness</div>
-                            <div className="text-6xl font-numbers text-emerald-500 leading-none pb-2 font-black tracking-tighter italic">98.5%</div>
+                            <div className="text-6xl font-numbers text-emerald-500 leading-none pb-2 font-black tracking-tighter italic">{integrityRate}%</div>
                             <div className="text-emerald-500/60 text-[10px] mt-4 flex items-center gap-2 font-black uppercase tracking-[0.2em] italic">
-                                <Activity size={14} className="animate-pulse" /> Truth Protocol: Nominal
+                                <Activity size={14} className="animate-pulse" /> Truth Protocol: {loading ? 'Loading...' : 'Nominal'}
                             </div>
                         </div>
                     </Card>
@@ -54,14 +94,14 @@ export const AEMView: React.FC = () => {
                     {/* Execution Metrics */}
                     <div className="grid grid-cols-2 gap-4">
                         <StatCard
-                            label="TTA (First Action)"
-                            value="12s"
+                            label="Total Events"
+                            value={totalExecutions.toString()}
                             icon={Zap}
-                            trend={{ value: "Optimal", isPositive: true, label: "velocity" }}
+                            trend={{ value: "Live", isPositive: true, label: "realtime" }}
                         />
                         <StatCard
-                            label="TTR (Resolution)"
-                            value="4m"
+                            label="Avg Duration"
+                            value={avgDuration}
                             icon={Clock}
                             iconColor="text-emerald-500"
                             trend={{ value: "Sync", isPositive: true, label: "closed" }}
@@ -74,9 +114,9 @@ export const AEMView: React.FC = () => {
                             <div className="text-white/40 text-[9px] uppercase tracking-[0.2em] font-black opacity-60">Evidence Matrix (Hash Proofs)</div>
                             <Shield size={14} className="text-[var(--color-brand-accent)]" />
                         </div>
-                        <div className="text-3xl font-numbers text-white flex items-center font-black tracking-tight italic">99.2% <span className="text-[10px] ml-2 opacity-40 font-numbers uppercase tracking-widest not-italic">Pass</span></div>
+                        <div className="text-3xl font-numbers text-white flex items-center font-black tracking-tight italic">{integrityRate}% <span className="text-[10px] ml-2 opacity-40 font-numbers uppercase tracking-widest not-italic">Pass</span></div>
                         <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden mt-3">
-                            <div className="bg-white w-[99.2%] h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]"></div>
+                            <div className="bg-white h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]" style={{ width: `${integrityRate}%` }}></div>
                         </div>
                     </Card>
                 </div>
@@ -144,7 +184,7 @@ export const AEMView: React.FC = () => {
                         </h3>
                         <div className="flex items-center gap-6">
                             <div className="flex gap-4 text-[9px] font-black uppercase tracking-widest text-white/20">
-                                <span className="flex items-center gap-2 italic">Matrix Core: 9ms</span>
+                                <span className="flex items-center gap-2 italic">Events: {totalExecutions}</span>
                                 <span className="flex items-center gap-2 italic">Sync Level: 100%</span>
                             </div>
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -156,18 +196,30 @@ export const AEMView: React.FC = () => {
                                 <tr>
                                     <th className="py-4 px-6">Timestamp</th>
                                     <th className="py-4 px-6">Truth Identity</th>
+                                    <th className="py-4 px-6">Agent</th>
                                     <th className="py-4 px-6">Perimeter</th>
                                     <th className="py-4 px-6 text-right pr-10">Governance Verdict</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.03]">
-                                {[...Array(12)].map((_, i) => (
-                                    <tr key={i} className="hover:bg-white/[0.03] transition-all duration-200 group">
-                                        <td className="py-4 px-6 text-white/30 group-hover:text-white/60 transition-colors uppercase tracking-widest">10:42:{10 + i}</td>
-                                        <td className="py-4 px-6 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">truth_{84920 + i}</td>
-                                        <td className="py-4 px-6 text-white/40 text-[9px] uppercase font-bold tracking-tight">Institutional_{i % 3 === 0 ? 'FINANCE' : i % 3 === 1 ? 'OPS' : 'GUEST'}</td>
+                                {loading ? (
+                                    <tr><td colSpan={5} className="py-8 text-center text-white/40">Loading...</td></tr>
+                                ) : executions?.slice(0, 20).map((exec) => (
+                                    <tr key={exec.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                                        <td className="py-4 px-6 text-white/30 group-hover:text-white/60 transition-colors uppercase tracking-widest">
+                                            {formatTimestamp(exec.started_at)}
+                                        </td>
+                                        <td className="py-4 px-6 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">
+                                            {exec.truth_identity || `exec_${exec.n8n_execution_id}`}
+                                        </td>
+                                        <td className="py-4 px-6 text-white/60 text-[9px] uppercase font-bold tracking-tight">
+                                            {exec.agent_name}
+                                        </td>
+                                        <td className="py-4 px-6 text-white/40 text-[9px] uppercase font-bold tracking-tight">
+                                            {exec.perimeter}
+                                        </td>
                                         <td className="py-4 px-6 text-right pr-10">
-                                            {i === 3 || i === 8 ? (
+                                            {exec.status !== 'success' ? (
                                                 <span className="text-red-500 bg-red-500/10 px-2 py-1 rounded border border-red-500/20 font-black tracking-widest text-[9px] uppercase">Drift Detected</span>
                                             ) : (
                                                 <span className="text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 font-black tracking-widest text-[9px] uppercase">Verify / Pass</span>
