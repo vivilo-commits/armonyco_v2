@@ -251,13 +251,13 @@ export const AOSView: React.FC = () => {
                             </div>
 
                             {/* Chat Footer / Input - Disabled */}
-                            <div className="p-5 border-t border-white/5 bg-black/40 shrink-0">
-                                <div className="relative group opacity-50 cursor-not-allowed">
-                                    <div className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-14 py-4 text-[13px] text-white/30 italic select-none">
-                                        Neural Override: Direct human intervention not permitted
+                            <div className="p-5 border-t border-white/10 bg-black/60 shrink-0">
+                                <div className="relative group cursor-not-allowed">
+                                    <div className="w-full bg-white/5 border border-white/20 rounded-xl px-14 py-4 text-[13px] text-white/50 italic select-none">
+                                        🔒 Neural Override: Direct human intervention not permitted
                                     </div>
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/10"><MessageCircle size={18} /></div>
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-white/10"><Shield size={18} /></div>
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30"><MessageCircle size={18} /></div>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-white/30"><Shield size={18} /></div>
                                 </div>
                             </div>
                         </div>
