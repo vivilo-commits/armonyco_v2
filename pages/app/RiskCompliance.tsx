@@ -246,11 +246,9 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
                     <Card padding="lg" className="flex flex-col justify-center">
                         <h3 className="text-[var(--color-text-muted)] text-xs uppercase tracking-wider mb-6 font-bold">Top Intervention Reasons</h3>
                         <div className="space-y-6">
-                            {[
-                                { label: 'Manual Price Override', val: '42%', color: 'bg-[var(--color-danger)]' },
-                                { label: 'Unstructured PO Entry', val: '28%', color: 'bg-[var(--color-warning)]' },
-                                { label: 'Guest Refund Exception', val: '15%', color: 'bg-[var(--color-text-muted)]' }
-                            ].map((item, i) => (
+                            {(interventionReasons.length > 0 ? interventionReasons : [
+                                { label: 'No intervention data', val: '0%', color: 'bg-[var(--color-text-muted)]' }
+                            ]).map((item, i) => (
                                 <div key={i} className="space-y-2">
                                     <div className="flex justify-between text-xs text-[var(--color-text-secondary)] font-medium">
                                         <span>{item.label}</span>
