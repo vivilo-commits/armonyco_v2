@@ -5,12 +5,13 @@ import { Card } from '../../components/ui/Card';
 import { StatCard } from '../../components/app/StatCard';
 import { Button } from '../../components/ui/Button';
 import { Tooltip } from '../../components/ui/Tooltip';
-import { useLogs, useAgents } from '../../src/hooks/useLogs';
+import { useLogs, useAgents, useN8nExecutions } from '../../src/hooks/useLogs';
 import { DecisionRecord } from '../../src/types';
 
 export const DecisionLog: React.FC = () => {
     const { data: logsData } = useLogs();
     const { data: agentsData } = useAgents();
+    const { data: executions } = useN8nExecutions();
 
     const [filterPolicy, setFilterPolicy] = useState('');
     const [filterVerdict, setFilterVerdict] = useState('ALL');
@@ -18,6 +19,12 @@ export const DecisionLog: React.FC = () => {
 
     const logs = logsData || [];
     const agents = agentsData || [];
+
+    // Calculate real stats from executions
+    const totalDecisions = executions?.length || 0;
+    const successCount = executions?.filter(e => e.status === 'success').length || 0;
+    const autonomyRate = totalDecisions > 0 ? ((successCount / totalDecisions) * 100).toFixed(1) : '0';
+    const alertCount = executions?.filter(e => e.status !== 'success').length || 0;
 
     const filteredLogs = logs.filter(log => {
         if (!log) return false;
@@ -56,33 +63,34 @@ export const DecisionLog: React.FC = () => {
             {/* KPI Strip */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <StatCard
-                    label="Decisions (24h)"
-                    value="1,492"
+                    label="Total Decisions"
+                    value={totalDecisions.toLocaleString()}
                     icon={Zap}
-                    trend={{ value: "+12%", isPositive: true, label: "load" }}
+                    trend={{ value: "Live", isPositive: true, label: "realtime" }}
                 />
                 <StatCard
                     label="Autonomy Rate"
-                    value="98.2%"
+                    value={`${autonomyRate}%`}
                     icon={Activity}
                     iconColor="text-[var(--color-brand-accent)]"
                     subtext="Autonomous execution"
                 />
                 <StatCard
                     label="Active Alerts"
-                    value="3"
+                    value={alertCount.toString()}
                     icon={AlertTriangle}
-                    iconColor="text-amber-500"
+                    iconColor={alertCount > 0 ? "text-amber-500" : "text-emerald-500"}
                     subtext="Signals requiring review"
                 />
                 <StatCard
                     label="Ledger State"
-                    value="1.2 GB"
+                    value="Synced"
                     icon={Shield}
                     iconColor="text-emerald-500"
                     subtext="Hashed & Encrypted"
                 />
             </div>
+
 
             {/* AI Agents / Governance Actors Row */}
             <div className="mb-12">
