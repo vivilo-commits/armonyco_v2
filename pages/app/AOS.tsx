@@ -24,7 +24,7 @@ export const AOSView: React.FC = () => {
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     // Filter conversations by phone number
     const filteredConversations = conversations?.filter(c =>
@@ -40,8 +40,8 @@ export const AOSView: React.FC = () => {
 
     // Auto-scroll to bottom when conversation changes or new messages arrive
     useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
     }, [selectedConvId, conversations]);
 
@@ -228,7 +228,7 @@ export const AOSView: React.FC = () => {
                             </div>
 
                             {/* Messages Area */}
-                            <div className="flex-1 overflow-y-auto p-8 scrollbar-hide space-y-6 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-8 scrollbar-hide space-y-6 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
                                 {selectedConversation?.messages && selectedConversation.messages.length > 0 ? (
                                     selectedConversation.messages.map((msg) => (
                                         <div key={msg.id} className={`flex flex-col ${msg.senderId === 'me' ? 'items-end self-end' : 'items-start'} max-w-[85%]`}>
@@ -256,7 +256,6 @@ export const AOSView: React.FC = () => {
                                         <p className="text-[10px] text-white/20 uppercase tracking-widest">No messages</p>
                                     </div>
                                 )}
-                                <div ref={messagesEndRef} />
                             </div>
 
                             {/* Chat Footer / Input - Disabled */}
