@@ -1,13 +1,13 @@
 /**
  * Vercel Serverless Function
- * Crea una sessione Stripe Checkout per ABBONAMENTI RICORRENTI
+ * Creates a Stripe Checkout session for RECURRING SUBSCRIPTIONS
  * 
- * IMPORTANTE: Mode cambiato da 'payment' a 'subscription'
+ * IMPORTANT: Mode changed from 'payment' to 'subscription'
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// IMPORTANTE: Installare con npm install stripe
+// IMPORTANT: Install with npm install stripe
 import Stripe from 'stripe';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -28,37 +28,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { 
             planId, 
             planName, 
-            amount,      // Prezzo mensile in centesimi (es. 24900 per €249)
-            credits,     // Credits del piano (tokens = credits × 100)
+            amount,      // Monthly price in cents (e.g. 24900 for €249)
+            credits,     // Plan credits (tokens = credits × 100)
             email, 
-            userId,      // User ID per linking
-            metadata,    // Metadati aggiuntivi
+            userId,      // User ID for linking
+            metadata,    // Additional metadata
             successUrl, 
             cancelUrl 
         } = req.body;
 
-        // Validazione input
+        // Input validation
         if (!planId || !amount || !email) {
             return res.status(400).json({ error: 'Missing required fields: planId, amount, email' });
         }
 
-        // Verifica che Stripe sia configurato
+        // Verify Stripe is configured
         if (!process.env.STRIPE_SECRET_KEY) {
+            console.error('[API] ❌ STRIPE_SECRET_KEY not configured');
             return res.status(500).json({ 
-                error: 'Stripe non configurato',
-                message: 'STRIPE_SECRET_KEY non trovata nelle variabili ambiente. Configura Stripe su Vercel.'
+                error: 'Stripe not configured',
+                message: 'STRIPE_SECRET_KEY not found in environment variables. Configure Stripe in Vercel Dashboard → Settings → Environment Variables.',
+                hint: 'See CONFIGURAZIONE_VERCEL.md for instructions'
+            });
+        }
+        
+        console.log('[API] ✅ Stripe configured, creating session...');
+
+        let stripe: Stripe;
+        try {
+            stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+                apiVersion: '2025-02-24.acacia',
+            });
+            console.log('[API] ✅ Stripe client initialized');
+        } catch (stripeError: any) {
+            console.error('[API] ❌ Stripe initialization error:', stripeError);
+            return res.status(500).json({ 
+                error: 'Stripe initialization error',
+                message: stripeError.message || 'Unable to initialize Stripe. Verify STRIPE_SECRET_KEY.'
             });
         }
 
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-            apiVersion: '2024-11-20.acacia',
-        });
-
         // ================================================================
-        // STEP 1: Crea o recupera Stripe Customer
+        // STEP 1: Create or retrieve Stripe Customer
         // ================================================================
         
-        // Cerca se esiste già un customer con questa email
+        // Check if customer already exists with this email
         const existingCustomers = await stripe.customers.list({
             email: email,
             limit: 1,
@@ -67,9 +81,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let customer;
         if (existingCustomers.data.length > 0) {
             customer = existingCustomers.data[0];
-            console.log('[Stripe] Customer esistente trovato:', customer.id);
+            console.log('[Stripe] Existing customer found:', customer.id);
         } else {
-            // Crea nuovo customer
+            // Create new customer
             customer = await stripe.customers.create({
                 email: email,
                 metadata: {
@@ -77,18 +91,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     ...metadata,
                 },
             });
-            console.log('[Stripe] Nuovo customer creato:', customer.id);
+            console.log('[Stripe] New customer created:', customer.id);
         }
 
         // ================================================================
-        // STEP 2: Crea sessione Stripe Checkout SUBSCRIPTION
+        // STEP 2: Create Stripe Checkout SUBSCRIPTION session
         // ================================================================
 
-        // NOTA: Devi creare i Price IDs nel dashboard Stripe e configurarli come variabili ambiente
+        // NOTE: You must create Price IDs in Stripe dashboard and configure them as environment variables
         const STRIPE_PRICE_IDS: Record<number, string> = {
-            1: process.env.STRIPE_PRICE_STARTER || '',  // Piano STARTER
-            2: process.env.STRIPE_PRICE_PRO || '',      // Piano PRO
-            3: process.env.STRIPE_PRICE_ELITE || '',   // Piano ELITE
+            1: process.env.STRIPE_PRICE_STARTER || '',  // STARTER plan
+            2: process.env.STRIPE_PRICE_PRO || '',      // PRO plan
+            3: process.env.STRIPE_PRICE_ELITE || '',   // ELITE plan
         };
 
         const priceId = STRIPE_PRICE_IDS[planId];
@@ -99,16 +113,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                               planId === 3 ? 'STRIPE_PRICE_ELITE' : 'STRIPE_PRICE_*';
             
             return res.status(400).json({ 
-                error: 'Price ID non configurato',
-                message: `Il Price ID per il piano ${planId} non è configurato. Configura ${envVarName} nelle variabili ambiente su Vercel.`
+                error: 'Price ID not configured',
+                message: `Price ID for plan ${planId} is not configured. Set ${envVarName} in Vercel environment variables.`
             });
         }
         
-        // Verifica che il Price ID abbia il formato corretto
+        // Verify Price ID format
         if (!priceId.startsWith('price_')) {
             return res.status(400).json({ 
-                error: 'Price ID non valido',
-                message: `Il Price ID "${priceId}" non ha il formato corretto. Deve iniziare con "price_".`
+                error: 'Invalid Price ID',
+                message: `Price ID "${priceId}" has invalid format. Must start with "price_".`
             });
         }
 
@@ -121,11 +135,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     quantity: 1,
                 },
             ],
-            mode: 'subscription',  // CAMBIATO DA 'payment' A 'subscription'
+            mode: 'subscription',  // CHANGED FROM 'payment' TO 'subscription'
             success_url: successUrl,
             cancel_url: cancelUrl,
             
-            // Metadati per webhook
+            // Metadata for webhook
             subscription_data: {
                 metadata: {
                     plan_id: planId.toString(),
@@ -142,10 +156,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 user_id: userId || '',
             },
 
-            // Permetti promo codes
+            // Allow promo codes
             allow_promotion_codes: true,
             
-            // Raccogli indirizzo fiscale
+            // Collect billing address
             billing_address_collection: 'required',
             
             // Tax ID collection for Italian billing
@@ -163,10 +177,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mode: 'subscription',
         });
     } catch (error: any) {
-        console.error('[API] Error creating checkout session:', error);
+        console.error('[API] ❌ Error creating checkout session:', error);
+        console.error('[API] Error type:', error.type);
+        console.error('[API] Error code:', error.code);
+        console.error('[API] Error message:', error.message);
+        console.error('[API] Error stack:', error.stack);
+        
+        // Handle specific Stripe errors
+        if (error.type === 'StripeInvalidRequestError') {
+            return res.status(400).json({ 
+                error: 'Stripe request error',
+                message: error.message || 'Invalid request to Stripe',
+                details: error.raw?.message
+            });
+        }
+        
+        if (error.type === 'StripeAuthenticationError') {
+            return res.status(401).json({ 
+                error: 'Stripe authentication error',
+                message: 'STRIPE_SECRET_KEY is invalid. Verify the key in Vercel.'
+            });
+        }
+        
+        if (error.type === 'StripeAPIError') {
+            return res.status(502).json({ 
+                error: 'Stripe API error',
+                message: error.message || 'Error communicating with Stripe'
+            });
+        }
+        
+        // Generic error
         return res.status(500).json({ 
             error: 'Failed to create checkout session',
-            message: error.message 
+            message: error.message || 'Unknown error while creating session',
+            type: error.type || 'UnknownError',
+            hint: 'Check logs in Vercel Dashboard → Functions for more details'
         });
     }
 }

@@ -59,7 +59,7 @@ export async function getPlans(): Promise<SubscriptionPlan[]> {
         name: p.name,
         price: p.price,
         credits: p.credits,
-        tokens: calculateTokensFromCredits(p.credits), // Aggiungi tokens calcolati
+        tokens: calculateTokensFromCredits(p.credits), // Add calculated tokens
         tier: p.tier,
         features: p.features || [],
     }));

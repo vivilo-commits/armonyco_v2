@@ -164,7 +164,7 @@ export async function redirectToCheckout(sessionId: string): Promise<void> {
     // Verify Stripe is configured
     if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
         throw new Error(
-            'Stripe is not configured. Configure VITE_STRIPE_PUBLIC_KEY in .env.local file'
+            'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables'
         );
     }
     
@@ -172,13 +172,14 @@ export async function redirectToCheckout(sessionId: string): Promise<void> {
     
     if (!stripe) {
         console.error('[Payment] ❌ Stripe not initialized');
-        throw new Error('Stripe not configured correctly. Check VITE_STRIPE_PUBLIC_KEY.');
+        throw new Error('Stripe not configured correctly. Verify VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard.');
     }
 
     console.log('[Payment] Stripe instance loaded, redirecting...');
 
     try {
-        const { error } = await stripe.redirectToCheckout({ sessionId });
+        // redirectToCheckout is available on @stripe/stripe-js Stripe instance
+        const { error } = await (stripe as any).redirectToCheckout({ sessionId });
 
         if (error) {
             console.error('[Stripe] ❌ Redirect error:', error);

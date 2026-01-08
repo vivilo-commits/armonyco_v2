@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // MOCK RESPONSE per sviluppo
         console.log('[API] Verifying mock payment for session:', session_id);
         
-        // Se è un mock session, ritorna success
+        // If it's a mock session, return success
         if (session_id.startsWith('mock_session_') || session_id.startsWith('cs_test_')) {
             return res.status(200).json({
                 status: 'success',
