@@ -1,9 +1,9 @@
 /**
  * TOKENS SERVICE
- * Gestione completa del sistema di tokens per abbonamenti
+ * Complete token system management for subscriptions
  * 
  * Formula: tokens = credits × 100
- * Esempio: Piano STARTER (25000 credits) = 2,500,000 tokens
+ * Example: STARTER Plan (25000 credits) = 2,500,000 tokens
  */
 
 import { supabase, getCurrentUser } from '../lib/supabase';
@@ -24,14 +24,14 @@ import type {
 export const TOKENS_PER_CREDIT = 100;
 
 /**
- * Calcola tokens da credits
+ * Calculates tokens from credits
  */
 export function calculateTokensFromCredits(credits: number): number {
   return credits * TOKENS_PER_CREDIT;
 }
 
 /**
- * Calcola credits da tokens
+ * Calculates credits from tokens
  */
 export function calculateCreditsFromTokens(tokens: number): number {
   return Math.floor(tokens / TOKENS_PER_CREDIT);
@@ -42,20 +42,20 @@ export function calculateCreditsFromTokens(tokens: number): number {
 // ============================================================================
 
 /**
- * Ottiene il saldo tokens corrente dell'utente
+ * Gets current token balance for user
  */
 export async function getUserTokens(userId?: string): Promise<TokenBalance | null> {
   if (!supabase) {
-    console.error('[Tokens] Supabase non configurato');
+    console.error('[Tokens] Supabase not configured');
     return null;
   }
 
   try {
-    // Se userId non è fornito, usa l'utente corrente
+    // If userId not provided, use current user
     const targetUserId = userId || (await getCurrentUser())?.id;
     
     if (!targetUserId) {
-      console.error('[Tokens] Nessun utente fornito');
+      console.error('[Tokens] No user provided');
       return null;
     }
 
@@ -66,7 +66,7 @@ export async function getUserTokens(userId?: string): Promise<TokenBalance | nul
       .single();
 
     if (error) {
-      // Se l'utente non ha ancora un record tokens, ritorna 0
+      // If user doesn't have a token record yet, return 0
       if (error.code === 'PGRST116') {
         return {
           userId: targetUserId,
@@ -75,7 +75,7 @@ export async function getUserTokens(userId?: string): Promise<TokenBalance | nul
         };
       }
       
-      console.error('[Tokens] Errore recupero saldo:', error);
+      console.error('[Tokens] Error retrieving balance:', error);
       return null;
     }
 
@@ -85,13 +85,13 @@ export async function getUserTokens(userId?: string): Promise<TokenBalance | nul
       lastUpdated: data.updated_at,
     };
   } catch (error) {
-    console.error('[Tokens] Errore getUserTokens:', error);
+    console.error('[Tokens] Error getUserTokens:', error);
     return null;
   }
 }
 
 /**
- * Ottiene il saldo tokens dell'utente corrente
+ * Gets current user's token balance
  */
 export async function getCurrentUserTokens(): Promise<number> {
   const balance = await getUserTokens();
@@ -99,7 +99,7 @@ export async function getCurrentUserTokens(): Promise<number> {
 }
 
 /**
- * Verifica se l'utente ha abbastanza tokens
+ * Checks if user has enough tokens
  */
 export async function hasEnoughTokens(amount: number, userId?: string): Promise<boolean> {
   const balance = await getUserTokens(userId);
@@ -111,12 +111,12 @@ export async function hasEnoughTokens(amount: number, userId?: string): Promise<
 // ============================================================================
 
 /**
- * Aggiunge tokens al saldo dell'utente
- * NOTA: Questa funzione richiede permessi service_role
+ * Adds tokens to user balance
+ * NOTE: This function requires service_role permissions
  */
 export async function addTokens(params: AddTokensParams): Promise<boolean> {
   if (!supabase) {
-    console.error('[Tokens] Supabase non configurato');
+    console.error('[Tokens] Supabase not configured');
     return false;
   }
 
@@ -124,16 +124,16 @@ export async function addTokens(params: AddTokensParams): Promise<boolean> {
     const { userId, amount, transactionType, description, referenceId, metadata } = params;
 
     if (amount <= 0) {
-      console.error('[Tokens] Amount deve essere positivo');
+      console.error('[Tokens] Amount must be positive');
       return false;
     }
 
-    // Ottieni saldo corrente
+    // Get current balance
     const currentBalance = await getUserTokens(userId);
     const balanceBefore = currentBalance?.tokens || 0;
     const balanceAfter = balanceBefore + amount;
 
-    // Aggiorna o crea record user_tokens
+    // Update or create user_tokens record
     const { error: upsertError } = await supabase
       .from('user_tokens')
       .upsert({
@@ -145,11 +145,11 @@ export async function addTokens(params: AddTokensParams): Promise<boolean> {
       });
 
     if (upsertError) {
-      console.error('[Tokens] Errore aggiornamento saldo:', upsertError);
+      console.error('[Tokens] Error updating balance:', upsertError);
       return false;
     }
 
-    // Registra transazione nello storico (se tabella esiste)
+    // Record transaction in history (if table exists)
     try {
       await supabase
         .from('token_history')
@@ -164,20 +164,20 @@ export async function addTokens(params: AddTokensParams): Promise<boolean> {
           metadata,
         });
     } catch (historyError) {
-      // Se la tabella token_history non esiste, ignora l'errore
-      console.warn('[Tokens] Storico non disponibile (tabella opzionale)');
+      // If token_history table doesn't exist, ignore error
+      console.warn('[Tokens] History not available (optional table)');
     }
 
-    console.log(`[Tokens] Aggiunti ${amount} tokens a utente ${userId}. Nuovo saldo: ${balanceAfter}`);
+    console.log(`[Tokens] Added ${amount} tokens to user ${userId}. New balance: ${balanceAfter}`);
     return true;
   } catch (error) {
-    console.error('[Tokens] Errore addTokens:', error);
+    console.error('[Tokens] Error addTokens:', error);
     return false;
   }
 }
 
 /**
- * Aggiunge tokens da sottoscrizione (helper)
+ * Adds tokens from subscription (helper)
  */
 export async function addTokensFromSubscription(
   userId: string,
@@ -192,9 +192,9 @@ export async function addTokensFromSubscription(
     userId,
     amount: tokens,
     transactionType,
-    description: `${planName} - ${transactionType === 'subscription_initial' ? 'Sottoscrizione iniziale' : 
-                   transactionType === 'subscription_renewal' ? 'Rinnovo mensile' : 
-                   transactionType === 'subscription_upgrade' ? 'Upgrade piano' : 'Downgrade piano'}`,
+    description: `${planName} - ${transactionType === 'subscription_initial' ? 'Initial subscription' : 
+                   transactionType === 'subscription_renewal' ? 'Monthly renewal' : 
+                   transactionType === 'subscription_upgrade' ? 'Plan upgrade' : 'Plan downgrade'}`,
     referenceId: subscriptionId,
     metadata: {
       plan: planName,
@@ -209,12 +209,12 @@ export async function addTokensFromSubscription(
 // ============================================================================
 
 /**
- * Consuma tokens dal saldo dell'utente
- * NOTA: Questa funzione richiede permessi service_role
+ * Consumes tokens from user balance
+ * NOTE: This function requires service_role permissions
  */
 export async function consumeTokens(params: ConsumeTokensParams): Promise<boolean> {
   if (!supabase) {
-    console.error('[Tokens] Supabase non configurato');
+    console.error('[Tokens] Supabase not configured');
     return false;
   }
 
@@ -222,23 +222,23 @@ export async function consumeTokens(params: ConsumeTokensParams): Promise<boolea
     const { userId, amount, action, metadata } = params;
 
     if (amount <= 0) {
-      console.error('[Tokens] Amount deve essere positivo');
+      console.error('[Tokens] Amount must be positive');
       return false;
     }
 
-    // Verifica saldo disponibile
+    // Check available balance
     const hasTokens = await hasEnoughTokens(amount, userId);
     if (!hasTokens) {
-      console.error('[Tokens] Saldo insufficiente');
+      console.error('[Tokens] Insufficient balance');
       return false;
     }
 
-    // Ottieni saldo corrente
+    // Get current balance
     const currentBalance = await getUserTokens(userId);
     const balanceBefore = currentBalance?.tokens || 0;
     const balanceAfter = balanceBefore - amount;
 
-    // Aggiorna saldo
+    // Update balance
     const { error: updateError } = await supabase
       .from('user_tokens')
       .update({
@@ -248,34 +248,34 @@ export async function consumeTokens(params: ConsumeTokensParams): Promise<boolea
       .eq('user_id', userId);
 
     if (updateError) {
-      console.error('[Tokens] Errore aggiornamento saldo:', updateError);
+      console.error('[Tokens] Error updating balance:', updateError);
       return false;
     }
 
-    // Registra transazione nello storico (se tabella esiste)
+    // Record transaction in history (if table exists)
     try {
       await supabase
         .from('token_history')
         .insert({
           user_id: userId,
-          amount: -amount, // Negativo per consumo
+          amount: -amount, // Negative for consumption
           balance_before: balanceBefore,
           balance_after: balanceAfter,
           transaction_type: 'consumption',
-          description: `Consumo: ${action}`,
+          description: `Consumption: ${action}`,
           metadata: {
             action,
             ...metadata,
           },
         });
     } catch (historyError) {
-      console.warn('[Tokens] Storico non disponibile (tabella opzionale)');
+      console.warn('[Tokens] History not available (optional table)');
     }
 
-    console.log(`[Tokens] Consumati ${amount} tokens da utente ${userId}. Nuovo saldo: ${balanceAfter}`);
+    console.log(`[Tokens] Consumed ${amount} tokens from user ${userId}. New balance: ${balanceAfter}`);
     return true;
   } catch (error) {
-    console.error('[Tokens] Errore consumeTokens:', error);
+    console.error('[Tokens] Error consumeTokens:', error);
     return false;
   }
 }
@@ -285,11 +285,11 @@ export async function consumeTokens(params: ConsumeTokensParams): Promise<boolea
 // ============================================================================
 
 /**
- * Ottiene lo storico transazioni tokens dell'utente
+ * Gets user's token transaction history
  */
 export async function getTokenHistory(filters: TokenHistoryFilters): Promise<TokenTransaction[]> {
   if (!supabase) {
-    console.error('[Tokens] Supabase non configurato');
+    console.error('[Tokens] Supabase not configured');
     return [];
   }
 
@@ -318,7 +318,7 @@ export async function getTokenHistory(filters: TokenHistoryFilters): Promise<Tok
     const { data, error } = await query;
 
     if (error) {
-      console.error('[Tokens] Errore recupero storico:', error);
+      console.error('[Tokens] Error retrieving history:', error);
       return [];
     }
 
@@ -335,13 +335,13 @@ export async function getTokenHistory(filters: TokenHistoryFilters): Promise<Tok
       createdAt: record.created_at,
     }));
   } catch (error) {
-    console.error('[Tokens] Errore getTokenHistory:', error);
+    console.error('[Tokens] Error getTokenHistory:', error);
     return [];
   }
 }
 
 /**
- * Ottiene statistiche tokens per periodo
+ * Gets token statistics for period
  */
 export async function getTokenStats(userId: string, startDate?: string): Promise<{
   totalAdded: number;
@@ -353,7 +353,7 @@ export async function getTokenStats(userId: string, startDate?: string): Promise
     const filters: TokenHistoryFilters = {
       userId,
       startDate,
-      limit: 1000, // Limite alto per statistiche
+      limit: 1000, // High limit for statistics
     };
 
     const history = await getTokenHistory(filters);
@@ -375,7 +375,7 @@ export async function getTokenStats(userId: string, startDate?: string): Promise
 
     return stats;
   } catch (error) {
-    console.error('[Tokens] Errore getTokenStats:', error);
+    console.error('[Tokens] Error getTokenStats:', error);
     return { totalAdded: 0, totalConsumed: 0, netChange: 0, transactionCount: 0 };
   }
 }
@@ -385,7 +385,7 @@ export async function getTokenStats(userId: string, startDate?: string): Promise
 // ============================================================================
 
 /**
- * Aggiustamento manuale tokens (solo admin)
+ * Manual token adjustment (admin only)
  */
 export async function adminAdjustTokens(
   userId: string,
@@ -397,7 +397,7 @@ export async function adminAdjustTokens(
     userId,
     amount,
     transactionType: 'manual_adjustment',
-    description: `Aggiustamento manuale: ${reason}`,
+    description: `Manual adjustment: ${reason}`,
     metadata: {
       admin_id: adminId,
       reason,

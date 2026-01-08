@@ -58,7 +58,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
         if (!executions?.length) return [];
         return executions.slice(0, 10).map(exec => ({
             id: exec.truth_identity || exec.n8n_execution_id,
-            timestamp: new Date(exec.started_at).toLocaleTimeString('it-IT'),
+            timestamp: new Date(exec.started_at).toLocaleTimeString('en-US'),
             policy: exec.perimeter || 'INSTITUTIONAL',
             verdict: exec.status === 'success' ? 'ALLOW' : 'DENY',
             responsible: exec.agent_name || 'SYSTEM',
@@ -87,7 +87,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
         if (!executions?.length) return [];
         return executions.filter(e => e.status !== 'success').slice(0, 5).map(exec => ({
             id: exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 12),
-            time: new Date(exec.started_at).toLocaleTimeString('it-IT'),
+            time: new Date(exec.started_at).toLocaleTimeString('en-US'),
             actor: exec.agent_name || 'SYSTEM',
             reason: exec.workflow_name?.toUpperCase().replace(/ /g, '_').slice(0, 15) || 'WORKFLOW_ERROR',
             action: exec.status === 'error' ? 'Error Logged' : 'Review Required',

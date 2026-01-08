@@ -1,6 +1,6 @@
 /**
  * REGISTRATION SERVICE
- * Gestione flusso registrazione multi-step con localStorage e completamento
+ * Multi-step registration flow management with localStorage and completion
  */
 
 import { signUpWithEmail, supabase } from '../lib/supabase';
@@ -25,7 +25,7 @@ export interface RegistrationDraft {
         lastName?: string;
         acceptTerms?: boolean;
 
-        // Step 2: Dati Aziendali
+        // Step 2: Business Details
         businessName?: string;
         vatNumber?: string;
         fiscalCode?: string;
@@ -39,13 +39,13 @@ export interface RegistrationDraft {
         sdiCode?: string;
         pecEmail?: string;
 
-        // Step 3: Piano
+        // Step 3: Plan
         planId?: number;
         planName?: string;
         planPrice?: number;
         planCredits?: number;
 
-        // Step 4: Pagamento
+        // Step 4: Payment
         stripeSessionId?: string;
         paymentIntentId?: string;
     };
@@ -97,11 +97,11 @@ const STORAGE_KEY = 'armonyco_registration_draft';
 const DRAFT_EXPIRY_HOURS = 24;
 
 /**
- * Salva draft registrazione in localStorage
+ * Saves registration draft to localStorage
  */
 export function saveRegistrationDraft(step: number, data: Partial<RegistrationDraft['data']>): void {
     try {
-        // Recupera draft esistente
+        // Retrieve existing draft
         const existing = getRegistrationDraft();
         
         const draft: RegistrationDraft = {
@@ -113,21 +113,21 @@ export function saveRegistrationDraft(step: number, data: Partial<RegistrationDr
             },
         };
 
-        // NON salvare la password in localStorage per sicurezza
-        // La password verrà richiesta nuovamente se l'utente ricarica la pagina
+        // DO NOT save password in localStorage for security
+        // Password will be requested again if user reloads the page
         if (draft.data.password) {
             delete draft.data.password;
         }
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-        console.log('[Registration] Draft salvato, step:', step);
+        console.log('[Registration] Draft saved, step:', step);
     } catch (error) {
-        console.error('[Registration] Errore salvataggio draft:', error);
+        console.error('[Registration] Error saving draft:', error);
     }
 }
 
 /**
- * Recupera draft registrazione da localStorage
+ * Retrieves registration draft from localStorage
  */
 export function getRegistrationDraft(): RegistrationDraft | null {
     try {
@@ -139,32 +139,32 @@ export function getRegistrationDraft(): RegistrationDraft | null {
 
         const draft: RegistrationDraft = JSON.parse(stored);
 
-        // Verifica scadenza (24 ore)
+        // Check expiration (24 hours)
         const age = Date.now() - draft.timestamp;
         const maxAge = DRAFT_EXPIRY_HOURS * 60 * 60 * 1000;
 
         if (age > maxAge) {
-            console.log('[Registration] Draft scaduto, rimuovo');
+            console.log('[Registration] Draft expired, removing');
             clearRegistrationDraft();
             return null;
         }
 
         return draft;
     } catch (error) {
-        console.error('[Registration] Errore recupero draft:', error);
+        console.error('[Registration] Error retrieving draft:', error);
         return null;
     }
 }
 
 /**
- * Pulisce draft registrazione da localStorage
+ * Clears registration draft from localStorage
  */
 export function clearRegistrationDraft(): void {
     try {
         localStorage.removeItem(STORAGE_KEY);
-        console.log('[Registration] Draft rimosso');
+        console.log('[Registration] Draft removed');
     } catch (error) {
-        console.error('[Registration] Errore rimozione draft:', error);
+        console.error('[Registration] Error removing draft:', error);
     }
 }
 
@@ -183,7 +183,7 @@ export function updateRegistrationDraft(updates: Partial<RegistrationDraft['data
 // ============================================================================
 
 /**
- * Completa la registrazione creando account Supabase e salvando tutti i dati
+ * Completes registration by creating Supabase account and saving all data
  */
 export async function completeRegistration(data: CompleteRegistrationData): Promise<RegistrationResult> {
     try {
@@ -210,33 +210,33 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             );
             console.log('[Registration] signUpWithEmail result:', signUpResult);
         } catch (error: any) {
-            console.error('[Registration] Errore creazione account:', error);
+            console.error('[Registration] Error creating account:', error);
             
             // Check for specific Supabase errors
             if (error.message?.includes('Anonymous sign-ins are disabled')) {
                 return {
                     success: false,
-                    error: 'Le registrazioni sono disabilitate su Supabase. Abilita "Email Signup" nella dashboard Supabase.',
+                    error: 'Registrations are disabled on Supabase. Enable "Email Signup" in Supabase dashboard.',
                 };
             }
             
             if (error.message?.includes('User already registered')) {
                 return {
                     success: false,
-                    error: 'Email già registrata. Prova a fare login.',
+                    error: 'Email already registered. Try logging in.',
                 };
             }
             
             return {
                 success: false,
-                error: error.message || 'Errore durante la creazione account',
+                error: error.message || 'Error during account creation',
             };
         }
 
         const { user, error: signUpError } = signUpResult;
 
         if (signUpError || !user) {
-            console.error('[Registration] Errore creazione account:', signUpError);
+            console.error('[Registration] Error creating account:', signUpError);
             
             // Check for specific Supabase errors in the error object
             const errorMessage = signUpError?.message || '';
@@ -244,13 +244,13 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
                 return {
                     success: false,
-                    error: 'Email già registrata. Prova a fare login.',
+                    error: 'Email already registered. Try logging in.',
                 };
             }
             
             return {
                 success: false,
-                error: errorMessage || 'Errore creazione account',
+                error: errorMessage || 'Error creating account',
             };
         }
 
@@ -321,7 +321,7 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.log('[Registration] Billing saved successfully');
         }
 
-        // 5. Salva informazioni piano/pagamento (opzionale - per tracking)
+        // 5. Save plan/payment information (optional - for tracking)
         if (supabase && data.stripeSessionId) {
             await supabase
                 .from('user_subscriptions')
@@ -333,9 +333,9 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
                 });
         }
 
-        console.log('[Registration] Registrazione completata con successo');
+        console.log('[Registration] Registration completed successfully');
 
-        // 6. Pulisci draft
+        // 6. Clear draft
         clearRegistrationDraft();
 
         return {
@@ -343,16 +343,16 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             userId,
         };
     } catch (error: any) {
-        console.error('[Registration] Errore completamento:', error);
+        console.error('[Registration] Error completing:', error);
         return {
             success: false,
-            error: error.message || 'Errore durante la registrazione',
+            error: error.message || 'Error during registration',
         };
     }
 }
 
 /**
- * Completa registrazione da draft salvato (dopo redirect da Stripe)
+ * Completes registration from saved draft (after redirect from Stripe)
  */
 export async function completeRegistrationFromDraft(
     sessionId: string,
@@ -364,7 +364,7 @@ export async function completeRegistrationFromDraft(
         if (!draft) {
             return {
                 success: false,
-                error: 'Nessun draft di registrazione trovato',
+                error: 'No registration draft found',
             };
         }
 
@@ -392,10 +392,10 @@ export async function completeRegistrationFromDraft(
 
         return await completeRegistration(data);
     } catch (error: any) {
-        console.error('[Registration] Errore completamento da draft:', error);
+        console.error('[Registration] Error completing from draft:', error);
         return {
             success: false,
-            error: error.message || 'Errore durante la registrazione',
+            error: error.message || 'Error during registration',
         };
     }
 }
@@ -405,7 +405,7 @@ export async function completeRegistrationFromDraft(
 // ============================================================================
 
 /**
- * Verifica se il draft è completo e pronto per il pagamento
+ * Checks if draft is complete and ready for payment
  */
 export function isDraftReadyForPayment(draft: RegistrationDraft | null): boolean {
     if (!draft) return false;
@@ -432,7 +432,7 @@ export function isDraftReadyForPayment(draft: RegistrationDraft | null): boolean
 }
 
 /**
- * Calcola la percentuale di completamento del draft
+ * Calculates draft completion percentage
  */
 export function calculateDraftCompleteness(draft: RegistrationDraft | null): number {
     if (!draft) return 0;

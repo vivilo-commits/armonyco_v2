@@ -88,7 +88,7 @@ function generateWelcomeEmailHTML(data: any): string {
             <h2>Ciao ${data.firstName},</h2>
             <p>Il tuo account è stato creato con successo!</p>
             <p><strong>Piano:</strong> ${data.planName}</p>
-            <p><strong>Crediti:</strong> ${data.credits.toLocaleString('it-IT')} ArmoCredits©</p>
+            <p><strong>Credits:</strong> ${data.credits.toLocaleString('en-US')} ArmoCredits©</p>
             <center>
                 <a href="${data.dashboardUrl}" class="button">Vai alla Dashboard</a>
             </center>

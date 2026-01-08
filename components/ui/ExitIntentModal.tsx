@@ -86,15 +86,15 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
                     <ul className="space-y-2 text-sm text-[var(--color-text-main)]">
                         <li className="flex items-center gap-2">
                             <span className="text-emerald-400">✓</span>
-                            Informazioni personali e aziendali
+                            Personal and business information
                         </li>
                         <li className="flex items-center gap-2">
                             <span className="text-emerald-400">✓</span>
-                            Piano selezionato
+                            Selected plan
                         </li>
                         <li className="flex items-center gap-2">
                             <span className="text-emerald-400">✓</span>
-                            Valido per 24 ore
+                            Valid for 24 hours
                         </li>
                     </ul>
                 </div>

@@ -1,6 +1,6 @@
 /**
  * VALIDATION SERVICE
- * Funzioni avanzate di validazione per il flusso di registrazione
+ * Advanced validation functions for registration flow
  */
 
 // ============================================================================
@@ -14,20 +14,20 @@ const CONSUMER_EMAIL_DOMAINS = [
 ];
 
 /**
- * Valida formato email (accetta qualsiasi email valida)
+ * Validates email format (accepts any valid email)
  */
 export function validateBusinessEmail(email: string): { valid: boolean; error?: string } {
     if (!email || !email.trim()) {
-        return { valid: false, error: 'Email richiesta' };
+        return { valid: false, error: 'Email required' };
     }
 
-    // Validazione formato base
+    // Basic format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        return { valid: false, error: 'Formato email non valido' };
+        return { valid: false, error: 'Invalid email format' };
     }
 
-    // Accetta tutte le email con formato valido
+    // Accept all emails with valid format
     return { valid: true };
 }
 
@@ -36,17 +36,17 @@ export function validateBusinessEmail(email: string): { valid: boolean; error?: 
 // ============================================================================
 
 export interface PasswordStrengthResult {
-    score: number; // 0-4 (0=molto debole, 4=molto forte)
+    score: number; // 0-4 (0=very weak, 4=very strong)
     feedback: string;
     valid: boolean;
 }
 
 /**
- * Valida la forza della password e restituisce feedback
+ * Validates password strength and returns feedback
  */
 export function validatePasswordStrength(password: string): PasswordStrengthResult {
     if (!password) {
-        return { score: 0, feedback: 'Password richiesta', valid: false };
+        return { score: 0, feedback: 'Password required', valid: false };
     }
 
     const length = password.length;
@@ -58,49 +58,49 @@ export function validatePasswordStrength(password: string): PasswordStrengthResu
     let score = 0;
     let feedback = '';
 
-    // Lunghezza minima
+    // Minimum length
     if (length < 8) {
         return { 
             score: 0, 
-            feedback: 'Password troppo corta (minimo 8 caratteri)', 
+            feedback: 'Password too short (minimum 8 characters)', 
             valid: false 
         };
     }
 
-    // Calcola score
+    // Calculate score
     if (length >= 8) score++;
     if (length >= 12) score++;
     if (hasLower && hasUpper) score++;
     if (hasNumber) score++;
     if (hasSpecial) score++;
 
-    // Normalizza score 0-4
+    // Normalize score 0-4
     score = Math.min(4, Math.floor(score * 0.8));
 
-    // Validazione requisiti obbligatori
+    // Validate mandatory requirements
     const valid = length >= 8 && hasUpper && hasNumber && hasSpecial;
 
     // Feedback
     if (!valid) {
         const missing = [];
-        if (!hasUpper) missing.push('1 maiuscola');
-        if (!hasNumber) missing.push('1 numero');
-        if (!hasSpecial) missing.push('1 carattere speciale');
-        feedback = `Mancante: ${missing.join(', ')}`;
+        if (!hasUpper) missing.push('1 uppercase letter');
+        if (!hasNumber) missing.push('1 number');
+        if (!hasSpecial) missing.push('1 special character');
+        feedback = `Missing: ${missing.join(', ')}`;
     } else {
         switch (score) {
             case 0:
             case 1:
-                feedback = 'Password debole';
+                feedback = 'Weak password';
                 break;
             case 2:
-                feedback = 'Password media';
+                feedback = 'Medium password';
                 break;
             case 3:
-                feedback = 'Password forte';
+                feedback = 'Strong password';
                 break;
             case 4:
-                feedback = 'Password molto forte';
+                feedback = 'Very strong password';
                 break;
         }
     }
@@ -113,21 +113,21 @@ export function validatePasswordStrength(password: string): PasswordStrengthResu
 // ============================================================================
 
 /**
- * Valida Partita IVA italiana (solo formato - 11 cifre)
+ * Validates Italian VAT number (format only - 11 digits)
  */
 export function validateItalianVAT(vat: string): { valid: boolean; error?: string } {
     if (!vat || !vat.trim()) {
-        return { valid: false, error: 'Partita IVA richiesta' };
+        return { valid: false, error: 'VAT number required' };
     }
 
-    // Rimuovi spazi e converti in uppercase
+    // Remove spaces and convert to uppercase
     const cleaned = vat.replace(/\s/g, '').toUpperCase();
 
-    // Verifica formato: 11 cifre numeriche
+    // Check format: 11 numeric digits
     if (!/^[0-9]{11}$/.test(cleaned)) {
         return { 
             valid: false, 
-            error: 'Partita IVA deve contenere esattamente 11 cifre numeriche' 
+            error: 'VAT number must contain exactly 11 numeric digits' 
         };
     }
 
@@ -146,16 +146,16 @@ export interface VIESResult {
 }
 
 /**
- * Valida P.IVA europea tramite API VIES
- * NOTA: VIES è un servizio SOAP, qui usiamo un proxy/wrapper
+ * Validates EU VAT number via VIES API
+ * NOTE: VIES is a SOAP service, here we use a proxy/wrapper
  */
 export async function validateVIES(vat: string, countryCode: string): Promise<VIESResult> {
     try {
-        // Pulisci input
+        // Clean input
         const cleanVAT = vat.replace(/\s/g, '').toUpperCase();
         const cleanCountry = countryCode.toUpperCase();
 
-        // Per Italia, usa validazione locale prima
+        // For Italy, use local validation first
         if (cleanCountry === 'IT') {
             const localCheck = validateItalianVAT(cleanVAT);
             if (!localCheck.valid) {
@@ -163,9 +163,9 @@ export async function validateVIES(vat: string, countryCode: string): Promise<VI
             }
         }
 
-        // Chiamata API VIES tramite proxy pubblico
-        // NOTA: L'API VIES blocca chiamate dirette dal browser (CORS)
-        // In produzione usare un proprio backend per evitare CORS
+        // VIES API call via public proxy
+        // NOTE: VIES API blocks direct calls from browser (CORS)
+        // In production use your own backend to avoid CORS
         const url = `https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${cleanCountry}/vat/${cleanVAT}`;
         
         const response = await fetch(url, {
@@ -176,11 +176,11 @@ export async function validateVIES(vat: string, countryCode: string): Promise<VI
         });
 
         if (!response.ok) {
-            // Fallback: se API non disponibile, permetti comunque di procedere
-            console.warn('[VIES] API non disponibile, skip validazione');
+            // Fallback: if API unavailable, allow proceeding anyway
+            console.warn('[VIES] API unavailable, skipping validation');
             return { 
                 valid: true, 
-                error: 'La verifica P.IVA europea (VIES) non è disponibile dal browser. Puoi comunque procedere.' 
+                error: 'EU VAT verification (VIES) is not available from browser. You can proceed anyway.' 
             };
         }
 
@@ -195,15 +195,15 @@ export async function validateVIES(vat: string, countryCode: string): Promise<VI
         } else {
             return {
                 valid: false,
-                error: 'Partita IVA non trovata nel registro europeo VIES',
+                error: 'VAT number not found in European VIES registry',
             };
         }
     } catch (error) {
-        console.warn('[VIES] Errore chiamata API (probabilmente CORS):', error);
-        // In caso di errore CORS, permetti comunque di procedere
+        console.warn('[VIES] API call error (probably CORS):', error);
+        // In case of CORS error, allow proceeding anyway
         return { 
             valid: true, 
-            error: 'La verifica P.IVA richiede un backend. Puoi comunque procedere con la registrazione.' 
+            error: 'VAT verification requires a backend. You can proceed with registration anyway.' 
         };
     }
 }
@@ -213,11 +213,11 @@ export async function validateVIES(vat: string, countryCode: string): Promise<VI
 // ============================================================================
 
 /**
- * Valida CAP italiano (5 cifre)
+ * Validates Italian postal code (5 digits)
  */
 export function validateItalianCAP(cap: string): { valid: boolean; error?: string } {
     if (!cap || !cap.trim()) {
-        return { valid: true }; // CAP è opzionale
+        return { valid: true }; // Postal code is optional
     }
 
     const cleaned = cap.replace(/\s/g, '');
@@ -225,7 +225,7 @@ export function validateItalianCAP(cap: string): { valid: boolean; error?: strin
     if (!/^[0-9]{5}$/.test(cleaned)) {
         return { 
             valid: false, 
-            error: 'CAP deve contenere esattamente 5 cifre' 
+            error: 'Postal code must contain exactly 5 digits' 
         };
     }
 
@@ -237,25 +237,25 @@ export function validateItalianCAP(cap: string): { valid: boolean; error?: strin
 // ============================================================================
 
 /**
- * Valida Codice SDI (7 caratteri alfanumerici o "0000000" per PEC)
+ * Validates SDI Code (7 alphanumeric characters or "0000000" for PEC)
  */
 export function validateSDI(code: string): { valid: boolean; error?: string } {
     if (!code || !code.trim()) {
-        return { valid: true }; // SDI è opzionale se c'è PEC
+        return { valid: true }; // SDI is optional if PEC is provided
     }
 
     const cleaned = code.replace(/\s/g, '').toUpperCase();
 
-    // "0000000" indica che si usa PEC invece di SDI
+    // "0000000" indicates using PEC instead of SDI
     if (cleaned === '0000000') {
         return { valid: true };
     }
 
-    // Altrimenti deve essere 7 caratteri alfanumerici
+    // Otherwise must be 7 alphanumeric characters
     if (!/^[A-Z0-9]{7}$/.test(cleaned)) {
         return { 
             valid: false, 
-            error: 'Codice SDI deve contenere 7 caratteri alfanumerici' 
+            error: 'SDI code must contain 7 alphanumeric characters' 
         };
     }
 
@@ -267,24 +267,24 @@ export function validateSDI(code: string): { valid: boolean; error?: string } {
 // ============================================================================
 
 /**
- * Valida numero di telefono italiano/internazionale
+ * Validates Italian/international phone number
  */
 export function validateItalianPhone(phone: string): { valid: boolean; error?: string } {
     if (!phone || !phone.trim()) {
-        return { valid: true }; // Telefono è opzionale
+        return { valid: true }; // Phone is optional
     }
 
     const cleaned = phone.replace(/[\s\-().]/g, '');
 
-    // Formato italiano: +39 o 0039 seguito da 9-10 cifre
-    // Formato internazionale: + seguito da 10-15 cifre
+    // Italian format: +39 or 0039 followed by 9-10 digits
+    // International format: + followed by 10-15 digits
     const italianRegex = /^(\+39|0039)?[0-9]{9,10}$/;
     const internationalRegex = /^\+[0-9]{10,15}$/;
 
     if (!italianRegex.test(cleaned) && !internationalRegex.test(cleaned)) {
         return { 
             valid: false, 
-            error: 'Formato telefono non valido (es. +39 333 123 4567)' 
+            error: 'Invalid phone format (e.g. +39 333 123 4567)' 
         };
     }
 
@@ -296,21 +296,21 @@ export function validateItalianPhone(phone: string): { valid: boolean; error?: s
 // ============================================================================
 
 /**
- * Valida Codice Fiscale italiano (formato base)
+ * Validates Italian Fiscal Code (basic format)
  */
 export function validateFiscalCode(code: string): { valid: boolean; error?: string } {
     if (!code || !code.trim()) {
-        return { valid: true }; // Codice fiscale è opzionale se c'è P.IVA
+        return { valid: true }; // Fiscal code is optional if VAT number is provided
     }
 
     const cleaned = code.replace(/\s/g, '').toUpperCase();
 
-    // Formato: 16 caratteri alfanumerici
-    // Pattern semplificato (validazione completa richiede algoritmo più complesso)
+    // Format: 16 alphanumeric characters
+    // Simplified pattern (complete validation requires more complex algorithm)
     if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(cleaned)) {
         return { 
             valid: false, 
-            error: 'Formato Codice Fiscale non valido (16 caratteri)' 
+            error: 'Invalid Fiscal Code format (16 characters)' 
         };
     }
 
@@ -346,23 +346,23 @@ export interface RegistrationData {
 }
 
 /**
- * Valida i dati dello Step 1 (Account Base)
+ * Validates Step 1 data (Account Base)
  */
 export function validateStep1(data: Partial<RegistrationData>): { valid: boolean; errors: Record<string, string> } {
     const errors: Record<string, string> = {};
 
-    // Nome e cognome
+    // First name and last name
     if (!data.firstName?.trim()) {
-        errors.firstName = 'Nome richiesto';
+        errors.firstName = 'First name required';
     }
     if (!data.lastName?.trim()) {
-        errors.lastName = 'Cognome richiesto';
+        errors.lastName = 'Last name required';
     }
 
     // Email
     const emailCheck = validateBusinessEmail(data.email || '');
     if (!emailCheck.valid) {
-        errors.email = emailCheck.error || 'Email non valida';
+        errors.email = emailCheck.error || 'Invalid email';
     }
 
     // Password
@@ -371,76 +371,76 @@ export function validateStep1(data: Partial<RegistrationData>): { valid: boolean
         errors.password = passwordCheck.feedback;
     }
 
-    // Conferma password
+    // Confirm password
     if (data.password !== data.confirmPassword) {
-        errors.confirmPassword = 'Le password non corrispondono';
+        errors.confirmPassword = 'Passwords do not match';
     }
 
-    // Termini e condizioni
+    // Terms and conditions
     if (data.acceptTerms !== true) {
-        errors.acceptTerms = 'Devi accettare i termini e condizioni';
+        errors.acceptTerms = 'You must accept the terms and conditions';
     }
 
     return { valid: Object.keys(errors).length === 0, errors };
 }
 
 /**
- * Valida i dati dello Step 2 (Dati Aziendali)
+ * Validates Step 2 data (Business Details)
  */
 export function validateStep2(data: Partial<RegistrationData>): { valid: boolean; errors: Record<string, string> } {
     const errors: Record<string, string> = {};
 
-    // Ragione sociale
+    // Business name
     if (!data.businessName?.trim()) {
-        errors.businessName = 'Ragione sociale richiesta';
+        errors.businessName = 'Business name required';
     }
 
-    // Partita IVA
+    // VAT number
     const vatCheck = validateItalianVAT(data.vatNumber || '');
     if (!vatCheck.valid) {
-        errors.vatNumber = vatCheck.error || 'P.IVA non valida';
+        errors.vatNumber = vatCheck.error || 'Invalid VAT number';
     }
 
-    // Codice Fiscale (opzionale)
+    // Fiscal Code (optional)
     if (data.fiscalCode) {
         const cfCheck = validateFiscalCode(data.fiscalCode);
         if (!cfCheck.valid) {
-            errors.fiscalCode = cfCheck.error || 'Codice Fiscale non valido';
+            errors.fiscalCode = cfCheck.error || 'Invalid Fiscal Code';
         }
     }
 
-    // Indirizzo
+    // Address
     if (!data.address?.trim()) {
-        errors.address = 'Indirizzo richiesto';
+        errors.address = 'Address required';
     }
 
-    // CAP
+    // Postal code
     if (data.cap) {
         const capCheck = validateItalianCAP(data.cap);
         if (!capCheck.valid) {
-            errors.cap = capCheck.error || 'CAP non valido';
+            errors.cap = capCheck.error || 'Invalid postal code';
         }
     }
 
-    // Città
+    // City
     if (!data.city?.trim()) {
-        errors.city = 'Città richiesta';
+        errors.city = 'City required';
     }
 
-    // Nazione
+    // Country
     if (!data.country?.trim()) {
-        errors.country = 'Nazione richiesta';
+        errors.country = 'Country required';
     }
 
-    // Telefono (opzionale)
+    // Phone (optional)
     if (data.phone) {
         const phoneCheck = validateItalianPhone(data.phone);
         if (!phoneCheck.valid) {
-            errors.phone = phoneCheck.error || 'Telefono non valido';
+            errors.phone = phoneCheck.error || 'Invalid phone';
         }
     }
 
-    // SDI e PEC sono completamente opzionali - nessuna validazione richiesta
+    // SDI and PEC are completely optional - no validation required
 
     return { valid: Object.keys(errors).length === 0, errors };
 }

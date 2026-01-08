@@ -290,7 +290,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <option>English (US) - Primary</option>
                                         <option>Português (Brasil)</option>
                                         <option>Español (LatAm)</option>
-                                        <option>Italiano</option>
+                                        <option>Italian</option>
                                     </select>
                                 </div>
                                 <div className="relative">

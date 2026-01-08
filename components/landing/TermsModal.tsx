@@ -20,121 +20,121 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccep
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Termini e Condizioni"
+            title="Terms and Conditions"
             width="lg"
             showCloseButton={true}
         >
             <div className="p-6 space-y-6">
-                {/* Contenuto scrollabile */}
+                {/* Scrollable content */}
                 <div className="max-h-[60vh] overflow-y-auto space-y-4 text-sm text-[var(--color-text-main)] pr-2">
                     <section>
-                        <h3 className="font-bold text-base mb-2">1. Accettazione dei Termini</h3>
+                        <h3 className="font-bold text-base mb-2">1. Acceptance of Terms</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Utilizzando il servizio Armonyco, accetti integralmente i presenti Termini e Condizioni.
-                            Se non accetti questi termini, non potrai utilizzare i nostri servizi.
+                            By using the Armonyco service, you fully accept these Terms and Conditions.
+                            If you do not accept these terms, you may not use our services.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">2. Descrizione del Servizio</h3>
+                        <h3 className="font-bold text-base mb-2">2. Service Description</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Armonyco è una piattaforma SaaS B2B che fornisce strumenti di gestione decisionale
-                            e automazione per le aziende. Il servizio include accesso a moduli AI, dashboard
-                            di analytics, e strumenti di compliance.
+                            Armonyco is a B2B SaaS platform that provides decision management tools
+                            and automation for businesses. The service includes access to AI modules, analytics
+                            dashboards, and compliance tools.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">3. Registrazione e Account</h3>
+                        <h3 className="font-bold text-base mb-2">3. Registration and Account</h3>
                         <ul className="list-disc list-inside space-y-2 text-[var(--color-text-muted)]">
-                            <li>Devi fornire informazioni accurate e complete durante la registrazione</li>
-                            <li>Sei responsabile della sicurezza delle tue credenziali di accesso</li>
-                            <li>Non puoi condividere il tuo account con terzi non autorizzati</li>
-                            <li>Devi notificarci immediatamente in caso di accesso non autorizzato</li>
+                            <li>You must provide accurate and complete information during registration</li>
+                            <li>You are responsible for the security of your login credentials</li>
+                            <li>You may not share your account with unauthorized third parties</li>
+                            <li>You must notify us immediately in case of unauthorized access</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">4. Piani e Pagamenti</h3>
+                        <h3 className="font-bold text-base mb-2">4. Plans and Payments</h3>
                         <ul className="list-disc list-inside space-y-2 text-[var(--color-text-muted)]">
-                            <li>I pagamenti sono elaborati tramite Stripe e sono soggetti alle loro politiche</li>
-                            <li>I crediti acquistati sono validi per il periodo specificato nel piano</li>
-                            <li>I crediti non utilizzati non sono rimborsabili</li>
-                            <li>I prezzi possono variare previa comunicazione con almeno 30 giorni di anticipo</li>
+                            <li>Payments are processed via Stripe and are subject to their policies</li>
+                            <li>Purchased credits are valid for the period specified in the plan</li>
+                            <li>Unused credits are not refundable</li>
+                            <li>Prices may change with at least 30 days advance notice</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">5. Utilizzo del Servizio</h3>
+                        <h3 className="font-bold text-base mb-2">5. Service Usage</h3>
                         <ul className="list-disc list-inside space-y-2 text-[var(--color-text-muted)]">
-                            <li>Accetti di utilizzare il servizio in conformità con tutte le leggi applicabili</li>
-                            <li>Non puoi utilizzare il servizio per attività illegali o non autorizzate</li>
-                            <li>Non puoi tentare di violare la sicurezza della piattaforma</li>
-                            <li>Non puoi fare reverse engineering del software</li>
+                            <li>You agree to use the service in compliance with all applicable laws</li>
+                            <li>You may not use the service for illegal or unauthorized activities</li>
+                            <li>You may not attempt to breach the platform's security</li>
+                            <li>You may not reverse engineer the software</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">6. Proprietà Intellettuale</h3>
+                        <h3 className="font-bold text-base mb-2">6. Intellectual Property</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Tutti i diritti di proprietà intellettuale relativi alla piattaforma Armonyco
-                            appartengono a noi o ai nostri licenzianti. I tuoi dati rimangono di tua proprietà,
-                            ma ci concedi una licenza per utilizzarli per fornirti il servizio.
+                            All intellectual property rights related to the Armonyco platform
+                            belong to us or our licensors. Your data remains your property,
+                            but you grant us a license to use it to provide you with the service.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">7. Privacy e Dati</h3>
+                        <h3 className="font-bold text-base mb-2">7. Privacy and Data</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Il trattamento dei tuoi dati personali è regolato dalla nostra Privacy Policy,
-                            conforme al GDPR. Trattiamo i dati con la massima sicurezza e non li vendiamo
-                            a terze parti.
+                            The processing of your personal data is governed by our Privacy Policy,
+                            compliant with GDPR. We process data with maximum security and do not sell
+                            it to third parties.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">8. Limitazione di Responsabilità</h3>
+                        <h3 className="font-bold text-base mb-2">8. Limitation of Liability</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Il servizio è fornito "così com'è" senza garanzie di alcun tipo. Non siamo
-                            responsabili per danni indiretti, incidentali o consequenziali derivanti
-                            dall'uso del servizio.
+                            The service is provided "as is" without warranties of any kind. We are not
+                            liable for indirect, incidental, or consequential damages arising
+                            from the use of the service.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">9. Risoluzione e Cancellazione</h3>
+                        <h3 className="font-bold text-base mb-2">9. Termination and Cancellation</h3>
                         <ul className="list-disc list-inside space-y-2 text-[var(--color-text-muted)]">
-                            <li>Puoi cancellare il tuo account in qualsiasi momento dalle impostazioni</li>
-                            <li>Possiamo sospendere o terminare l'account in caso di violazione dei termini</li>
-                            <li>I dati vengono conservati secondo la nostra retention policy</li>
+                            <li>You can delete your account at any time from settings</li>
+                            <li>We may suspend or terminate the account in case of terms violation</li>
+                            <li>Data is retained according to our retention policy</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">10. Modifiche ai Termini</h3>
+                        <h3 className="font-bold text-base mb-2">10. Terms Modifications</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Ci riserviamo il diritto di modificare questi termini in qualsiasi momento.
-                            Le modifiche saranno comunicate via email e pubblicate sulla piattaforma.
-                            L'uso continuato del servizio costituisce accettazione delle modifiche.
+                            We reserve the right to modify these terms at any time.
+                            Changes will be communicated via email and published on the platform.
+                            Continued use of the service constitutes acceptance of the changes.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-base mb-2">11. Legge Applicabile</h3>
+                        <h3 className="font-bold text-base mb-2">11. Applicable Law</h3>
                         <p className="text-[var(--color-text-muted)] leading-relaxed">
-                            Questi termini sono regolati dalla legge italiana. Eventuali controversie
-                            saranno di competenza esclusiva del Foro di Milano.
+                            These terms are governed by Italian law. Any disputes
+                            will be subject to the exclusive jurisdiction of the Court of Milan.
                         </p>
                     </section>
 
                     <section className="pt-4 border-t border-[var(--color-border)]">
                         <p className="text-xs text-[var(--color-text-muted)] italic">
-                            Ultimo aggiornamento: Gennaio 2026
+                            Last updated: January 2026
                         </p>
                     </section>
                 </div>
 
-                {/* Footer con azioni */}
+                {/* Footer with actions */}
                 <div className="flex gap-3 pt-4 border-t border-[var(--color-border)]">
                     {onAccept && (
                         <Button
@@ -142,7 +142,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccep
                             onClick={handleAccept}
                             className="flex-1"
                         >
-                            Accetto i Termini
+                            Accept Terms
                         </Button>
                     )}
                     <Button
@@ -150,7 +150,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccep
                         onClick={onClose}
                         className={onAccept ? 'flex-1' : 'w-full'}
                     >
-                        {onAccept ? 'Rifiuta' : 'Chiudi'}
+                        {onAccept ? 'Decline' : 'Close'}
                     </Button>
                 </div>
             </div>

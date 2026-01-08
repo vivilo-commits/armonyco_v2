@@ -1,6 +1,6 @@
 /**
  * PAYMENT SERVICE
- * Integrazione con Stripe per gestione pagamenti
+ * Stripe integration for payment management
  */
 
 import { loadStripe, Stripe } from '@stripe/stripe-js';
@@ -14,12 +14,12 @@ const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 let stripePromise: Promise<Stripe | null> | null = null;
 
 /**
- * Ottieni istanza Stripe (singleton)
+ * Get Stripe instance (singleton)
  */
 export function getStripe(): Promise<Stripe | null> {
     if (!stripePromise) {
         if (!STRIPE_PUBLIC_KEY) {
-            console.error('[Stripe] Public key non configurata');
+            console.error('[Stripe] Public key not configured');
             return Promise.resolve(null);
         }
         stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
@@ -34,8 +34,8 @@ export function getStripe(): Promise<Stripe | null> {
 export interface CheckoutSessionData {
     planId: number;
     planName: string;
-    amount: number; // in centesimi (es. 24900 per €249/mese)
-    credits: number; // Credits del piano (tokens = credits × 100)
+    amount: number; // in cents (e.g. 24900 for €249/month)
+    credits: number; // Plan credits (tokens = credits × 100)
     email: string;
     userId?: string; // User ID per linking con Stripe Customer
     metadata: {
@@ -55,14 +55,14 @@ export interface CheckoutSessionResponse {
 }
 
 /**
- * Crea una sessione Stripe Checkout per SUBSCRIPTION
- * NOTA: Questa funzione deve chiamare un backend endpoint
+ * Creates a Stripe Checkout session for SUBSCRIPTION
+ * NOTE: This function must call a backend endpoint
  */
 export async function createCheckoutSession(data: CheckoutSessionData): Promise<CheckoutSessionResponse> {
     try {
-        // Determina URL backend
-        // In sviluppo locale, usa VITE_API_URL se configurato, altrimenti usa window.location.origin
-        // NOTA: Le API funzionano solo con `vercel dev` o quando deployate su Vercel
+        // Determine backend URL
+        // In local development, use VITE_API_URL if configured, otherwise use window.location.origin
+        // NOTE: APIs only work with `vercel dev` or when deployed on Vercel
         const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
         const endpoint = `${backendUrl}/api/stripe/create-checkout`;
 
@@ -86,7 +86,7 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
                 amount: data.amount,
                 credits: data.credits,
                 email: data.email,
-                userId: data.userId, // Importante per linking subscription
+                userId: data.userId, // Important for linking subscription
                 metadata: data.metadata,
                 successUrl: `${window.location.origin}/registration/success?session_id={CHECKOUT_SESSION_ID}`,
                 cancelUrl: `${window.location.origin}/registration?step=4&error=payment_cancelled`,
@@ -97,30 +97,30 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ 
-                error: 'Errore sconosciuto',
+                error: 'Unknown error',
                 message: `HTTP ${response.status}: ${response.statusText}` 
             }));
             
             console.error('[Payment] API Error:', errorData);
             
-            // Messaggio di errore più chiaro per 404
+            // Clearer error message for 404
             if (response.status === 404) {
                 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
                 if (isLocalhost && !import.meta.env.VITE_API_URL) {
                     throw new Error(
-                        'Endpoint API non trovato (404). ' +
-                        'In sviluppo locale, usa `vercel dev` invece di `npm run dev` per far girare le API, ' +
-                        'oppure configura VITE_API_URL nel file .env.local per puntare a un deployment Vercel.'
+                        'API endpoint not found (404). ' +
+                        'In local development, use `vercel dev` instead of `npm run dev` to run APIs, ' +
+                        'or configure VITE_API_URL in .env.local to point to a Vercel deployment.'
                     );
                 } else {
                     throw new Error(
-                        `Endpoint API non trovato (404): ${endpoint}. ` +
-                        'Verifica che le API siano deployate su Vercel o che VITE_API_URL sia configurato correttamente.'
+                        `API endpoint not found (404): ${endpoint}. ` +
+                        'Verify that APIs are deployed on Vercel or that VITE_API_URL is configured correctly.'
                     );
                 }
             }
             
-            throw new Error(errorData.message || errorData.error || 'Errore creazione sessione pagamento');
+            throw new Error(errorData.message || errorData.error || 'Error creating payment session');
         }
 
         const result = await response.json();
@@ -131,11 +131,11 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
         });
 
         if (!result.sessionId) {
-            throw new Error('Session ID non ricevuto dal server');
+            throw new Error('Session ID not received from server');
         }
 
         if (!result.url) {
-            throw new Error('URL di checkout non disponibile dal server');
+            throw new Error('Checkout URL not available from server');
         }
 
         return {
@@ -145,34 +145,34 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
             mode: result.mode || 'subscription',
         };
     } catch (error: any) {
-        console.error('[Payment] ❌ Errore creazione checkout session:', error);
+        console.error('[Payment] ❌ Error creating checkout session:', error);
         console.error('[Payment] Error details:', {
             message: error.message,
             name: error.name,
             stack: error.stack,
         });
-        throw new Error(error.message || 'Impossibile avviare il pagamento. Verifica la configurazione.');
+        throw new Error(error.message || 'Unable to start payment. Check configuration.');
     }
 }
 
 /**
- * Reindirizza a Stripe Checkout
+ * Redirects to Stripe Checkout
  */
 export async function redirectToCheckout(sessionId: string): Promise<void> {
     console.log('[Payment] Redirecting to Stripe Checkout, session:', sessionId);
     
-    // Verifica che Stripe sia configurato
+    // Verify Stripe is configured
     if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
         throw new Error(
-            'Stripe non è configurato. Configura VITE_STRIPE_PUBLIC_KEY nel file .env.local'
+            'Stripe is not configured. Configure VITE_STRIPE_PUBLIC_KEY in .env.local file'
         );
     }
     
     const stripe = await getStripe();
     
     if (!stripe) {
-        console.error('[Payment] ❌ Stripe non inizializzato');
-        throw new Error('Stripe non configurato correttamente. Verifica VITE_STRIPE_PUBLIC_KEY.');
+        console.error('[Payment] ❌ Stripe not initialized');
+        throw new Error('Stripe not configured correctly. Check VITE_STRIPE_PUBLIC_KEY.');
     }
 
     console.log('[Payment] Stripe instance loaded, redirecting...');
@@ -181,42 +181,42 @@ export async function redirectToCheckout(sessionId: string): Promise<void> {
         const { error } = await stripe.redirectToCheckout({ sessionId });
 
         if (error) {
-            console.error('[Stripe] ❌ Errore redirect:', error);
-            throw new Error(error.message || 'Errore reindirizzamento a Stripe');
+            console.error('[Stripe] ❌ Redirect error:', error);
+            throw new Error(error.message || 'Error redirecting to Stripe');
         }
 
-        console.log('[Payment] ✅ Redirect avviato con successo');
+        console.log('[Payment] ✅ Redirect started successfully');
     } catch (error: any) {
-        console.error('[Payment] ❌ Errore durante redirect:', error);
+        console.error('[Payment] ❌ Error during redirect:', error);
         throw error;
     }
 }
 
 /**
- * Crea sessione e reindirizza in un unico step
+ * Creates session and redirects in a single step
  */
 export async function initiatePayment(data: CheckoutSessionData): Promise<void> {
     try {
         console.log('[Payment] 🚀 Initiating payment flow...');
         
-        // Crea sessione
+        // Create session
         console.log('[Payment] Step 1: Creating checkout session...');
         const session = await createCheckoutSession(data);
         
         if (!session.sessionId) {
-            throw new Error('Session ID non disponibile dopo la creazione');
+            throw new Error('Session ID not available after creation');
         }
 
         console.log('[Payment] Step 2: Redirecting to Stripe Checkout...');
         
-        // Reindirizza a Stripe Checkout
+        // Redirect to Stripe Checkout
         await redirectToCheckout(session.sessionId);
         
-        // Se arriviamo qui senza errori, il redirect è in corso
-        // L'utente verrà portato su Stripe
+        // If we get here without errors, redirect is in progress
+        // User will be taken to Stripe
         console.log('[Payment] ✅ Payment flow initiated successfully');
     } catch (error: any) {
-        console.error('[Payment] ❌ Errore avvio pagamento:', error);
+        console.error('[Payment] ❌ Error starting payment:', error);
         console.error('[Payment] Error stack:', error.stack);
         throw error;
     }
@@ -235,7 +235,7 @@ export interface PaymentStatus {
 }
 
 /**
- * Verifica lo stato di un pagamento tramite session ID
+ * Verifies payment status via session ID
  */
 export async function verifyPaymentStatus(sessionId: string): Promise<PaymentStatus> {
     try {
@@ -250,7 +250,7 @@ export async function verifyPaymentStatus(sessionId: string): Promise<PaymentSta
         });
 
         if (!response.ok) {
-            throw new Error('Errore verifica pagamento');
+            throw new Error('Payment verification error');
         }
 
         const result = await response.json();
@@ -262,10 +262,10 @@ export async function verifyPaymentStatus(sessionId: string): Promise<PaymentSta
             metadata: result.metadata,
         };
     } catch (error: any) {
-        console.error('[Payment] Errore verifica stato:', error);
+        console.error('[Payment] Error verifying status:', error);
         return {
             status: 'failed',
-            error: error.message || 'Impossibile verificare lo stato del pagamento',
+            error: error.message || 'Unable to verify payment status',
         };
     }
 }
@@ -275,17 +275,17 @@ export async function verifyPaymentStatus(sessionId: string): Promise<PaymentSta
 // ============================================================================
 
 /**
- * Simula un abbonamento per testing (NON usare in produzione)
+ * Simulates a subscription for testing (DO NOT use in production)
  */
 export async function mockPayment(data: CheckoutSessionData): Promise<{ success: boolean; sessionId: string; customerId: string }> {
-    console.warn('[Payment] Usando MOCK subscription - solo per sviluppo!');
+    console.warn('[Payment] Using MOCK subscription - development only!');
     
     return new Promise((resolve) => {
         setTimeout(() => {
             const sessionId = `mock_session_${Date.now()}`;
             const customerId = `cus_mock_${Math.random().toString(36).substring(7)}`;
             
-            // Salva dati mock in localStorage per simulare callback
+            // Save mock data in localStorage to simulate callback
             localStorage.setItem('mock_payment_data', JSON.stringify({
                 sessionId,
                 customerId,
@@ -301,13 +301,13 @@ export async function mockPayment(data: CheckoutSessionData): Promise<{ success:
 }
 
 /**
- * Simula redirect a pagina successo (per mock)
+ * Simulates redirect to success page (for mock)
  */
 export async function mockPaymentFlow(data: CheckoutSessionData): Promise<void> {
     const result = await mockPayment(data);
     
     if (result.success) {
-        // Simula redirect a success page
+        // Simulate redirect to success page
         const successUrl = `/registration/success?session_id=${result.sessionId}`;
         window.location.href = successUrl;
     }
@@ -325,7 +325,7 @@ export interface PriceBreakdown {
 }
 
 /**
- * Calcola il breakdown del prezzo con IVA italiana (22%)
+ * Calculates price breakdown with Italian VAT (22%)
  */
 export function calculatePriceBreakdown(amount: number, taxRate: number = 0.22): PriceBreakdown {
     const subtotal = Math.round(amount * 100) / 100;
@@ -341,24 +341,24 @@ export function calculatePriceBreakdown(amount: number, taxRate: number = 0.22):
 }
 
 /**
- * Calcola i tokens mensili da un piano
+ * Calculates monthly tokens from a plan
  */
 export function calculateMonthlyTokens(credits: number): number {
     return credits * 100;
 }
 
 /**
- * Formatta i tokens per display
+ * Formats tokens for display
  */
 export function formatTokens(tokens: number): string {
-    return new Intl.NumberFormat('it-IT').format(tokens);
+    return new Intl.NumberFormat('en-US').format(tokens);
 }
 
 /**
- * Formatta importo in Euro
+ * Formats amount in Euros
  */
 export function formatEuro(amount: number): string {
-    return new Intl.NumberFormat('it-IT', {
+    return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR',
     }).format(amount);

@@ -1,6 +1,6 @@
 /**
  * TOKENS HISTORY MODAL
- * Mostra lo storico completo delle transazioni tokens (opzionale)
+ * Shows complete token transaction history (optional)
  */
 
 import React, { useEffect, useState } from 'react';
@@ -19,13 +19,13 @@ interface TokensHistoryModalProps {
 }
 
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-    subscription_initial: '🎉 Sottoscrizione Iniziale',
-    subscription_renewal: '🔄 Rinnovo Mensile',
-    subscription_upgrade: '⬆️ Upgrade Piano',
-    subscription_downgrade: '⬇️ Downgrade Piano',
-    manual_adjustment: '⚙️ Aggiustamento Manuale',
-    consumption: '📉 Consumo',
-    refund: '↩️ Rimborso',
+    subscription_initial: '🎉 Initial Subscription',
+    subscription_renewal: '🔄 Monthly Renewal',
+    subscription_upgrade: '⬆️ Plan Upgrade',
+    subscription_downgrade: '⬇️ Plan Downgrade',
+    manual_adjustment: '⚙️ Manual Adjustment',
+    consumption: '📉 Consumption',
+    refund: '↩️ Refund',
 };
 
 export const TokensHistoryModal: React.FC<TokensHistoryModalProps> = ({ isOpen, onClose }) => {
@@ -51,14 +51,14 @@ export const TokensHistoryModal: React.FC<TokensHistoryModalProps> = ({ isOpen, 
 
             setTransactions(history);
         } catch (error) {
-            console.error('[TokensHistory] Errore caricamento:', error);
+            console.error('[TokensHistory] Error loading:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleString('it-IT', {
+        return new Date(dateString).toLocaleString('en-US', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -73,10 +73,10 @@ export const TokensHistoryModal: React.FC<TokensHistoryModalProps> = ({ isOpen, 
                 {/* Header */}
                 <div className="mb-6">
                     <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
-                        Storico Tokens
+                        Token History
                     </h2>
                     <p className="text-sm text-[var(--color-text-muted)] mt-1">
-                        Tutte le transazioni del tuo account
+                        All transactions for your account
                     </p>
                 </div>
 
@@ -88,7 +88,7 @@ export const TokensHistoryModal: React.FC<TokensHistoryModalProps> = ({ isOpen, 
                 ) : transactions.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-[var(--color-text-muted)]">
-                            Nessuna transazione disponibile
+                            No transactions available
                         </p>
                     </div>
                 ) : (
@@ -125,7 +125,7 @@ export const TokensHistoryModal: React.FC<TokensHistoryModalProps> = ({ isOpen, 
                                             {formatTokens(transaction.amount)}
                                         </p>
                                         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                                            Saldo: {formatTokens(transaction.balanceAfter)}
+                                            Balance: {formatTokens(transaction.balanceAfter)}
                                         </p>
                                     </div>
                                 </div>
