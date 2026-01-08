@@ -32,9 +32,22 @@ This repository is equipped with the **Plumb-Line™ Strategy**, allowing a seam
    cp .env.example .env.local
    ```
 4. **Run Development Server**
+
+   **Opzione 1: Solo Frontend (senza API Stripe)**
    ```bash
    npm run dev
    ```
+   ⚠️ **Nota:** Le API Stripe non funzioneranno con questa opzione. Usa l'Opzione 2 per testare il pagamento.
+
+   **Opzione 2: Frontend + API (consigliato per testare Stripe)**
+   ```bash
+   # Installa Vercel CLI se non l'hai già fatto
+   npm install -g vercel
+   
+   # Avvia il server con API
+   npm run dev:vercel
+   ```
+   Questo avvia sia il frontend che le API serverless, permettendo di testare il flusso completo di pagamento.
 
 ### Quality Hygiene
 

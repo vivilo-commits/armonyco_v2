@@ -1,9 +1,30 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, Building, User, CreditCard, Zap } from '../ui/Icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, CheckCircle, Loader, AlertTriangle } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { authService } from '../../src/services/auth.service';
+import { ProgressBar } from '../ui/ProgressBar';
+import { PasswordStrengthMeter } from '../ui/PasswordStrengthMeter';
+import { VATVerifier } from '../ui/VATVerifier';
+import { ExitIntentModal } from '../ui/ExitIntentModal';
+import { TermsModal } from './TermsModal';
+import { PlanCard, Plan } from './PlanCard';
+import { ITALIAN_PROVINCES } from '../../src/data/italian-provinces';
+import { 
+    validateStep1, 
+    validateStep2
+} from '../../src/services/validation.service';
+import { 
+    saveRegistrationDraft, 
+    getRegistrationDraft, 
+    clearRegistrationDraft,
+    completeRegistration
+} from '../../src/services/registration.service';
+import { 
+    initiatePayment, 
+    calculatePriceBreakdown,
+    formatEuro 
+} from '../../src/services/payment.service';
 
 interface SignUpWizardProps {
     isOpen: boolean;
@@ -13,151 +34,179 @@ interface SignUpWizardProps {
 }
 
 const STEPS = [
-    { id: 1, title: 'Personal Info', icon: User },
-    { id: 2, title: 'Organization', icon: Building },
-    { id: 3, title: 'Billing Details', icon: CreditCard },
-    { id: 4, title: 'Select Plan', icon: Zap },
+    'Account Base',
+    'Dati Aziendali',
+    'Selezione Piano',
+    'Pagamento',
+    'Conferma'
 ];
 
-export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onContact, onComplete }) => {
+const PLANS: Plan[] = [
+    {
+        id: 1,
+        name: 'STARTER',
+        credits: 25000,
+        tokens: 2500000, // 25,000 credits × 100
+        price: 249,
+        features: [
+            '2,5M tokens al mese',
+            'I tokens si accumulano',
+            'Dashboard analytics',
+            'Email support',
+            'Documentazione completa'
+        ],
+    },
+    {
+        id: 2,
+        name: 'PRO',
+        credits: 100000,
+        tokens: 10000000, // 100,000 credits × 100
+        price: 999,
+        badge: '🔥 Più Popolare',
+        features: [
+            '10M tokens al mese',
+            'I tokens si accumulano',
+            'Dashboard avanzata',
+            'Priority support',
+            'API access',
+            'Custom reports'
+        ],
+    },
+    {
+        id: 3,
+        name: 'ELITE',
+        credits: 250000,
+        tokens: 25000000, // 250,000 credits × 100
+        price: 2499,
+        features: [
+            '25M tokens al mese',
+            'I tokens si accumulano',
+            'Dashboard enterprise',
+            '24/7 support dedicato',
+            'API illimitata',
+            'White label',
+            'SLA garantito'
+        ],
+    },
+    {
+        id: 4,
+        name: 'VIP',
+        credits: 0,
+        price: 0,
+        isCustom: true,
+        features: [
+            'Tokens illimitati',
+            'Progetto istituzionale',
+            'Account manager dedicato',
+            'Customizzazione completa',
+            'Contratto enterprise'
+        ],
+    },
+];
+
+export const SignUpWizard: React.FC<SignUpWizardProps> = ({ 
+    isOpen, 
+    onClose, 
+    onContact, 
+    onComplete 
+}) => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showTerms, setShowTerms] = useState(false);
+    const [showExitIntent, setShowExitIntent] = useState(false);
 
-    // Personal Info
-    const [profile, setProfile] = useState({
-        firstName: '',
-        lastName: '',
+    // Step 1: Account Base
+    const [formData, setFormData] = useState({
+        // Step 1
         email: '',
-        phone: '',
         password: '',
         confirmPassword: '',
-    });
+        firstName: '',
+        lastName: '',
+        acceptTerms: false,
 
-    // Organization
-    const [org, setOrg] = useState({
-        name: '',
-        billingEmail: '',
-        website: '',
-        language: 'EN',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    });
-
-    // Billing Details
-    const [billing, setBilling] = useState({
-        legalName: '',
+        // Step 2
+        businessName: '',
         vatNumber: '',
         fiscalCode: '',
         address: '',
+        civicNumber: '',
+        cap: '',
         city: '',
-        zip: '',
-        country: '',
+        province: '',
+        country: 'Italia',
+        phone: '',
         sdiCode: '',
         pecEmail: '',
+
+        // Step 3
+        planId: 0,
+        planName: '',
+        planPrice: 0,
+        planCredits: 0,
     });
 
-    // Plan
-    const [selectedPlan, setSelectedPlan] = useState<number>(25000);
-
-    // Validation helpers
-    const isValidEmail = (email: string) => {
-        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return regex.test(email);
-    };
-
-    const isValidPhone = (phone: string) => {
-        if (!phone) return true; // Phone is optional
-        // Accept international format: +XX XXX XXX XXXX or similar
-        const regex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,9}$/;
-        return regex.test(phone.replace(/\s/g, ''));
-    };
-
-    const isValidVAT = (vat: string, country: string) => {
-        if (!vat) return true; // VAT is optional
-        // Basic VAT validation per country
-        const patterns: Record<string, RegExp> = {
-            'IT': /^IT[0-9]{11}$/i,
-            'Italy': /^IT[0-9]{11}$/i,
-            'DE': /^DE[0-9]{9}$/i,
-            'Germany': /^DE[0-9]{9}$/i,
-            'FR': /^FR[A-Z0-9]{2}[0-9]{9}$/i,
-            'France': /^FR[A-Z0-9]{2}[0-9]{9}$/i,
-            'ES': /^ES[A-Z0-9][0-9]{7}[A-Z0-9]$/i,
-            'Spain': /^ES[A-Z0-9][0-9]{7}[A-Z0-9]$/i,
-            'PT': /^PT[0-9]{9}$/i,
-            'Portugal': /^PT[0-9]{9}$/i,
-            'UK': /^GB([0-9]{9}|[0-9]{12}|(GD|HA)[0-9]{3})$/i,
-            'United Kingdom': /^GB([0-9]{9}|[0-9]{12}|(GD|HA)[0-9]{3})$/i,
-        };
-        const pattern = patterns[country];
-        if (pattern) {
-            return pattern.test(vat.replace(/\s/g, ''));
+    // Carica draft al mount
+    useEffect(() => {
+        if (isOpen) {
+            const draft = getRegistrationDraft();
+            if (draft) {
+                setFormData(prev => ({ ...prev, ...draft.data }));
+                // Non ripristinare lo step automaticamente per sicurezza
+                console.log('[SignUp] Draft recuperato dal localStorage');
+            }
         }
-        // Generic: at least 8 alphanumeric
-        return /^[A-Z0-9]{8,}$/i.test(vat.replace(/\s/g, ''));
+    }, [isOpen]);
+
+    // Auto-save draft (debounced)
+    useEffect(() => {
+        if (!isOpen || step === 5) return; // Non salvare nello step finale
+
+        const timeoutId = setTimeout(() => {
+            if (step > 1) {
+                saveRegistrationDraft(step, formData);
+            }
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+    }, [formData, step, isOpen]);
+
+    const updateField = (field: string, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        // Rimuovi errore del campo quando l'utente modifica
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
     };
 
-    const isValidPassword = (password: string) => {
-        // Min 8 chars, at least 1 letter and 1 number
-        return password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
-    };
-
-    const validateStep = () => {
-        setError(null);
+    // Validazione step corrente
+    const validateCurrentStep = (): boolean => {
+        setErrors({});
 
         if (step === 1) {
-            if (!profile.firstName.trim() || !profile.lastName.trim()) {
-                setError('Please enter your first and last name');
-                return false;
-            }
-            if (!profile.email || !isValidEmail(profile.email)) {
-                setError('Please enter a valid email address (e.g. name@company.com)');
-                return false;
-            }
-            if (profile.phone && !isValidPhone(profile.phone)) {
-                setError('Please enter a valid phone number (e.g. +39 333 123 4567)');
-                return false;
-            }
-            if (!profile.password || !isValidPassword(profile.password)) {
-                setError('Password must be at least 8 characters with letters and numbers');
-                return false;
-            }
-            if (profile.password !== profile.confirmPassword) {
-                setError('Passwords do not match');
+            const result = validateStep1(formData);
+            if (!result.valid) {
+                setErrors(result.errors);
                 return false;
             }
         }
 
         if (step === 2) {
-            if (!org.name.trim()) {
-                setError('Please enter your organization name');
-                return false;
-            }
-            if (!org.billingEmail || !isValidEmail(org.billingEmail)) {
-                setError('Please enter a valid billing email address');
-                return false;
-            }
-            if (org.website && !org.website.startsWith('http')) {
-                setError('Website must start with http:// or https://');
+            const result = validateStep2(formData);
+            if (!result.valid) {
+                setErrors(result.errors);
                 return false;
             }
         }
 
         if (step === 3) {
-            if (!billing.legalName.trim()) {
-                setError('Please enter the legal company name');
-                return false;
-            }
-            if (billing.vatNumber && !isValidVAT(billing.vatNumber, billing.country)) {
-                setError(`Invalid VAT format for ${billing.country || 'selected country'}. Example: IT12345678901`);
-                return false;
-            }
-            if (!billing.address.trim() || !billing.city.trim() || !billing.country.trim()) {
-                setError('Please complete all required address fields (Address, City, Country)');
-                return false;
-            }
-            if (billing.pecEmail && !isValidEmail(billing.pecEmail)) {
-                setError('Please enter a valid PEC email address');
+            if (!formData.planId) {
+                setErrors({ plan: 'Seleziona un piano per continuare' });
                 return false;
             }
         }
@@ -166,384 +215,798 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({ isOpen, onClose, onC
     };
 
     const nextStep = () => {
-        if (validateStep()) {
+        console.log('[SignUp] Validating step', step, 'Form data:', formData);
+        const isValid = validateCurrentStep();
+        console.log('[SignUp] Validation result:', isValid, 'Errors:', errors);
+        
+        if (isValid) {
+            console.log('[SignUp] Moving to step', step + 1);
             setStep(step + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            console.log('[SignUp] ❌ Validation FAILED. Errors:', errors);
+            // Scroll al primo errore
+            const firstErrorElement = document.querySelector('[class*="text-red"]');
+            if (firstErrorElement) {
+                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
     };
 
-    const prevStep = () => setStep(step - 1);
+    const prevStep = () => {
+        setStep(step - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-    const handleComplete = async () => {
-        if (!validateStep()) return;
+    const goToStep = (targetStep: number) => {
+        if (targetStep < step) {
+            setStep(targetStep);
+        }
+    };
+
+    const handleClose = () => {
+        if (step > 1 && step < 4) {
+            setShowExitIntent(true);
+        } else {
+            onClose();
+        }
+    };
+
+    const handleSaveAndExit = () => {
+        saveRegistrationDraft(step, formData);
+        setShowExitIntent(false);
+        onClose();
+    };
+
+    const handleExitWithoutSaving = () => {
+        clearRegistrationDraft();
+        setShowExitIntent(false);
+        onClose();
+    };
+
+    // Step 3: Selezione piano
+    const handleSelectPlan = (plan: Plan) => {
+        if (plan.isCustom) {
+            onContact();
+            return;
+        }
+
+        updateField('planId', plan.id);
+        updateField('planName', plan.name);
+        updateField('planPrice', plan.price);
+        updateField('planCredits', plan.credits);
+    };
+
+    // Step 4: Pagamento
+    const handlePayment = async () => {
+        if (!validateCurrentStep()) return;
+
+        // Verifica che Stripe sia configurato
+        if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+            setErrors({ 
+                payment: 'Stripe non è configurato. Configura VITE_STRIPE_PUBLIC_KEY nel file .env.local' 
+            });
+            return;
+        }
 
         setIsSubmitting(true);
-        setError(null);
+        setErrors({}); // Clear previous errors
 
         try {
-            // 1. Create user account
-            const response = await authService.signUp({
-                email: profile.email,
-                password: profile.password,
-                userProfile: {
-                    firstName: profile.firstName,
-                    lastName: profile.lastName,
-                    email: profile.email,
-                    phone: profile.phone,
-                    photo: null,
-                }
+            console.log('[SignUp] Starting Stripe payment flow...');
+            console.log('[SignUp] Plan:', formData.planName, 'Credits:', formData.planCredits);
+            
+            // Payment reale con Stripe
+            await initiatePayment({
+                planId: formData.planId,
+                planName: formData.planName,
+                amount: Math.round(formData.planPrice * 1.22 * 100),
+                credits: formData.planCredits,
+                email: formData.email,
+                userId: undefined, // Verrà aggiunto dopo la registrazione
+                metadata: {
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    businessName: formData.businessName,
+                    vatNumber: formData.vatNumber,
+                },
             });
-
-            // 2. Save organization data
-            await authService.updateOrganization({
-                name: org.name,
-                billingEmail: org.billingEmail,
-                language: org.language,
-                timezone: org.timezone,
+            
+            // Se initiatePayment non lancia errori, il redirect è in corso
+            // Non impostare isSubmitting a false perché l'utente verrà reindirizzato
+            console.log('[SignUp] Redirecting to Stripe Checkout...');
+        } catch (error: any) {
+            console.error('[SignUp] ❌ Payment error:', error);
+            console.error('[SignUp] Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
             });
-
-            // 3. Save billing details
-            await authService.updateBillingDetails(billing);
-
-            // 4. Add initial credits based on plan
-            await authService.addCredits(selectedPlan);
-
-            onComplete({
-                ...response,
-                organization: org,
-                billingDetails: billing,
-                credits: selectedPlan,
+            
+            setErrors({ 
+                payment: error.message || 'Errore durante il pagamento. Verifica la configurazione di Stripe.' 
             });
-        } catch (err: any) {
-            console.error('Registration failed', err);
-            setError(err.message || 'Registration failed. Please try again.');
-        } finally {
             setIsSubmitting(false);
         }
     };
 
-    const plans = [
-        { id: 1, name: 'Starter', amt: 25000, price: 249, units: 'Up to 50' },
-        { id: 2, name: 'Pro', amt: 100000, price: 999, units: 'Up to 200' },
-        { id: 3, name: 'Elite', amt: 250000, price: 2499, units: 'Up to 500' },
-        { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true },
-    ];
+    // Handle Stripe redirect return
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        // Handle Stripe redirect return
+        if (sessionId && isOpen) {
+            // Stripe payment completed
+            handleCompleteRegistration();
+        }
+    }, [isOpen]);
+
+    const handleCompleteRegistration = async () => {
+        console.log('[SignUp] Starting registration completion...');
+        setIsSubmitting(true);
+        setErrors({}); // Clear previous errors
+
+        try {
+            const result = await completeRegistration({
+                email: formData.email,
+                password: formData.password,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                businessName: formData.businessName,
+                vatNumber: formData.vatNumber,
+                fiscalCode: formData.fiscalCode,
+                phone: formData.phone,
+                address: formData.address,
+                civicNumber: formData.civicNumber,
+                cap: formData.cap,
+                city: formData.city,
+                province: formData.province,
+                country: formData.country,
+                sdiCode: formData.sdiCode,
+                pecEmail: formData.pecEmail,
+                planId: formData.planId,
+                planCredits: formData.planCredits,
+            });
+
+            if (result.success) {
+                console.log('[SignUp] Registration completed successfully!');
+                setStep(5); // Go to confirmation step
+                setIsSubmitting(false);
+                
+                // Callback after 3 seconds
+                setTimeout(() => {
+                    onComplete({
+                        userId: result.userId,
+                        email: formData.email,
+                        plan: formData.planName,
+                        credits: formData.planCredits,
+                    });
+                }, 3000);
+            } else {
+                console.error('[SignUp] Registration failed:', result.error);
+                const errorMessage = result.error || 'Errore durante la registrazione';
+                
+                // Se l'email è già registrata, torna allo step 1 e mostra l'errore nel campo email
+                if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
+                    setStep(1);
+                    setErrors({ 
+                        email: 'Questa email è già registrata. Prova a fare login invece.',
+                        general: 'Questa email è già registrata. Prova a fare login invece.'
+                    });
+                    // Scroll al campo email dopo un breve delay per permettere il render
+                    setTimeout(() => {
+                        const emailInput = document.querySelector('input[type="email"]');
+                        if (emailInput) {
+                            emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            (emailInput as HTMLInputElement).focus();
+                        }
+                    }, 100);
+                } else {
+                    // Per altri errori, mostra nel banner generale
+                    setErrors({ general: errorMessage });
+                    // Scroll al banner di errore
+                    setTimeout(() => {
+                        const errorBanner = document.querySelector('[class*="bg-red-500"]');
+                        if (errorBanner) {
+                            errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100);
+                }
+                setIsSubmitting(false);
+            }
+        } catch (error: any) {
+            console.error('[SignUp] Registration exception:', error);
+            const errorMessage = error.message || 'Errore durante la registrazione';
+            
+            // Se l'email è già registrata, torna allo step 1 e mostra l'errore nel campo email
+            if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
+                setStep(1);
+                setErrors({ 
+                    email: 'Questa email è già registrata. Prova a fare login invece.',
+                    general: 'Questa email è già registrata. Prova a fare login invece.'
+                });
+                // Scroll al campo email dopo un breve delay per permettere il render
+                setTimeout(() => {
+                    const emailInput = document.querySelector('input[type="email"]');
+                    if (emailInput) {
+                        emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        (emailInput as HTMLInputElement).focus();
+                    }
+                }, 100);
+            } else {
+                // Per altri errori, mostra nel banner generale
+                setErrors({ general: errorMessage });
+                // Scroll al banner di errore
+                setTimeout(() => {
+                    const errorBanner = document.querySelector('[class*="bg-red-500"]');
+                    if (errorBanner) {
+                        errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+            }
+            setIsSubmitting(false);
+        }
+    };
+
+    const priceBreakdown = formData.planPrice ? calculatePriceBreakdown(formData.planPrice) : null;
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Create Account"
-            width="full"
-            showCloseButton={true}
-        >
-            <div className="flex flex-col h-auto max-h-[85vh] md:max-h-none">
-                {/* Step Indicator */}
-                <div className="px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <div className="flex items-center justify-center gap-2">
-                        {STEPS.map((s, idx) => (
-                            <React.Fragment key={s.id}>
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${step === s.id
-                                    ? 'bg-[var(--color-brand-accent)] text-black'
-                                    : step > s.id
-                                        ? 'bg-emerald-500/20 text-emerald-500'
-                                        : 'bg-white/5 text-[var(--color-text-muted)]'
-                                    }`}>
-                                    {step > s.id ? <CheckCircle size={14} /> : <s.icon size={14} />}
-                                    <span className="hidden md:inline">{s.title}</span>
-                                </div>
-                                {idx < STEPS.length - 1 && (
-                                    <div className={`w-8 h-0.5 ${step > s.id ? 'bg-emerald-500' : 'bg-white/10'}`} />
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Error Banner */}
-                {error && (
-                    <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm text-center">
-                        {error}
-                    </div>
-                )}
-
-                {/* Body */}
-                <div className="p-8 overflow-y-auto flex-1">
-                    <div className="flex justify-center mb-8">
-                        <img src="/assets/logo-full.png" alt="Armonyco" className="h-14 object-contain" />
-                    </div>
-
-                    {/* Step 1: Personal Info */}
-                    {step === 1 && (
-                        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="text-center mb-8">
-                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Personal Information</h2>
-                                <p className="text-sm text-[var(--color-text-muted)] mt-1">Tell us about yourself</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <FloatingInput
-                                    label="First Name *"
-                                    value={profile.firstName}
-                                    onChange={e => setProfile({ ...profile, firstName: e.target.value })}
-                                />
-                                <FloatingInput
-                                    label="Last Name *"
-                                    value={profile.lastName}
-                                    onChange={e => setProfile({ ...profile, lastName: e.target.value })}
-                                />
-                            </div>
-                            <FloatingInput
-                                label="Email Address *"
-                                type="email"
-                                value={profile.email}
-                                onChange={e => setProfile({ ...profile, email: e.target.value })}
+        <>
+            <Modal
+                isOpen={isOpen}
+                onClose={handleClose}
+                title={null}
+                width="full"
+                showCloseButton={step < 5}
+            >
+                <div className="flex flex-col h-auto max-h-[90vh] md:max-h-none">
+                    {/* Progress Bar */}
+                    {step < 5 && (
+                        <div className="px-6 py-5 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
+                            <ProgressBar
+                                currentStep={step}
+                                totalSteps={5}
+                                stepTitles={STEPS}
                             />
-                            <FloatingInput
-                                label="Phone Number"
-                                type="tel"
-                                value={profile.phone}
-                                onChange={e => setProfile({ ...profile, phone: e.target.value })}
-                            />
-                            <div className="grid grid-cols-2 gap-6">
-                                <FloatingInput
-                                    label="Password *"
-                                    type="password"
-                                    value={profile.password}
-                                    onChange={e => setProfile({ ...profile, password: e.target.value })}
-                                />
-                                <FloatingInput
-                                    label="Confirm Password *"
-                                    type="password"
-                                    value={profile.confirmPassword}
-                                    onChange={e => setProfile({ ...profile, confirmPassword: e.target.value })}
-                                />
+                        </div>
+                    )}
+
+                    {/* Error Banner */}
+                    {errors.general && (
+                        <div className="mx-6 mt-4 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-lg text-red-400 text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <AlertTriangle size={20} className="flex-shrink-0 text-red-400" />
+                            <div className="flex-1">
+                                <p className="font-semibold text-red-300 mb-1">Errore di registrazione</p>
+                                <p>{errors.general}</p>
                             </div>
                         </div>
                     )}
 
-                    {/* Step 2: Organization */}
-                    {step === 2 && (
-                        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="text-center mb-8">
-                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Organization Details</h2>
-                                <p className="text-sm text-[var(--color-text-muted)] mt-1">Tell us about your company</p>
+                    {/* Body */}
+                    <div className="p-6 md:p-8 overflow-y-auto flex-1">
+                        {/* Logo */}
+                        {step < 5 && (
+                            <div className="flex justify-center mb-8">
+                                <img src="/assets/logo-full.png" alt="Armonyco" className="h-12 object-contain" />
                             </div>
+                        )}
 
-                            <FloatingInput
-                                label="Organization Name *"
-                                value={org.name}
-                                onChange={e => setOrg({ ...org, name: e.target.value })}
-                            />
-                            <FloatingInput
-                                label="Billing Email *"
-                                type="email"
-                                value={org.billingEmail}
-                                onChange={e => setOrg({ ...org, billingEmail: e.target.value })}
-                            />
-                            <FloatingInput
-                                label="Company Website"
-                                type="url"
-                                value={org.website}
-                                onChange={e => setOrg({ ...org, website: e.target.value })}
-                                placeholder="https://example.com"
-                            />
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="relative">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3 z-10">Language</label>
-                                    <select
-                                        value={org.language}
-                                        onChange={e => setOrg({ ...org, language: e.target.value })}
-                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
-                                    >
-                                        <option value="EN">English</option>
-                                        <option value="IT">Italiano</option>
-                                        <option value="ES">Español</option>
-                                        <option value="PT">Português</option>
-                                        <option value="FR">Français</option>
-                                    </select>
+                        {/* STEP 1: Account Base */}
+                        {step === 1 && (
+                            <div className="max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Crea il tuo Account</h2>
+                                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                                        Inizia inserendo i tuoi dati personali
+                                    </p>
                                 </div>
-                                <div className="relative">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3 z-10">Timezone</label>
-                                    <select
-                                        value={org.timezone}
-                                        onChange={e => setOrg({ ...org, timezone: e.target.value })}
-                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
-                                    >
-                                        <option value="Europe/Rome">Europe/Rome (CET)</option>
-                                        <option value="Europe/London">Europe/London (GMT)</option>
-                                        <option value="America/New_York">America/New York (EST)</option>
-                                        <option value="America/Los_Angeles">America/Los Angeles (PST)</option>
-                                        <option value="America/Sao_Paulo">America/São Paulo (BRT)</option>
-                                    </select>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FloatingInput
+                                        label="Nome *"
+                                        value={formData.firstName}
+                                        onChange={e => updateField('firstName', e.target.value)}
+                                        error={errors.firstName}
+                                    />
+                                    <FloatingInput
+                                        label="Cognome *"
+                                        value={formData.lastName}
+                                        onChange={e => updateField('lastName', e.target.value)}
+                                        error={errors.lastName}
+                                    />
                                 </div>
-                            </div>
-                        </div>
-                    )}
 
-                    {/* Step 3: Billing Details */}
-                    {step === 3 && (
-                        <div className="max-w-2xl mx-auto w-full space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="text-center mb-8">
-                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Billing & Fiscal Details</h2>
-                                <p className="text-sm text-[var(--color-text-muted)] mt-1">For invoicing purposes</p>
-                            </div>
-
-                            <FloatingInput
-                                label="Legal Company Name *"
-                                value={billing.legalName}
-                                onChange={e => setBilling({ ...billing, legalName: e.target.value })}
-                            />
-                            <div className="grid grid-cols-2 gap-6">
                                 <FloatingInput
-                                    label="VAT Number"
-                                    value={billing.vatNumber}
-                                    onChange={e => setBilling({ ...billing, vatNumber: e.target.value })}
-                                    placeholder="e.g. IT12345678901"
-                                />
-                                <FloatingInput
-                                    label="Fiscal Code"
-                                    value={billing.fiscalCode}
-                                    onChange={e => setBilling({ ...billing, fiscalCode: e.target.value })}
-                                />
-                            </div>
-                            <FloatingInput
-                                label="Street Address *"
-                                value={billing.address}
-                                onChange={e => setBilling({ ...billing, address: e.target.value })}
-                            />
-                            <div className="grid grid-cols-3 gap-6">
-                                <FloatingInput
-                                    label="City *"
-                                    value={billing.city}
-                                    onChange={e => setBilling({ ...billing, city: e.target.value })}
-                                />
-                                <FloatingInput
-                                    label="ZIP / Postal Code"
-                                    value={billing.zip}
-                                    onChange={e => setBilling({ ...billing, zip: e.target.value })}
-                                />
-                                <FloatingInput
-                                    label="Country *"
-                                    value={billing.country}
-                                    onChange={e => setBilling({ ...billing, country: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <FloatingInput
-                                    label="SDI Code (Italy)"
-                                    value={billing.sdiCode}
-                                    onChange={e => setBilling({ ...billing, sdiCode: e.target.value })}
-                                    placeholder="e.g. 0000000"
-                                />
-                                <FloatingInput
-                                    label="PEC Email (Italy)"
+                                    label="Email *"
                                     type="email"
-                                    value={billing.pecEmail}
-                                    onChange={e => setBilling({ ...billing, pecEmail: e.target.value })}
-                                    placeholder="company@pec.it"
+                                    value={formData.email}
+                                    onChange={e => updateField('email', e.target.value)}
+                                    error={errors.email}
+                                    placeholder="nome@example.com"
                                 />
-                            </div>
-                        </div>
-                    )}
 
-                    {/* Step 4: Select Plan */}
-                    {step === 4 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                            <div className="text-center mb-8">
-                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Select Your Plan</h2>
-                                <p className="text-sm text-[var(--color-text-muted)] mt-1">Choose the plan that fits your needs</p>
-                            </div>
-
-                            <div className="max-w-4xl mx-auto grid grid-cols-4 gap-4">
-                                {plans.map(plan => (
-                                    <button
-                                        key={plan.id}
-                                        onClick={() => {
-                                            if (plan.isCustom) {
-                                                onContact();
-                                            } else {
-                                                setSelectedPlan(plan.amt);
-                                            }
-                                        }}
-                                        className={`py-6 rounded-[1.5rem] border transition-all flex flex-col items-center justify-center gap-1 ${selectedPlan === plan.amt && !plan.isCustom
-                                            ? 'bg-[var(--color-text-main)] text-[var(--color-surface)] border-[var(--color-text-main)] shadow-xl scale-[1.02]'
-                                            : 'bg-[var(--color-surface)] text-[var(--color-text-main)] border-[var(--color-border)] hover:border-[var(--color-text-main)]'
-                                            }`}
-                                    >
-                                        <span className={`text-[12px] uppercase tracking-[0.2em] font-black ${selectedPlan === plan.amt && !plan.isCustom ? 'text-white' : 'text-[var(--color-brand-accent)]'
-                                            }`}>
-                                            {plan.name}
-                                        </span>
-                                        {plan.isCustom ? (
-                                            <div className="flex flex-col items-center my-3">
-                                                <span className="text-[18px] font-bold leading-tight text-center">Contact Us</span>
-                                                <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <span className="text-[30px] font-bold leading-none mb-0">
-                                                    €{plan.price.toLocaleString('de-DE')}
-                                                    <span className="text-[14px] opacity-60 font-medium">/mo</span>
-                                                </span>
-                                                <span className="text-[8px] uppercase font-black opacity-50 tracking-widest mb-0.5">VAT Incl.</span>
-                                            </>
-                                        )}
-                                        <div className="flex flex-col items-center gap-1 border-t border-black/5 dark:border-white/5 pt-4 mt-2 w-full">
-                                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${selectedPlan === plan.amt && !plan.isCustom ? 'text-white' : 'text-[var(--color-brand-accent)]'
-                                                } mb-1`}>
-                                                {plan.isCustom ? 'Scope' : 'Includes'}
-                                            </span>
-                                            {!plan.isCustom ? (
-                                                <>
-                                                    <span className="text-[18px] font-bold tracking-tight">{plan.amt.toLocaleString('de-DE')}</span>
-                                                    <span className="text-[9px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
-                                                </>
-                                            ) : (
-                                                <span className="text-[11px] font-bold tracking-tight text-center px-2">Institutional Project</span>
-                                            )}
+                                <div>
+                                    <FloatingInput
+                                        label="Password *"
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={e => updateField('password', e.target.value)}
+                                        error={errors.password}
+                                    />
+                                    {formData.password && (
+                                        <div className="mt-3">
+                                            <PasswordStrengthMeter password={formData.password} />
                                         </div>
-                                    </button>
-                                ))}
+                                    )}
+                                </div>
+
+                                <FloatingInput
+                                    label="Conferma Password *"
+                                    type="password"
+                                    value={formData.confirmPassword}
+                                    onChange={e => updateField('confirmPassword', e.target.value)}
+                                    error={errors.confirmPassword}
+                                />
+
+                                <div className="pt-4">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.acceptTerms}
+                                            onChange={e => updateField('acceptTerms', e.target.checked)}
+                                            className="mt-1 w-5 h-5 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-brand-accent)] focus:ring-2 focus:ring-[var(--color-brand-accent)]"
+                                        />
+                                        <span className="text-sm text-[var(--color-text-main)] group-hover:text-[var(--color-text-main)]">
+                                            Accetto i{' '}
+                                            <button
+                                                type="button"
+                                                onClick={e => {
+                                                    e.preventDefault();
+                                                    setShowTerms(true);
+                                                }}
+                                                className="text-[var(--color-brand-accent)] underline hover:no-underline"
+                                            >
+                                                Termini e Condizioni
+                                            </button>
+                                            {' '}e la Privacy Policy *
+                                        </span>
+                                    </label>
+                                    {errors.acceptTerms && (
+                                        <p className="text-xs text-red-400 mt-2">{errors.acceptTerms}</p>
+                                    )}
+                                </div>
                             </div>
-                            <p className="text-center text-[9px] text-[var(--color-text-muted)] mt-4 italic">VAT Included. Monthly refresh.</p>
+                        )}
+
+                        {/* STEP 2: Dati Aziendali */}
+                        {step === 2 && (
+                            <div className="max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Dati Aziendali</h2>
+                                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                                        Informazioni necessarie per la fatturazione
+                                    </p>
+                                </div>
+
+                                <FloatingInput
+                                    label="Ragione Sociale *"
+                                    value={formData.businessName}
+                                    onChange={e => updateField('businessName', e.target.value)}
+                                    error={errors.businessName}
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <FloatingInput
+                                            label="Partita IVA *"
+                                            value={formData.vatNumber}
+                                            onChange={e => updateField('vatNumber', e.target.value)}
+                                            error={errors.vatNumber}
+                                            placeholder="12345678901"
+                                        />
+                                        <VATVerifier
+                                            vatNumber={formData.vatNumber}
+                                            countryCode="IT"
+                                            onVerified={(companyName) => {
+                                                if (companyName && !formData.businessName) {
+                                                    updateField('businessName', companyName);
+                                                }
+                                            }}
+                                            className="mt-3"
+                                        />
+                                    </div>
+
+                                    <FloatingInput
+                                        label="Codice Fiscale"
+                                        value={formData.fiscalCode}
+                                        onChange={e => updateField('fiscalCode', e.target.value)}
+                                        error={errors.fiscalCode}
+                                        placeholder="Opzionale se diverso da P.IVA"
+                                    />
+                                </div>
+
+                                <FloatingInput
+                                    label="Telefono Aziendale"
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={e => updateField('phone', e.target.value)}
+                                    error={errors.phone}
+                                    placeholder="+39 333 123 4567"
+                                />
+
+                                <div className="pt-4 border-t border-[var(--color-border)]">
+                                    <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-4">
+                                        Sede Legale
+                                    </h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-2">
+                                            <FloatingInput
+                                                label="Via/Piazza *"
+                                                value={formData.address}
+                                                onChange={e => updateField('address', e.target.value)}
+                                                error={errors.address}
+                                            />
+                                        </div>
+                                        <FloatingInput
+                                            label="Numero Civico"
+                                            value={formData.civicNumber}
+                                            onChange={e => updateField('civicNumber', e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                                        <FloatingInput
+                                            label="CAP"
+                                            value={formData.cap}
+                                            onChange={e => updateField('cap', e.target.value)}
+                                            error={errors.cap}
+                                            placeholder="00100"
+                                        />
+                                        <FloatingInput
+                                            label="Città *"
+                                            value={formData.city}
+                                            onChange={e => updateField('city', e.target.value)}
+                                            error={errors.city}
+                                        />
+                                        <div>
+                                            <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] block mb-2">
+                                                Provincia
+                                            </label>
+                                            <select
+                                                value={formData.province}
+                                                onChange={e => updateField('province', e.target.value)}
+                                                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 py-3 text-sm focus:border-[var(--color-brand-accent)] outline-none"
+                                            >
+                                                <option value="">Seleziona...</option>
+                                                {ITALIAN_PROVINCES.map(prov => (
+                                                    <option key={prov.code} value={prov.code}>
+                                                        {prov.name} ({prov.code})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6">
+                                        <FloatingInput
+                                            label="Nazione *"
+                                            value={formData.country}
+                                            onChange={e => updateField('country', e.target.value)}
+                                            error={errors.country}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-[var(--color-border)]">
+                                    <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-2">
+                                        Fatturazione Elettronica (Opzionale)
+                                    </h3>
+                                    <p className="text-xs text-[var(--color-text-muted)] mb-4">
+                                        Codice SDI o PEC per fatture elettroniche - completamente opzionale
+                                    </p>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FloatingInput
+                                            label="Codice SDI (opzionale)"
+                                            value={formData.sdiCode}
+                                            onChange={e => updateField('sdiCode', e.target.value)}
+                                            placeholder="XXXXXXX"
+                                        />
+                                        <FloatingInput
+                                            label="PEC (opzionale)"
+                                            type="email"
+                                            value={formData.pecEmail}
+                                            onChange={e => updateField('pecEmail', e.target.value)}
+                                            placeholder="azienda@pec.it"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: Selezione Piano */}
+                        {step === 3 && (
+                            <div className="space-y-6 animate-in fade-in duration-300">
+                                <div className="text-center mb-8">
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
+                                        Scegli il Tuo Piano
+                                    </h2>
+                                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                                        Seleziona il piano più adatto alle tue esigenze
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                                    {PLANS.map(plan => (
+                                        <PlanCard
+                                            key={plan.id}
+                                            plan={plan}
+                                            selected={formData.planId === plan.id}
+                                            onSelect={() => handleSelectPlan(plan)}
+                                        />
+                                    ))}
+                                </div>
+
+                                {errors.plan && (
+                                    <p className="text-center text-sm text-red-400 mt-4">{errors.plan}</p>
+                                )}
+
+                                {priceBreakdown && formData.planId > 0 && (
+                                    <div className="max-w-md mx-auto mt-8 p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
+                                        <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-4">
+                                            Riepilogo Costi
+                                        </h3>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-[var(--color-text-muted)]">Subtotale:</span>
+                                                <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[var(--color-text-muted)]">IVA 22%:</span>
+                                                <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
+                                            </div>
+                                            <div className="flex justify-between pt-3 border-t border-[var(--color-border)] text-lg font-bold">
+                                                <span>Totale:</span>
+                                                <span className="text-[var(--color-brand-accent)]">
+                                                    {formatEuro(priceBreakdown.total)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <p className="text-center text-xs text-[var(--color-text-muted)] italic mt-6">
+                                    Abbonamento mensile con fatturazione automatica. I tokens si accumulano ogni mese e non scadono.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* STEP 4: Pagamento */}
+                        {step === 4 && priceBreakdown && (
+                            <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300">
+                                <div className="text-center mb-6">
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
+                                        Conferma e Pagamento
+                                    </h2>
+                                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                                        Verifica i dati e procedi al pagamento
+                                    </p>
+                                </div>
+
+                                {/* Riepilogo Ordine */}
+                                <div className="bg-[var(--color-brand-accent)]/10 border-2 border-[var(--color-brand-accent)] rounded-xl p-6">
+                                    <h3 className="text-lg font-bold text-[var(--color-text-main)] mb-4">
+                                        📋 Riepilogo Ordine
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="font-bold text-[var(--color-text-main)]">
+                                                    Piano {formData.planName}
+                                                </p>
+                                                <p className="text-xs text-[var(--color-brand-accent)]">
+                                                    ⚡ {(formData.planCredits * 100).toLocaleString('it-IT')} tokens/mese
+                                                </p>
+                                                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                                                    I tokens si accumulano mensilmente
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => goToStep(3)}
+                                                className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
+                                            >
+                                                Modifica
+                                            </button>
+                                        </div>
+                                        <div className="border-t border-[var(--color-border)] pt-3 space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-[var(--color-text-muted)]">Subtotale:</span>
+                                                <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[var(--color-text-muted)]">IVA 22%:</span>
+                                                <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
+                                            </div>
+                                            <div className="flex justify-between pt-2 border-t border-[var(--color-border)] text-xl font-bold">
+                                                <span>Totale/Mese:</span>
+                                                <span className="text-[var(--color-brand-accent)]">
+                                                    {formatEuro(priceBreakdown.total)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Dati Fiscali */}
+                                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-bold text-[var(--color-text-main)]">
+                                            🏢 Dati Fatturazione
+                                        </h3>
+                                        <button
+                                            onClick={() => goToStep(2)}
+                                            className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
+                                        >
+                                            Modifica
+                                        </button>
+                                    </div>
+                                    <div className="text-sm space-y-1 text-[var(--color-text-muted)]">
+                                        <p><strong className="text-[var(--color-text-main)]">{formData.businessName}</strong></p>
+                                        <p>P.IVA: {formData.vatNumber}</p>
+                                        <p>{formData.address} {formData.civicNumber}</p>
+                                        <p>{formData.cap} {formData.city} ({formData.province})</p>
+                                        {formData.sdiCode && <p>SDI: {formData.sdiCode}</p>}
+                                        {formData.pecEmail && <p>PEC: {formData.pecEmail}</p>}
+                                    </div>
+                                </div>
+
+                                {/* Informazioni pagamento */}
+                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
+                                    <h3 className="text-sm font-bold text-blue-400 mb-3">ℹ️ Informazioni Abbonamento</h3>
+                                    <ul className="text-xs text-[var(--color-text-muted)] space-y-2">
+                                        <li>• Pagamento sicuro gestito da Stripe</li>
+                                        <li>• I tokens vengono accreditati immediatamente e si accumulano ogni mese</li>
+                                        <li>• Fatturazione automatica mensile</li>
+                                        <li>• Riceverai la fattura via email entro 24 ore</li>
+                                        <li>• Puoi cancellare l'abbonamento in qualsiasi momento</li>
+                                        <li>• Puoi utilizzare carte di credito/debito o bonifico SEPA</li>
+                                    </ul>
+                                </div>
+
+                                {errors.payment && (
+                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center text-red-400 text-sm">
+                                        {errors.payment}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* STEP 5: Conferma Successo */}
+                        {step === 5 && (
+                            <div className="max-w-2xl mx-auto text-center space-y-8 animate-in fade-in duration-500 py-8">
+                                <div className="w-24 h-24 mx-auto bg-emerald-500 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
+                                    <CheckCircle size={64} className="text-white" />
+                                </div>
+
+                                <div>
+                                    <h2 className="text-3xl font-bold text-[var(--color-text-main)] mb-3">
+                                        Benvenuto in Armonyco! 🎉
+                                    </h2>
+                                    <p className="text-lg text-[var(--color-text-muted)]">
+                                        Il tuo account è stato creato con successo
+                                    </p>
+                                </div>
+
+                                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-left space-y-4">
+                                    <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-center mb-6">
+                                        Riepilogo Account
+                                    </h3>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-[var(--color-text-muted)]">Email:</span>
+                                            <span className="font-medium text-[var(--color-text-main)]">{formData.email}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[var(--color-text-muted)]">Piano:</span>
+                                            <span className="font-medium text-[var(--color-text-main)]">{formData.planName}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[var(--color-text-muted)]">Crediti:</span>
+                                            <span className="font-bold text-[var(--color-brand-accent)]">
+                                                {formData.planCredits.toLocaleString('it-IT')} ArmoCredits©
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[var(--color-text-muted)]">Data attivazione:</span>
+                                            <span className="font-medium text-[var(--color-text-main)]">
+                                                {new Date().toLocaleDateString('it-IT')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
+                                    <p className="text-sm text-[var(--color-text-muted)]">
+                                        📧 Abbiamo inviato un'email di conferma con tutti i dettagli a{' '}
+                                        <strong className="text-[var(--color-text-main)]">{formData.email}</strong>
+                                    </p>
+                                </div>
+
+                                <div className="pt-6">
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => {
+                                            clearRegistrationDraft();
+                                            window.location.href = '/app/dashboard';
+                                        }}
+                                        className="w-full md:w-auto px-12"
+                                    >
+                                        Vai alla Dashboard →
+                                    </Button>
+                                    <p className="text-xs text-[var(--color-text-muted)] mt-4">
+                                        Sarai reindirizzato automaticamente tra pochi secondi...
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Navigation */}
+                    {step < 5 && (
+                        <div className="px-6 md:px-8 py-5 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex justify-between items-center shrink-0 rounded-b-xl">
+                            {step > 1 ? (
+                                <Button
+                                    variant="secondary"
+                                    leftIcon={<ChevronLeft size={18} />}
+                                    onClick={prevStep}
+                                    disabled={isSubmitting}
+                                >
+                                    Indietro
+                                </Button>
+                            ) : (
+                                <div></div>
+                            )}
+
+                            {step < 4 ? (
+                                <Button
+                                    variant="primary"
+                                    rightIcon={<ChevronRight size={18} />}
+                                    onClick={nextStep}
+                                    disabled={isSubmitting}
+                                >
+                                    Continua
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="primary"
+                                    rightIcon={isSubmitting ? <Loader size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                    onClick={handlePayment}
+                                    disabled={isSubmitting}
+                                    isLoading={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Elaborazione...' : 'Procedi al Pagamento'}
+                                </Button>
+                            )}
                         </div>
                     )}
                 </div>
+            </Modal>
 
-                {/* Footer */}
-                <div className="px-8 py-5 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex justify-between items-center shrink-0 rounded-b-xl">
-                    {step > 1 ? (
-                        <Button
-                            variant="secondary"
-                            leftIcon={<ChevronLeft size={18} />}
-                            onClick={prevStep}
-                        >
-                            Back
-                        </Button>
-                    ) : (
-                        <div></div>
-                    )}
+            {/* Modals */}
+            <TermsModal
+                isOpen={showTerms}
+                onClose={() => setShowTerms(false)}
+                onAccept={() => updateField('acceptTerms', true)}
+            />
 
-                    {step < 4 ? (
-                        <Button
-                            variant="primary"
-                            rightIcon={<ChevronRight size={18} />}
-                            onClick={nextStep}
-                        >
-                            Continue
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="primary"
-                            rightIcon={<CheckCircle size={18} />}
-                            onClick={handleComplete}
-                            isLoading={isSubmitting}
-                        >
-                            {isSubmitting ? 'Creating Account...' : 'Create Account'}
-                        </Button>
-                    )}
-                </div>
-            </div>
-        </Modal>
+            <ExitIntentModal
+                isEnabled={step > 1 && step < 4 && isOpen}
+                onSaveAndExit={handleSaveAndExit}
+                onContinue={() => setShowExitIntent(false)}
+                onExitWithoutSaving={handleExitWithoutSaving}
+            />
+        </>
     );
 };
