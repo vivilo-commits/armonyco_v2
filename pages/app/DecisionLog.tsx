@@ -170,7 +170,7 @@ export const DecisionLog: React.FC = () => {
                             {executions && executions.length > 0 ? executions.slice(0, 50).map((exec) => (
                                 <tr key={exec.id} className="hover:bg-white/[0.03] transition-all duration-200 group cursor-default">
                                     <td className="px-6 py-5 text-white/30 group-hover:text-white/60 transition-colors uppercase tracking-widest">
-                                        {new Date(exec.started_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(exec.started_at).toLocaleString('en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                     </td>
                                     <td className="px-6 py-5 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">
                                         {exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 8)}

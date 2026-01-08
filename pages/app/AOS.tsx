@@ -76,11 +76,11 @@ export const AOSView: React.FC = () => {
 
         if (isToday) {
             // Show time only for today
-            return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         } else {
             // Show date and time for other days
-            return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' +
-                date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' }) + ' ' +
+                date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         }
     };
 

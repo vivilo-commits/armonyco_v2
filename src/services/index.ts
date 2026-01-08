@@ -5,3 +5,6 @@ export * from './log.service';
 export * from './product.service';
 export * from './compliance.service';
 export * from './contact.service';
+export * from './tokens.service';
+export * from './subscription.service';
+export * from './payment.service';

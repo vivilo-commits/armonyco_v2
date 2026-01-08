@@ -51,7 +51,7 @@ export const AEMView: React.FC = () => {
 
     const formatTimestamp = (ts: string) => {
         const date = new Date(ts);
-        return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     };
 
     return (
