@@ -57,7 +57,7 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
         } catch (error: any) {
             setResult({
                 verified: false,
-                error: error.message || 'Errore verifica',
+                error: error.message || 'Verification error',
             });
         } finally {
             setIsVerifying(false);
@@ -66,7 +66,7 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
 
     return (
         <div className={`space-y-3 ${className}`}>
-            {/* Button verifica */}
+            {/* Verify button */}
             <Button
                 variant="secondary"
                 onClick={handleVerify}
@@ -74,10 +74,10 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
                 leftIcon={isVerifying ? <Loader size={16} className="animate-spin" /> : undefined}
                 className="w-full sm:w-auto"
             >
-                {isVerifying ? 'Verifica in corso...' : 'Verifica P.IVA su VIES'}
+                {isVerifying ? 'Verifying...' : 'Verify VAT on VIES'}
             </Button>
 
-            {/* Risultato verifica */}
+            {/* Verification result */}
             {result && (
                 <div
                     className={`
@@ -99,10 +99,10 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
                     <div className="flex-1">
                         {result.verified ? (
                             <>
-                                <p className="font-bold mb-1">✓ Verifica completata</p>
+                                <p className="font-bold mb-1">✓ Verification completed</p>
                                 {result.companyName && (
                                     <p className="text-xs opacity-80">
-                                        Ragione sociale: {result.companyName}
+                                        Company name: {result.companyName}
                                     </p>
                                 )}
                                 {result.error && (
@@ -115,8 +115,8 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
                             <>
                                 <p className="font-bold mb-1">
                                     {result.error?.includes('backend') || result.error?.includes('browser') 
-                                        ? 'ℹ️ Verifica non disponibile' 
-                                        : '⚠️ Attenzione'}
+                                        ? 'ℹ️ Verification unavailable' 
+                                        : '⚠️ Warning'}
                                 </p>
                                 <p className="text-xs opacity-80">
                                     {result.error}
@@ -129,8 +129,8 @@ export const VATVerifier: React.FC<VATVerifierProps> = ({
 
             {/* Info tooltip */}
             <p className="text-[10px] text-[var(--color-text-muted)] italic">
-                ℹ️ La verifica VIES europea richiede un backend (blocco CORS dal browser).
-                La verifica è opzionale - puoi comunque procedere con la registrazione.
+                ℹ️ European VIES verification requires a backend (CORS block from browser).
+                Verification is optional - you can proceed with registration anyway.
             </p>
         </div>
     );

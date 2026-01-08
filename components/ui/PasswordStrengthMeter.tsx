@@ -13,7 +13,7 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ pa
         return null;
     }
 
-    // Colori basati sullo score
+    // Colors based on score
     const colors = [
         'bg-red-500',      // 0 - Molto debole
         'bg-orange-500',   // 1 - Debole

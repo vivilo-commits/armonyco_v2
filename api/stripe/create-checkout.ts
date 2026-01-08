@@ -148,7 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Raccogli indirizzo fiscale
             billing_address_collection: 'required',
             
-            // Tax ID collection per fatturazione italiana
+            // Tax ID collection for Italian billing
             tax_id_collection: {
                 enabled: true,
             },

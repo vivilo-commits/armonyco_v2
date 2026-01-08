@@ -58,38 +58,38 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 {plan.isCustom ? (
                     <div className="py-4">
                         <p className="text-2xl font-bold text-[var(--color-text-main)]">
-                            Contattaci
+                            Contact Us
                         </p>
                         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                            Preventivo personalizzato
+                            Custom Quote
                         </p>
                     </div>
                 ) : (
                     <>
                         <div className="flex items-baseline justify-center gap-1">
                             <span className="text-4xl font-bold text-[var(--color-text-main)]">
-                                €{plan.price.toLocaleString('it-IT')}
+                                €{plan.price.toLocaleString('en-US')}
                             </span>
-                            <span className="text-sm text-[var(--color-text-muted)]">/mese</span>
+                            <span className="text-sm text-[var(--color-text-muted)]">/month</span>
                         </div>
                         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                            IVA esclusa • Fatturazione mensile
+                            VAT excluded • Monthly billing
                         </p>
                     </>
                 )}
             </div>
 
-            {/* Tokens Mensili */}
+            {/* Monthly Tokens */}
             {!plan.isCustom && (
                 <div className="text-center py-4 bg-gradient-to-br from-[var(--color-brand-accent)]/10 to-[var(--color-brand-accent)]/5 rounded-lg border border-[var(--color-brand-accent)]/20">
                     <p className="text-3xl font-bold text-[var(--color-text-main)]">
-                        {(plan.tokens || plan.credits * 100).toLocaleString('it-IT')}
+                        {(plan.tokens || plan.credits * 100).toLocaleString('en-US')}
                     </p>
                     <p className="text-[10px] uppercase font-black text-[var(--color-brand-accent)] tracking-wider mt-1">
-                        Tokens/Mese
+                        Tokens/Month
                     </p>
                     <p className="text-[9px] text-[var(--color-text-muted)] mt-1.5 px-2">
-                        ⚡ I tokens si accumulano ogni mese
+                        ⚡ Tokens accumulate every month
                     </p>
                 </div>
             )}
@@ -97,7 +97,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             {/* Features */}
             <div className="flex-1">
                 <p className="text-xs uppercase font-black text-[var(--color-text-muted)] tracking-wider mb-3">
-                    {plan.isCustom ? 'Include:' : 'Features Incluse:'}
+                    {plan.isCustom ? 'Includes:' : 'Included Features:'}
                 </p>
                 <ul className="space-y-2">
                     {plan.features.map((feature, index) => (
@@ -115,11 +115,11 @@ export const PlanCard: React.FC<PlanCardProps> = ({
                 </ul>
             </div>
 
-            {/* Indicator selezionato */}
+            {/* Selected indicator */}
             {selected && (
                 <div className="flex items-center justify-center gap-2 py-2 bg-[var(--color-brand-accent)] text-black rounded-lg font-bold text-sm">
                     <CheckCircle size={18} />
-                    <span>Piano Selezionato</span>
+                    <span>Selected Plan</span>
                 </div>
             )}
         </button>

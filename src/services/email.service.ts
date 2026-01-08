@@ -1,6 +1,6 @@
 /**
  * EMAIL SERVICE
- * Gestione invio email transazionali
+ * Transactional email sending management
  */
 
 // ============================================================================
@@ -28,11 +28,11 @@ export interface PaymentConfirmationData {
 }
 
 // ============================================================================
-// EMAIL SENDING (tramite backend API)
+// EMAIL SENDING (via backend API)
 // ============================================================================
 
 /**
- * Invia email di benvenuto dopo registrazione completata
+ * Sends welcome email after registration completed
  */
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
     try {
@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
             },
             body: JSON.stringify({
                 to: data.to,
-                subject: `Benvenuto in Armonyco, ${data.firstName}!`,
+                subject: `Welcome to Armonyco, ${data.firstName}!`,
                 data: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -61,20 +61,20 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
         });
 
         if (!response.ok) {
-            throw new Error('Errore invio email');
+            throw new Error('Error sending email');
         }
 
-        console.log('[Email] Welcome email inviata a:', data.to);
+        console.log('[Email] Welcome email sent to:', data.to);
         return true;
     } catch (error: any) {
-        console.error('[Email] Errore invio welcome email:', error);
-        // Non bloccare il flusso se l'email fallisce
+        console.error('[Email] Error sending welcome email:', error);
+        // Don't block flow if email fails
         return false;
     }
 }
 
 /**
- * Invia email di conferma pagamento
+ * Sends payment confirmation email
  */
 export async function sendPaymentConfirmation(data: PaymentConfirmationData): Promise<boolean> {
     try {
@@ -88,7 +88,7 @@ export async function sendPaymentConfirmation(data: PaymentConfirmationData): Pr
             },
             body: JSON.stringify({
                 to: data.to,
-                subject: 'Conferma Pagamento - Armonyco',
+                subject: 'Payment Confirmation - Armonyco',
                 data: {
                     firstName: data.firstName,
                     orderNumber: data.orderNumber,
@@ -96,7 +96,7 @@ export async function sendPaymentConfirmation(data: PaymentConfirmationData): Pr
                     amount: data.amount,
                     credits: data.credits,
                     invoiceUrl: data.invoiceUrl,
-                    date: new Date().toLocaleDateString('it-IT', {
+                    date: new Date().toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -106,35 +106,35 @@ export async function sendPaymentConfirmation(data: PaymentConfirmationData): Pr
         });
 
         if (!response.ok) {
-            throw new Error('Errore invio email conferma');
+            throw new Error('Error sending confirmation email');
         }
 
-        console.log('[Email] Payment confirmation email inviata a:', data.to);
+        console.log('[Email] Payment confirmation email sent to:', data.to);
         return true;
     } catch (error: any) {
-        console.error('[Email] Errore invio payment confirmation:', error);
+        console.error('[Email] Error sending payment confirmation:', error);
         return false;
     }
 }
 
 // ============================================================================
-// MOCK EMAIL (per sviluppo senza backend)
+// MOCK EMAIL (for development without backend)
 // ============================================================================
 
 /**
- * Simula invio email per testing locale
+ * Simulates email sending for local testing
  */
 export async function mockSendEmail(
     type: 'welcome' | 'payment',
     data: WelcomeEmailData | PaymentConfirmationData
 ): Promise<boolean> {
-    console.warn(`[Email] MOCK - Invio email tipo "${type}" a:`, data.to);
-    console.log('[Email] MOCK - Dati email:', data);
+    console.warn(`[Email] MOCK - Sending email type "${type}" to:`, data.to);
+    console.log('[Email] MOCK - Email data:', data);
 
-    // Simula delay network
+    // Simulate network delay
     return new Promise((resolve) => {
         setTimeout(() => {
-            console.log(`[Email] MOCK - Email "${type}" inviata con successo`);
+            console.log(`[Email] MOCK - Email "${type}" sent successfully`);
             resolve(true);
         }, 500);
     });
@@ -155,20 +155,20 @@ export async function mockPaymentConfirmation(data: PaymentConfirmationData): Pr
 }
 
 // ============================================================================
-// EMAIL TEMPLATES (HTML per preview/debug)
+// EMAIL TEMPLATES (HTML for preview/debug)
 // ============================================================================
 
 /**
- * Genera HTML template per email di benvenuto
+ * Generates HTML template for welcome email
  */
 export function generateWelcomeEmailHTML(data: WelcomeEmailData): string {
     return `
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benvenuto in Armonyco</title>
+    <title>Welcome to Armonyco</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -183,55 +183,55 @@ export function generateWelcomeEmailHTML(data: WelcomeEmailData): string {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎉 Benvenuto in Armonyco!</h1>
+            <h1>🎉 Welcome to Armonyco!</h1>
         </div>
         <div class="content">
-            <h2>Ciao ${data.firstName},</h2>
+            <h2>Hello ${data.firstName},</h2>
             <p>
-                Grazie per esserti registrato su Armonyco! Il tuo account è ora attivo e pronto all'uso.
+                Thank you for registering with Armonyco! Your account is now active and ready to use.
             </p>
             
             <div class="info-box">
-                <h3>📋 Riepilogo Registrazione</h3>
-                <p><strong>Azienda:</strong> ${data.businessName}</p>
-                <p><strong>Piano:</strong> ${data.planName}</p>
-                <p><strong>Crediti:</strong> ${data.credits.toLocaleString('it-IT')} ArmoCredits©</p>
+                <h3>📋 Registration Summary</h3>
+                <p><strong>Company:</strong> ${data.businessName}</p>
+                <p><strong>Plan:</strong> ${data.planName}</p>
+                <p><strong>Credits:</strong> ${data.credits.toLocaleString('en-US')} ArmoCredits©</p>
                 <p><strong>Email:</strong> ${data.to}</p>
             </div>
 
             <p>
-                Puoi iniziare subito ad utilizzare la piattaforma accedendo alla tua dashboard.
+                You can start using the platform right away by accessing your dashboard.
             </p>
 
             <center>
                 <a href="${window.location.origin}/app/dashboard" class="button">
-                    Vai alla Dashboard
+                    Go to Dashboard
                 </a>
             </center>
 
             ${data.invoiceUrl ? `
             <p style="margin-top: 30px;">
-                <strong>Fattura:</strong> La tua fattura è disponibile 
-                <a href="${data.invoiceUrl}">qui</a>.
+                <strong>Invoice:</strong> Your invoice is available 
+                <a href="${data.invoiceUrl}">here</a>.
             </p>
             ` : ''}
 
             <p style="margin-top: 30px;">
-                Hai bisogno di aiuto? Consulta la nostra 
-                <a href="${window.location.origin}/docs">documentazione</a> o 
-                <a href="mailto:support@armonyco.com">contatta il supporto</a>.
+                Need help? Check out our 
+                <a href="${window.location.origin}/docs">documentation</a> or 
+                <a href="mailto:support@armonyco.com">contact support</a>.
             </p>
 
             <p>
-                A presto,<br>
-                <strong>Il Team Armonyco</strong>
+                Best regards,<br>
+                <strong>The Armonyco Team</strong>
             </p>
         </div>
         <div class="footer">
-            <p>© 2026 Armonyco. Tutti i diritti riservati.</p>
+            <p>© 2026 Armonyco. All rights reserved.</p>
             <p>
                 <a href="${window.location.origin}/privacy">Privacy Policy</a> | 
-                <a href="${window.location.origin}/terms">Termini e Condizioni</a>
+                <a href="${window.location.origin}/terms">Terms and Conditions</a>
             </p>
         </div>
     </div>
@@ -241,16 +241,16 @@ export function generateWelcomeEmailHTML(data: WelcomeEmailData): string {
 }
 
 /**
- * Genera HTML template per conferma pagamento
+ * Generates HTML template for payment confirmation
  */
 export function generatePaymentConfirmationHTML(data: PaymentConfirmationData): string {
     return `
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conferma Pagamento</title>
+    <title>Payment Confirmation</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -266,50 +266,50 @@ export function generatePaymentConfirmationHTML(data: PaymentConfirmationData): 
     <div class="container">
         <div class="header">
             <div class="success-icon">✓</div>
-            <h1>Pagamento Confermato!</h1>
+            <h1>Payment Confirmed!</h1>
         </div>
         <div class="content">
-            <h2>Ciao ${data.firstName},</h2>
+            <h2>Hello ${data.firstName},</h2>
             <p>
-                Il tuo pagamento è stato elaborato con successo. 
-                Grazie per aver scelto Armonyco!
+                Your payment has been processed successfully. 
+                Thank you for choosing Armonyco!
             </p>
             
             <div class="info-box">
-                <h3>📄 Dettagli Ordine</h3>
-                <p><strong>Numero Ordine:</strong> ${data.orderNumber}</p>
-                <p><strong>Piano:</strong> ${data.planName}</p>
-                <p><strong>Crediti:</strong> ${data.credits.toLocaleString('it-IT')} ArmoCredits©</p>
-                <p><strong>Data:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+                <h3>📄 Order Details</h3>
+                <p><strong>Order Number:</strong> ${data.orderNumber}</p>
+                <p><strong>Plan:</strong> ${data.planName}</p>
+                <p><strong>Credits:</strong> ${data.credits.toLocaleString('en-US')} ArmoCredits©</p>
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US')}</p>
                 <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
-                <p class="total">Totale: €${(data.amount / 100).toFixed(2)}</p>
-                <p style="font-size: 12px; color: #666;">IVA inclusa</p>
+                <p class="total">Total: €${(data.amount / 100).toFixed(2)}</p>
+                <p style="font-size: 12px; color: #666;">VAT included</p>
             </div>
 
             ${data.invoiceUrl ? `
             <p>
-                <strong>Fattura:</strong> Puoi scaricare la tua fattura 
-                <a href="${data.invoiceUrl}">cliccando qui</a>.
+                <strong>Invoice:</strong> You can download your invoice 
+                <a href="${data.invoiceUrl}">by clicking here</a>.
             </p>
             ` : ''}
 
             <p>
-                I tuoi crediti sono stati accreditati immediatamente sul tuo account
-                e sono pronti per essere utilizzati.
+                Your credits have been credited immediately to your account
+                and are ready to use.
             </p>
 
             <p style="margin-top: 30px;">
-                Domande? Scrivici a 
+                Questions? Contact us at 
                 <a href="mailto:billing@armonyco.com">billing@armonyco.com</a>
             </p>
 
             <p>
-                Cordiali saluti,<br>
-                <strong>Il Team Armonyco</strong>
+                Best regards,<br>
+                <strong>The Armonyco Team</strong>
             </p>
         </div>
         <div class="footer">
-            <p>© 2026 Armonyco. Tutti i diritti riservati.</p>
+            <p>© 2026 Armonyco. All rights reserved.</p>
         </div>
     </div>
 </body>

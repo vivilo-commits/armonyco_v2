@@ -1,5 +1,5 @@
 /**
- * Province italiane per select
+ * Italian provinces for select dropdown
  */
 
 export const ITALIAN_PROVINCES = [

@@ -1,6 +1,6 @@
 /**
  * TOKENS CARD COMPONENT
- * Visualizza il saldo tokens e le informazioni sull'abbonamento
+ * Displays token balance and subscription information
  */
 
 import React, { useEffect, useState } from 'react';
@@ -50,14 +50,14 @@ export const TokensCard: React.FC = () => {
             setSubscription(sub);
             setMonthlyStats(stats);
         } catch (error) {
-            console.error('[TokensCard] Errore caricamento dati:', error);
+            console.error('[TokensCard] Error loading data:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('it-IT', {
+        return new Date(dateString).toLocaleDateString('en-US', {
             day: '2-digit',
             month: 'long',
             year: 'numeric',
@@ -85,11 +85,11 @@ export const TokensCard: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-sm uppercase font-black tracking-wider text-[var(--color-text-muted)]">
-                        Saldo Tokens
+                        Token Balance
                     </h2>
                     {subscription && (
                         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                            Piano {subscription.plan.name}
+                            {subscription.plan.name} Plan
                         </p>
                     )}
                 </div>
@@ -98,22 +98,22 @@ export const TokensCard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Saldo Principale */}
+            {/* Main Balance */}
             <div className="text-center py-6 bg-[var(--color-surface)]/50 rounded-xl border border-[var(--color-border)]">
                 <p className="text-5xl font-black text-[var(--color-text-main)] mb-2">
                     {formatTokens(tokenBalance)}
                 </p>
                 <p className="text-xs uppercase font-black tracking-wider text-[var(--color-brand-accent)]">
-                    Tokens Disponibili
+                    Available Tokens
                 </p>
             </div>
 
-            {/* Statistiche Mensili */}
+            {/* Monthly Statistics */}
             {monthlyStats && (
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-[var(--color-surface)]/50 rounded-xl p-4 border border-[var(--color-border)]">
                         <p className="text-xs text-[var(--color-text-muted)] mb-1">
-                            Ricevuti questo mese
+                            Received this month
                         </p>
                         <p className="text-2xl font-bold text-emerald-400">
                             +{formatTokens(monthlyStats.totalAdded)}
@@ -121,7 +121,7 @@ export const TokensCard: React.FC = () => {
                     </div>
                     <div className="bg-[var(--color-surface)]/50 rounded-xl p-4 border border-[var(--color-border)]">
                         <p className="text-xs text-[var(--color-text-muted)] mb-1">
-                            Consumati questo mese
+                            Consumed this month
                         </p>
                         <p className="text-2xl font-bold text-orange-400">
                             -{formatTokens(monthlyStats.totalConsumed)}
@@ -130,12 +130,12 @@ export const TokensCard: React.FC = () => {
                 </div>
             )}
 
-            {/* Barra Utilizzo */}
+            {/* Usage Bar */}
             {monthlyStats && monthlyStats.totalAdded > 0 && (
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-xs text-[var(--color-text-muted)]">
-                            Utilizzo mensile
+                            Monthly usage
                         </span>
                         <span className="text-xs font-bold text-[var(--color-text-main)]">
                             {getUsagePercentage().toFixed(1)}%
@@ -150,12 +150,12 @@ export const TokensCard: React.FC = () => {
                 </div>
             )}
 
-            {/* Info Abbonamento */}
+            {/* Subscription Info */}
             {subscription && (
                 <div className="border-t border-[var(--color-border)] pt-4 space-y-3">
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-[var(--color-text-muted)]">
-                            Tokens mensili:
+                            Monthly tokens:
                         </span>
                         <span className="font-bold text-[var(--color-brand-accent)]">
                             +{formatTokens(subscription.tokensPerMonth)}
@@ -165,7 +165,7 @@ export const TokensCard: React.FC = () => {
                     {subscription.expiresAt && (
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-[var(--color-text-muted)]">
-                                Prossimo rinnovo:
+                                Next renewal:
                             </span>
                             <span className="font-medium text-[var(--color-text-main)]">
                                 {formatDate(subscription.expiresAt)}
@@ -183,7 +183,7 @@ export const TokensCard: React.FC = () => {
                                 ? 'bg-emerald-500/20 text-emerald-400' 
                                 : 'bg-orange-500/20 text-orange-400'}
                         `}>
-                            {subscription.status === 'active' ? '✓ Attivo' : '⚠ Non attivo'}
+                            {subscription.status === 'active' ? '✓ Active' : '⚠ Inactive'}
                         </span>
                     </div>
                 </div>
@@ -192,8 +192,8 @@ export const TokensCard: React.FC = () => {
             {/* Info Box */}
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
                 <p className="text-xs text-[var(--color-text-muted)]">
-                    <strong className="text-blue-400">ℹ️ Nota:</strong> I tokens si accumulano ogni mese 
-                    e non scadono mai. Puoi utilizzarli quando vuoi!
+                    <strong className="text-blue-400">ℹ️ Note:</strong> Tokens accumulate every month 
+                    and never expire. You can use them whenever you want!
                 </p>
             </div>
         </div>
