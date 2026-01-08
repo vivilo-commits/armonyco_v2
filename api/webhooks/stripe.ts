@@ -1,22 +1,22 @@
 /**
  * Vercel Serverless Function
- * Gestisce webhook Stripe per ABBONAMENTI RICORRENTI
+ * Handles Stripe webhooks for RECURRING SUBSCRIPTIONS
  * 
- * Eventi gestiti:
- * - customer.subscription.created: Prima sottoscrizione
- * - invoice.payment_succeeded: Rinnovo mensile
- * - customer.subscription.updated: Cambio piano
- * - customer.subscription.deleted: Cancellazione
+ * Handled events:
+ * - customer.subscription.created: Initial subscription
+ * - invoice.payment_succeeded: Monthly renewal
+ * - customer.subscription.updated: Plan change
+ * - customer.subscription.deleted: Cancellation
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// IMPORTANTE: Installare con npm install stripe @supabase/supabase-js
+// IMPORTANT: Install with npm install stripe @supabase/supabase-js
 // import Stripe from 'stripe';
 
 // ============================================================================
-// HELPER: Inizializza Supabase con service_role per scrivere tokens
+// HELPER: Initialize Supabase with service_role to write tokens
 // ============================================================================
 function getSupabaseClient() {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -30,7 +30,7 @@ function getSupabaseClient() {
 }
 
 // ============================================================================
-// HELPER: Mapping Plan ID ai credits
+// HELPER: Mapping Plan ID to credits
 // ============================================================================
 const PLAN_CREDITS: Record<number, { credits: number; name: string }> = {
     1: { credits: 25000, name: 'STARTER' },   // 2,500,000 tokens
@@ -39,7 +39,7 @@ const PLAN_CREDITS: Record<number, { credits: number; name: string }> = {
 };
 
 // ============================================================================
-// HELPER: Aggiungi tokens all'utente
+// HELPER: Add tokens to user
 // ============================================================================
 async function addTokensToUser(
     userId: string,
@@ -52,7 +52,7 @@ async function addTokensToUser(
     const tokens = credits * 100; // Formula: tokens = credits × 100
 
     try {
-        // Ottieni saldo corrente
+        // Get current balance
         const { data: currentData } = await supabase
             .from('user_tokens')
             .select('tokens')
@@ -62,7 +62,7 @@ async function addTokensToUser(
         const balanceBefore = currentData?.tokens || 0;
         const balanceAfter = balanceBefore + tokens;
 
-        // Aggiorna saldo tokens
+        // Update token balance
         const { error: upsertError } = await supabase
             .from('user_tokens')
             .upsert({
@@ -74,11 +74,11 @@ async function addTokensToUser(
             });
 
         if (upsertError) {
-            console.error('[Webhook] Errore aggiornamento tokens:', upsertError);
+            console.error('[Webhook] Error updating tokens:', upsertError);
             return false;
         }
 
-        // Registra nello storico (se tabella esiste)
+        // Record in history (if table exists)
         try {
             await supabase.from('token_history').insert({
                 user_id: userId,
@@ -91,13 +91,13 @@ async function addTokensToUser(
                 metadata: { credits, tokens },
             });
         } catch (historyError) {
-            console.warn('[Webhook] Storico non disponibile (opzionale)');
+            console.warn('[Webhook] History not available (optional)');
         }
 
-        console.log(`[Webhook] ✅ Aggiunti ${tokens} tokens a utente ${userId} (${credits} credits)`);
+        console.log(`[Webhook] ✅ Added ${tokens} tokens to user ${userId} (${credits} credits)`);
         return true;
     } catch (error) {
-        console.error('[Webhook] Errore addTokensToUser:', error);
+        console.error('[Webhook] Error addTokensToUser:', error);
         return false;
     }
 }
@@ -141,16 +141,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[Webhook] 📩 Event received:', event.type);
 
         // ====================================================================
-        // GESTIONE EVENTI SUBSCRIPTION
+        // SUBSCRIPTION EVENTS HANDLING
         // ====================================================================
 
         switch (event.type) {
             // ----------------------------------------------------------------
-            // SUBSCRIPTION CREATED - Prima sottoscrizione
+            // SUBSCRIPTION CREATED - Initial subscription
             // ----------------------------------------------------------------
             case 'customer.subscription.created': {
                 const subscription = event.data.object as Stripe.Subscription;
-                console.log('[Webhook] 🆕 Nuova subscription:', subscription.id);
+                console.log('[Webhook] 🆕 New subscription:', subscription.id);
 
                 const metadata = subscription.metadata || {};
                 const userId = metadata.user_id;
@@ -165,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const supabase = getSupabaseClient();
 
-                // Crea record subscription
+                // Create subscription record
                 const { error: subError } = await supabase
                     .from('user_subscriptions')
                     .insert({
@@ -179,40 +179,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     });
 
                 if (subError) {
-                    console.error('[Webhook] ❌ Errore creazione subscription:', subError);
+                    console.error('[Webhook] ❌ Error creating subscription:', subError);
                     break;
                 }
 
-                // Aggiungi tokens iniziali
+                // Add initial tokens
                 const planInfo = PLAN_CREDITS[planId] || { credits, name: metadata.plan_name };
                 await addTokensToUser(
                     userId,
                     credits,
                     'subscription_initial',
-                    `Piano ${planInfo.name} - Sottoscrizione iniziale`,
+                    `${planInfo.name} Plan - Initial subscription`,
                     subscription.id
                 );
 
-                console.log('[Webhook] ✅ Subscription creata e tokens assegnati');
+                console.log('[Webhook] ✅ Subscription created and tokens assigned');
                 break;
             }
 
             // ----------------------------------------------------------------
-            // INVOICE PAID - Rinnovo mensile
+            // INVOICE PAID - Monthly renewal
             // ----------------------------------------------------------------
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
-                console.log('[Webhook] 💰 Pagamento ricevuto:', invoice.id);
+                console.log('[Webhook] 💰 Payment received:', invoice.id);
 
-                // Verifica che sia un rinnovo subscription (non il primo pagamento)
+                // Verify this is a subscription renewal (not the first payment)
                 if (!invoice.subscription || invoice.billing_reason === 'subscription_create') {
-                    console.log('[Webhook] ℹ️ Primo pagamento, tokens già assegnati in subscription.created');
+                    console.log('[Webhook] ℹ️ First payment, tokens already assigned in subscription.created');
                     break;
                 }
 
                 const subscriptionId = invoice.subscription as string;
                 
-                // Recupera subscription da Stripe per ottenere metadata
+                // Retrieve subscription from Stripe to get metadata
                 const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                 const metadata = subscription.metadata || {};
                 const userId = metadata.user_id;
@@ -224,17 +224,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     break;
                 }
 
-                // Aggiungi tokens mensili (si accumulano!)
+                // Add monthly tokens (they accumulate!)
                 const planInfo = PLAN_CREDITS[planId] || { credits, name: metadata.plan_name };
                 await addTokensToUser(
                     userId,
                     credits,
                     'subscription_renewal',
-                    `Piano ${planInfo.name} - Rinnovo mensile`,
+                    `${planInfo.name} Plan - Monthly renewal`,
                     invoice.id
                 );
 
-                // Aggiorna data scadenza subscription
+                // Update subscription expiration date
                 const supabase = getSupabaseClient();
                 await supabase
                     .from('user_subscriptions')
@@ -243,24 +243,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     })
                     .eq('stripe_subscription_id', subscriptionId);
 
-                console.log('[Webhook] ✅ Rinnovo processato, tokens aggiunti');
+                console.log('[Webhook] ✅ Renewal processed, tokens added');
                 break;
             }
 
             // ----------------------------------------------------------------
-            // SUBSCRIPTION UPDATED - Cambio piano (upgrade/downgrade)
+            // SUBSCRIPTION UPDATED - Plan change (upgrade/downgrade)
             // ----------------------------------------------------------------
             case 'customer.subscription.updated': {
                 const subscription = event.data.object as Stripe.Subscription;
                 const previousAttributes = (event.data as any).previous_attributes;
 
-                // Verifica se c'è stato un cambio di piano (price change)
+                // Verify if there was a plan change (price change)
                 if (!previousAttributes?.items) {
-                    console.log('[Webhook] ℹ️ Subscription aggiornata ma nessun cambio piano');
+                    console.log('[Webhook] ℹ️ Subscription updated but no plan change');
                     break;
                 }
 
-                console.log('[Webhook] 🔄 Cambio piano subscription:', subscription.id);
+                console.log('[Webhook] 🔄 Plan change subscription:', subscription.id);
 
                 const metadata = subscription.metadata || {};
                 const userId = metadata.user_id;
@@ -274,7 +274,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const supabase = getSupabaseClient();
 
-                // Aggiorna subscription
+                // Update subscription
                 await supabase
                     .from('user_subscriptions')
                     .update({
@@ -283,30 +283,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     })
                     .eq('stripe_subscription_id', subscription.id);
 
-                // Aggiungi tokens del nuovo piano (si mantengono quelli esistenti!)
+                // Add tokens from new plan (existing tokens are kept!)
                 const planInfo = PLAN_CREDITS[planId] || { credits, name: metadata.plan_name };
                 await addTokensToUser(
                     userId,
                     credits,
                     'subscription_upgrade',
-                    `Cambio a piano ${planInfo.name}`,
+                    `Changed to ${planInfo.name} plan`,
                     subscription.id
                 );
 
-                console.log('[Webhook] ✅ Cambio piano processato');
+                console.log('[Webhook] ✅ Plan change processed');
                 break;
             }
 
             // ----------------------------------------------------------------
-            // SUBSCRIPTION DELETED - Cancellazione
+            // SUBSCRIPTION DELETED - Cancellation
             // ----------------------------------------------------------------
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
-                console.log('[Webhook] ❌ Subscription cancellata:', subscription.id);
+                console.log('[Webhook] ❌ Subscription cancelled:', subscription.id);
 
                 const supabase = getSupabaseClient();
 
-                // Imposta status cancelled (NON rimuovere tokens!)
+                // Set status to cancelled (DO NOT remove tokens!)
                 await supabase
                     .from('user_subscriptions')
                     .update({
@@ -314,35 +314,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     })
                     .eq('stripe_subscription_id', subscription.id);
 
-                console.log('[Webhook] ✅ Subscription cancellata (tokens mantenuti)');
+                console.log('[Webhook] ✅ Subscription cancelled (tokens kept)');
                 break;
             }
 
             // ----------------------------------------------------------------
-            // PAYMENT FAILED - Pagamento fallito
+            // PAYMENT FAILED - Payment failed
             // ----------------------------------------------------------------
             case 'invoice.payment_failed': {
                 const invoice = event.data.object as Stripe.Invoice;
-                console.log('[Webhook] ⚠️ Pagamento fallito:', invoice.id);
+                console.log('[Webhook] ⚠️ Payment failed:', invoice.id);
 
-                // TODO: Inviare email di notifica all'utente
-                // TODO: Eventualmente sospendere l'accesso dopo X tentativi
+                // TODO: Send notification email to user
+                // TODO: Possibly suspend access after X attempts
 
                 break;
             }
 
             // ----------------------------------------------------------------
-            // Altri eventi
+            // Other events
             // ----------------------------------------------------------------
             default:
-                console.log('[Webhook] ℹ️ Evento non gestito:', event.type);
+                console.log('[Webhook] ℹ️ Unhandled event type:', event.type);
         }
 
         return res.status(200).json({ received: true });
         */
 
         // ====================================================================
-        // MOCK RESPONSE per sviluppo (quando Stripe non è configurato)
+        // MOCK RESPONSE for development (when Stripe is not configured)
         // ====================================================================
         console.log('[Webhook] 📩 Mock webhook received');
         const mockEvent = req.body;

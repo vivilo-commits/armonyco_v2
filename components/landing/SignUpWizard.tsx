@@ -283,9 +283,9 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
         // Verify Stripe is configured
         if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-            setErrors({ 
-                payment: 'Stripe is not configured. Configure VITE_STRIPE_PUBLIC_KEY in .env.local file' 
-            });
+                setErrors({
+                    payment: 'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables. See CONFIGURAZIONE_VERCEL.md'
+                });
             return;
         }
 
