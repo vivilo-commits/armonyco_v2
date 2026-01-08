@@ -38,6 +38,10 @@ export async function signInWithEmail(email: string, password: string) {
 export async function signUpWithEmail(email: string, password: string, metadata?: Record<string, any>) {
   if (!supabase) throw new Error('Supabase not configured');
 
+  console.log('[Supabase] Attempting signup with email:', email);
+  console.log('[Supabase] Password length:', password?.length);
+  console.log('[Supabase] Metadata:', metadata);
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -46,7 +50,12 @@ export async function signUpWithEmail(email: string, password: string, metadata?
     },
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[Supabase] Signup error:', error);
+    throw error;
+  }
+
+  console.log('[Supabase] Signup success:', data);
   return data;
 }
 
