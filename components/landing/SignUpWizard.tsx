@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, Loader, AlertTriangle } from '../ui/Icons';
+import { ChevronLeft, ChevronRight, CheckCircle, Loader, AlertTriangle, Zap } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -10,20 +10,20 @@ import { ExitIntentModal } from '../ui/ExitIntentModal';
 import { TermsModal } from './TermsModal';
 import { PlanCard, Plan } from './PlanCard';
 import { ITALIAN_PROVINCES } from '../../src/data/italian-provinces';
-import { 
-    validateStep1, 
+import {
+    validateStep1,
     validateStep2
 } from '../../src/services/validation.service';
-import { 
-    saveRegistrationDraft, 
-    getRegistrationDraft, 
+import {
+    saveRegistrationDraft,
+    getRegistrationDraft,
     clearRegistrationDraft,
     completeRegistration
 } from '../../src/services/registration.service';
-import { 
-    initiatePayment, 
+import {
+    initiatePayment,
     calculatePriceBreakdown,
-    formatEuro 
+    formatEuro
 } from '../../src/services/payment.service';
 
 interface SignUpWizardProps {
@@ -48,9 +48,10 @@ const PLANS: Plan[] = [
         credits: 25000,
         tokens: 2500000, // 25,000 credits × 100
         price: 249,
+        units: 'Up to 50 units',
         features: [
-            '2.5M tokens per month',
-            'Tokens accumulate',
+            '2.5M ArmoCredits©/month',
+            'ArmoCredits© accumulate',
             'Dashboard analytics',
             'Email support',
             'Complete documentation'
@@ -62,10 +63,12 @@ const PLANS: Plan[] = [
         credits: 100000,
         tokens: 10000000, // 100,000 credits × 100
         price: 999,
-        badge: '🔥 Most Popular',
+        units: 'Up to 200 units',
+        badge: '🔥 MOST POPULAR',
+        popular: true,
         features: [
-            '10M tokens per month',
-            'Tokens accumulate',
+            '10M ArmoCredits©/month',
+            'ArmoCredits© accumulate',
             'Advanced dashboard',
             'Priority support',
             'API access',
@@ -78,9 +81,10 @@ const PLANS: Plan[] = [
         credits: 250000,
         tokens: 25000000, // 250,000 credits × 100
         price: 2499,
+        units: 'Up to 500 units',
         features: [
-            '25M tokens per month',
-            'Tokens accumulate',
+            '25M ArmoCredits©/month',
+            'ArmoCredits© accumulate',
             'Enterprise dashboard',
             '24/7 dedicated support',
             'Unlimited API',
@@ -93,9 +97,10 @@ const PLANS: Plan[] = [
         name: 'VIP',
         credits: 0,
         price: 0,
+        units: '500+ units',
         isCustom: true,
         features: [
-            'Unlimited tokens',
+            'Unlimited ArmoCredits©',
             'Institutional project',
             'Dedicated account manager',
             'Complete customization',
@@ -104,11 +109,11 @@ const PLANS: Plan[] = [
     },
 ];
 
-export const SignUpWizard: React.FC<SignUpWizardProps> = ({ 
-    isOpen, 
-    onClose, 
-    onContact, 
-    onComplete 
+export const SignUpWizard: React.FC<SignUpWizardProps> = ({
+    isOpen,
+    onClose,
+    onContact,
+    onComplete
 }) => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -218,7 +223,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         console.log('[SignUp] Validating step', step, 'Form data:', formData);
         const isValid = validateCurrentStep();
         console.log('[SignUp] Validation result:', isValid, 'Errors:', errors);
-        
+
         if (isValid) {
             console.log('[SignUp] Moving to step', step + 1);
             setStep(step + 1);
@@ -282,10 +287,10 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         if (!validateCurrentStep()) return;
 
         // Verify Stripe is configured
-        if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-                setErrors({
-                    payment: 'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables. See CONFIGURAZIONE_VERCEL.md'
-                });
+        if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY_TEST) {
+            setErrors({
+                payment: 'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY_TEST in Vercel Dashboard → Settings → Environment Variables. See CONFIGURAZIONE_VERCEL.md'
+            });
             return;
         }
 
@@ -295,7 +300,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         try {
             console.log('[SignUp] Starting Stripe payment flow...');
             console.log('[SignUp] Plan:', formData.planName, 'Credits:', formData.planCredits);
-            
+
             // Payment reale con Stripe
             await initiatePayment({
                 planId: formData.planId,
@@ -311,7 +316,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                     vatNumber: formData.vatNumber,
                 },
             });
-            
+
             // Se initiatePayment non lancia errori, il redirect è in corso
             // Don't set isSubmitting to false because user will be redirected
             console.log('[SignUp] Redirecting to Stripe Checkout...');
@@ -322,9 +327,9 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                 stack: error.stack,
                 name: error.name,
             });
-            
-            setErrors({ 
-                payment: error.message || 'Error during payment. Check Stripe configuration.' 
+
+            setErrors({
+                payment: error.message || 'Error during payment. Check Stripe configuration.'
             });
             setIsSubmitting(false);
         }
@@ -334,7 +339,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
-        
+
         // Handle Stripe redirect return
         if (sessionId && isOpen) {
             // Stripe payment completed
@@ -373,7 +378,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                 console.log('[SignUp] Registration completed successfully!');
                 setStep(5); // Go to confirmation step
                 setIsSubmitting(false);
-                
+
                 // Callback after 3 seconds
                 setTimeout(() => {
                     onComplete({
@@ -386,11 +391,11 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             } else {
                 console.error('[SignUp] Registration failed:', result.error);
                 const errorMessage = result.error || 'Error during registration';
-                
+
                 // If email is already registered, go back to step 1 and show error in email field
                 if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
                     setStep(1);
-                    setErrors({ 
+                    setErrors({
                         email: 'This email is already registered. Try logging in instead.',
                         general: 'This email is already registered. Try logging in instead.'
                     });
@@ -418,11 +423,11 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         } catch (error: any) {
             console.error('[SignUp] Registration exception:', error);
             const errorMessage = error.message || 'Error during registration';
-            
+
             // If email is already registered, go back to step 1 and show error in email field
             if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
                 setStep(1);
-                setErrors({ 
+                setErrors({
                     email: 'This email is already registered. Try logging in instead.',
                     general: 'This email is already registered. Try logging in instead.'
                 });
@@ -754,23 +759,22 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                 )}
 
                                 {priceBreakdown && formData.planId > 0 && (
-                                    <div className="max-w-md mx-auto mt-8 p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
-                                        <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-4">
+                                    <div className="max-w-md mx-auto mt-8 p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                                        <h3 className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4">
                                             Cost Summary
                                         </h3>
-                                        <div className="space-y-2 text-sm">
+                                        <div className="space-y-3 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">Subtotal:</span>
-                                                <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
+                                                <span className="text-zinc-500">Monthly Fee:</span>
+                                                <span className="font-medium text-zinc-900">€{formData.planPrice.toLocaleString('de-DE')}</span>
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">VAT 22%:</span>
-                                                <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
+                                            <div className="flex justify-between text-zinc-400 text-xs">
+                                                <span className="italic">VAT included (22%)</span>
                                             </div>
-                                            <div className="flex justify-between pt-3 border-t border-[var(--color-border)] text-lg font-bold">
-                                                <span>Total:</span>
-                                                <span className="text-[var(--color-brand-accent)]">
-                                                    {formatEuro(priceBreakdown.total)}
+                                            <div className="flex justify-between pt-3 border-t border-zinc-200">
+                                                <span className="text-lg font-bold text-zinc-900">Total:</span>
+                                                <span className="text-xl font-bold text-[var(--color-brand-accent)]">
+                                                    €{formData.planPrice.toLocaleString('de-DE')}/mo
                                                 </span>
                                             </div>
                                         </div>
@@ -785,99 +789,113 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                         {/* STEP 4: Payment */}
                         {step === 4 && priceBreakdown && (
-                            <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300">
+                            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-300">
                                 <div className="text-center mb-6">
-                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
+                                    <h2 className="text-2xl font-bold text-zinc-900">
                                         Confirm and Payment
                                     </h2>
-                                    <p className="text-sm text-[var(--color-text-muted)] mt-2">
+                                    <p className="text-sm text-zinc-500 mt-2">
                                         Verify your information and proceed to payment
                                     </p>
                                 </div>
 
-                                {/* Order Summary */}
-                                <div className="bg-[var(--color-brand-accent)]/10 border-2 border-[var(--color-brand-accent)] rounded-xl p-6">
-                                    <h3 className="text-lg font-bold text-[var(--color-text-main)] mb-4">
-                                        📋 Order Summary
-                                    </h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="font-bold text-[var(--color-text-main)]">
-                                                    {formData.planName} Plan
-                                                </p>
-                                                <p className="text-xs text-[var(--color-brand-accent)]">
-                                                    ⚡ {(formData.planCredits * 100).toLocaleString('en-US')} tokens/month
-                                                </p>
-                                                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                                                    Tokens accumulate monthly
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={() => goToStep(3)}
-                                                className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
-                                            >
-                                                Edit
-                                            </button>
-                                        </div>
-                                        <div className="border-t border-[var(--color-border)] pt-3 space-y-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">Subtotal:</span>
-                                                <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">VAT 22%:</span>
-                                                <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
-                                            </div>
-                                            <div className="flex justify-between pt-2 border-t border-[var(--color-border)] text-xl font-bold">
-                                                <span>Total/Month:</span>
-                                                <span className="text-[var(--color-brand-accent)]">
-                                                    {formatEuro(priceBreakdown.total)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Billing Details */}
-                                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-bold text-[var(--color-text-main)]">
-                                            🏢 Billing Details
+                                {/* Order Summary - Light Card */}
+                                <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                                            Order Summary
                                         </h3>
                                         <button
-                                            onClick={() => goToStep(2)}
-                                            className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
+                                            onClick={() => goToStep(3)}
+                                            className="text-[10px] text-[var(--color-brand-accent)] font-black uppercase tracking-wider hover:underline"
                                         >
                                             Edit
                                         </button>
                                     </div>
-                                    <div className="text-sm space-y-1 text-[var(--color-text-muted)]">
-                                        <p><strong className="text-[var(--color-text-main)]">{formData.businessName}</strong></p>
-                                        <p>VAT: {formData.vatNumber}</p>
-                                        <p>{formData.address} {formData.civicNumber}</p>
-                                        <p>{formData.cap} {formData.city} ({formData.province})</p>
-                                        {formData.sdiCode && <p>SDI: {formData.sdiCode}</p>}
-                                        {formData.pecEmail && <p>PEC: {formData.pecEmail}</p>}
+                                    <div className="p-6 space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="font-bold text-zinc-900 text-lg">
+                                                    {formData.planName} Plan
+                                                </p>
+                                                <p className="text-sm text-[var(--color-brand-accent)]">
+                                                    {formData.planCredits.toLocaleString('de-DE')} ArmoCredits©/month
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-2xl font-bold text-[var(--color-brand-accent)]">
+                                                    €{formData.planPrice.toLocaleString('de-DE')}/mo
+                                                </p>
+                                                <p className="text-[10px] text-zinc-400 italic">VAT included</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Payment Information */}
-                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-                                    <h3 className="text-sm font-bold text-blue-400 mb-3">ℹ️ Subscription Information</h3>
-                                    <ul className="text-xs text-[var(--color-text-muted)] space-y-2">
-                                        <li>• Secure payment handled by Stripe</li>
-                                        <li>• Tokens are credited immediately and accumulate every month</li>
-                                        <li>• Automatic monthly billing</li>
-                                        <li>• You will receive the invoice via email within 24 hours</li>
-                                        <li>• You can cancel the subscription at any time</li>
-                                        <li>• You can use credit/debit cards or SEPA transfer</li>
-                                    </ul>
+                                {/* Billing Details - Light Card */}
+                                <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                                            Billing Details
+                                        </h3>
+                                        <button
+                                            onClick={() => goToStep(2)}
+                                            className="text-[10px] text-[var(--color-brand-accent)] font-black uppercase tracking-wider hover:underline"
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                    <div className="p-6 text-sm space-y-1.5">
+                                        <p className="font-bold text-zinc-900">{formData.businessName}</p>
+                                        <p className="text-zinc-500">VAT: <span className="text-zinc-700">{formData.vatNumber}</span></p>
+                                        <p className="text-zinc-500">{formData.address} {formData.civicNumber}</p>
+                                        <p className="text-zinc-500">{formData.cap} {formData.city} ({formData.province})</p>
+                                        {formData.sdiCode && <p className="text-zinc-500">SDI: <span className="text-zinc-700">{formData.sdiCode}</span></p>}
+                                        {formData.pecEmail && <p className="text-zinc-500">PEC: <span className="text-zinc-700">{formData.pecEmail}</span></p>}
+                                    </div>
+                                </div>
+
+                                {/* Subscription Information - Light Card */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-blue-100">
+                                        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
+                                            Subscription Information
+                                        </h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <ul className="text-[12px] text-zinc-600 space-y-2.5">
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                Secure payment handled by Stripe
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                ArmoCredits are credited immediately and accumulate every month
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                Automatic monthly billing
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                You will receive the invoice via email within 24 hours
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                You can cancel the subscription at any time
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <CheckCircle size={14} className="text-blue-500 flex-shrink-0" />
+                                                Credit/debit cards or SEPA transfer accepted
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
 
                                 {errors.payment && (
-                                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center text-red-400 text-sm">
-                                        {errors.payment}
+                                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+                                        <AlertTriangle size={18} className="text-red-500 flex-shrink-0" />
+                                        <span className="text-red-600 text-sm">{errors.payment}</span>
                                     </div>
                                 )}
                             </div>

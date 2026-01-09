@@ -9,7 +9,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 // CONFIGURATION
 // ============================================================================
 
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY_TEST;
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
@@ -96,13 +96,13 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
         console.log('[Payment] Response status:', response.status);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ 
+            const errorData = await response.json().catch(() => ({
                 error: 'Unknown error',
-                message: `HTTP ${response.status}: ${response.statusText}` 
+                message: `HTTP ${response.status}: ${response.statusText}`
             }));
-            
+
             console.error('[Payment] API Error:', errorData);
-            
+
             // Clearer error message for 404
             if (response.status === 404) {
                 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -119,7 +119,7 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
                     );
                 }
             }
-            
+
             throw new Error(errorData.message || errorData.error || 'Error creating payment session');
         }
 
@@ -156,41 +156,18 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
 }
 
 /**
- * Redirects to Stripe Checkout
+ * Redirects to Stripe Checkout using URL (new approach - redirectToCheckout is deprecated)
  */
-export async function redirectToCheckout(sessionId: string): Promise<void> {
-    console.log('[Payment] Redirecting to Stripe Checkout, session:', sessionId);
-    
-    // Verify Stripe is configured
-    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-        throw new Error(
-            'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables'
-        );
-    }
-    
-    const stripe = await getStripe();
-    
-    if (!stripe) {
-        console.error('[Payment] ❌ Stripe not initialized');
-        throw new Error('Stripe not configured correctly. Verify VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard.');
+export async function redirectToCheckout(checkoutUrl: string): Promise<void> {
+    console.log('[Payment] Redirecting to Stripe Checkout URL...');
+
+    if (!checkoutUrl) {
+        throw new Error('Checkout URL not provided');
     }
 
-    console.log('[Payment] Stripe instance loaded, redirecting...');
-
-    try {
-        // redirectToCheckout is available on @stripe/stripe-js Stripe instance
-        const { error } = await (stripe as any).redirectToCheckout({ sessionId });
-
-        if (error) {
-            console.error('[Stripe] ❌ Redirect error:', error);
-            throw new Error(error.message || 'Error redirecting to Stripe');
-        }
-
-        console.log('[Payment] ✅ Redirect started successfully');
-    } catch (error: any) {
-        console.error('[Payment] ❌ Error during redirect:', error);
-        throw error;
-    }
+    // Direct redirect to the checkout URL (new Stripe approach)
+    console.log('[Payment] ✅ Redirecting to:', checkoutUrl);
+    window.location.href = checkoutUrl;
 }
 
 /**
@@ -199,20 +176,20 @@ export async function redirectToCheckout(sessionId: string): Promise<void> {
 export async function initiatePayment(data: CheckoutSessionData): Promise<void> {
     try {
         console.log('[Payment] 🚀 Initiating payment flow...');
-        
+
         // Create session
         console.log('[Payment] Step 1: Creating checkout session...');
         const session = await createCheckoutSession(data);
-        
-        if (!session.sessionId) {
-            throw new Error('Session ID not available after creation');
+
+        if (!session.url) {
+            throw new Error('Checkout URL not available after session creation');
         }
 
         console.log('[Payment] Step 2: Redirecting to Stripe Checkout...');
-        
-        // Redirect to Stripe Checkout
-        await redirectToCheckout(session.sessionId);
-        
+
+        // Redirect to Stripe Checkout using the URL
+        await redirectToCheckout(session.url);
+
         // If we get here without errors, redirect is in progress
         // User will be taken to Stripe
         console.log('[Payment] ✅ Payment flow initiated successfully');
@@ -255,7 +232,7 @@ export async function verifyPaymentStatus(sessionId: string): Promise<PaymentSta
         }
 
         const result = await response.json();
-        
+
         return {
             status: result.status || 'failed',
             paymentIntentId: result.paymentIntentId,
@@ -280,12 +257,12 @@ export async function verifyPaymentStatus(sessionId: string): Promise<PaymentSta
  */
 export async function mockPayment(data: CheckoutSessionData): Promise<{ success: boolean; sessionId: string; customerId: string }> {
     console.warn('[Payment] Using MOCK subscription - development only!');
-    
+
     return new Promise((resolve) => {
         setTimeout(() => {
             const sessionId = `mock_session_${Date.now()}`;
             const customerId = `cus_mock_${Math.random().toString(36).substring(7)}`;
-            
+
             // Save mock data in localStorage to simulate callback
             localStorage.setItem('mock_payment_data', JSON.stringify({
                 sessionId,
@@ -295,7 +272,7 @@ export async function mockPayment(data: CheckoutSessionData): Promise<{ success:
                 tokens: data.credits * 100,
                 ...data,
             }));
-            
+
             resolve({ success: true, sessionId, customerId });
         }, 1000);
     });
@@ -306,7 +283,7 @@ export async function mockPayment(data: CheckoutSessionData): Promise<{ success:
  */
 export async function mockPaymentFlow(data: CheckoutSessionData): Promise<void> {
     const result = await mockPayment(data);
-    
+
     if (result.success) {
         // Simulate redirect to success page
         const successUrl = `/registration/success?session_id=${result.sessionId}`;

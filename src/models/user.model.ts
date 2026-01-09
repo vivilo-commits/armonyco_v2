@@ -12,6 +12,7 @@ export interface UserProfile {
     phone: string;
     photo?: string | null;
     role: UserRole;
+    jobRole?: string; // Job Role / Title field
     credits: number; // ArmoCredits balance
 }
 

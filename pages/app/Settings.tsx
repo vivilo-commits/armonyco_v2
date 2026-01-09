@@ -272,7 +272,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <FloatingInput label="Email Address" value={localProfile.email} onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })} />
                                 <FloatingInput label="Phone Number" value={localProfile.phone} onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} />
                                 <div className="md:col-span-2">
-                                    <FloatingInput label="Job Role / Title" value="Regional Operations Director" />
+                                    <FloatingInput label="Job Role / Title" value={localProfile.jobRole || ''} onChange={(e) => setLocalProfile({ ...localProfile, jobRole: e.target.value })} />
                                 </div>
                             </div>
                         </Card>
@@ -848,78 +848,144 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <div>
                                 <h3 className="text-xl font-light text-white">Institutional Subscription Plans</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-1">Upgrade or scale your autonomous fleet</p>
+                                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-1">Select the plan that best fits your needs</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            { id: 1, name: 'Starter', amt: 25000, price: 249, units: 'Up to 50' },
-                            { id: 2, name: 'Pro', amt: 100000, price: 999, units: 'Up to 200' },
-                            { id: 3, name: 'Elite', amt: 250000, price: 2499, units: 'Up to 500' },
-                            { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
+                            {
+                                id: 1,
+                                name: 'STARTER',
+                                credits: 25000,
+                                tokens: '2,500,000',
+                                price: 249,
+                                features: ['2.5M tokens per month', 'Tokens accumulate', 'Dashboard analytics', 'Email support', 'Complete documentation']
+                            },
+                            {
+                                id: 2,
+                                name: 'PRO',
+                                credits: 100000,
+                                tokens: '10,000,000',
+                                price: 999,
+                                popular: true,
+                                features: ['10M tokens per month', 'Tokens accumulate', 'Advanced dashboard', 'Priority support', 'API access', 'Custom reports']
+                            },
+                            {
+                                id: 3,
+                                name: 'ELITE',
+                                credits: 250000,
+                                tokens: '25,000,000',
+                                price: 2499,
+                                features: ['25M tokens per month', 'Tokens accumulate', 'Enterprise dashboard', '24/7 dedicated support', 'Unlimited API', 'White label', 'Guaranteed SLA']
+                            },
+                            {
+                                id: 4,
+                                name: 'VIP',
+                                credits: 0,
+                                tokens: 'Unlimited',
+                                price: 0,
+                                isCustom: true,
+                                features: ['Unlimited tokens', 'Institutional project', 'Dedicated account manager', 'Complete customization', 'Enterprise contract']
+                            }
                         ].map(plan => (
-                            <button
-                                onClick={() => {
-                                    if (plan.isCustom) {
-                                        setIsContactOpen(true);
-                                    } else {
-                                        onUpdatePlanId(plan.id);
-                                    }
-                                }}
+                            <Card
                                 key={plan.id}
-                                className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === activePlanId ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
+                                variant="dark"
+                                padding="none"
+                                className={`relative overflow-hidden flex flex-col transition-all duration-300 ${plan.id === activePlanId
+                                    ? 'border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.15)]'
+                                    : plan.popular
+                                        ? 'border-[var(--color-brand-accent)]/30'
+                                        : 'border-white/5 hover:border-white/10'
+                                    }`}
                             >
+                                {/* Popular Badge */}
+                                {plan.popular && (
+                                    <div className="absolute -top-0 left-1/2 -translate-x-1/2 z-20">
+                                        <div className="bg-[var(--color-brand-accent)] text-black text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-b-xl flex items-center gap-1.5 shadow-lg">
+                                            <span>🔥</span> MOST POPULAR
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Active Badge */}
                                 {plan.id === activePlanId && (
-                                    <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
-                                )}
-                                <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
-
-                                {plan.isCustom ? (
-                                    <div className="flex flex-col items-center my-3">
-                                        <span className={`text-[24px] font-bold leading-tight text-center ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>Contact Us</span>
-                                        <span className="text-[10px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
-                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mt-2">{plan.units} units</span>
+                                    <div className="absolute top-3 right-3 z-20">
+                                        <div className="bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                            <CheckCircle size={10} /> Active
+                                        </div>
                                     </div>
-                                ) : (
-                                    <>
-                                        <span className={`text-[42px] font-bold leading-none mb-0 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
-                                            €{plan.price.toLocaleString('de-DE')}<span className="text-[18px] opacity-60 font-medium">/mo</span>
-                                        </span>
-                                        <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-1.5 leading-none">VAT Included</span>
-                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mb-4">€5/unit • {plan.units} units</span>
-                                    </>
                                 )}
 
-                                <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-8 mt-2 w-full">
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">
-                                            {plan.isCustom ? 'Scope' : 'Includes'}
-                                        </span>
-                                        {!plan.isCustom ? (
-                                            <>
-                                                <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
-                                                <span className="text-[10px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
-                                            </>
-                                        ) : (
-                                            <span className="text-[12px] font-bold tracking-tight text-white/90 text-center px-4">Institutional Project</span>
-                                        )}
+                                {/* Header */}
+                                <div className={`p-6 text-center ${plan.popular ? 'pt-10' : 'pt-6'}`}>
+                                    <h4 className="text-[var(--color-brand-accent)] text-[11px] font-black uppercase tracking-[0.3em] mb-4">{plan.name}</h4>
+
+                                    {plan.isCustom ? (
+                                        <div className="mb-2">
+                                            <span className="text-2xl font-bold text-white">Contact Us</span>
+                                            <p className="text-[10px] text-zinc-500 mt-1">Custom Quote</p>
+                                        </div>
+                                    ) : (
+                                        <div className="mb-2">
+                                            <span className="text-4xl font-bold text-white">€{plan.price.toLocaleString('de-DE')}</span>
+                                            <span className="text-zinc-500 text-sm">/month</span>
+                                            <p className="text-[10px] text-zinc-500 mt-1">VAT included • Monthly billing</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Tokens Box */}
+                                <div className="mx-6 mb-6 p-4 bg-white/[0.03] border border-white/5 rounded-xl text-center">
+                                    <div className="text-2xl font-bold text-white tracking-tight">{plan.tokens}</div>
+                                    <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-widest mt-1">TOKENS/MONTH</div>
+                                    {!plan.isCustom && (
+                                        <div className="flex items-center justify-center gap-1 mt-2 text-[9px] text-zinc-500">
+                                            <Zap size={10} className="text-[var(--color-brand-accent)]" />
+                                            <span className="italic">Tokens accumulate every month</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Features */}
+                                <div className="px-6 pb-6 flex-1">
+                                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4">
+                                        {plan.isCustom ? 'INCLUDES:' : 'INCLUDED FEATURES:'}
                                     </div>
+                                    <ul className="space-y-2.5">
+                                        {plan.features.map((feature, idx) => (
+                                            <li key={idx} className="flex items-start gap-2 text-[12px] text-zinc-400">
+                                                <CheckCircle size={14} className="text-[var(--color-brand-accent)] mt-0.5 flex-shrink-0" />
+                                                <span>{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                                <div
-                                    onClick={plan.id !== activePlanId ? () => handlePlanChange(plan) : undefined}
-                                    className={`mt-6 px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${plan.id === activePlanId
-                                        ? 'bg-transparent border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] cursor-default'
-                                        : 'bg-[var(--color-brand-accent)] text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer'
-                                        }`}
-                                >
-                                    {plan.id === activePlanId ? 'ACTIVE' : 'Select Plan'}
+
+                                {/* CTA Button */}
+                                <div className="p-6 pt-0">
+                                    <button
+                                        onClick={() => {
+                                            if (plan.isCustom) {
+                                                setIsContactOpen(true);
+                                            } else if (plan.id !== activePlanId) {
+                                                handlePlanChange(plan);
+                                            }
+                                        }}
+                                        className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${plan.id === activePlanId
+                                            ? 'bg-transparent border border-emerald-500/50 text-emerald-500 cursor-default'
+                                            : 'bg-[var(--color-brand-accent)] text-black hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:scale-[1.02]'
+                                            }`}
+                                    >
+                                        {plan.id === activePlanId ? 'Current Plan' : plan.isCustom ? 'Contact Sales' : 'Select Plan'}
+                                    </button>
                                 </div>
-                            </button>
+                            </Card>
                         ))}
                     </div>
-                    <p className="mt-8 text-center text-[10px] text-zinc-500 uppercase font-bold tracking-widest italic opacity-60">All payments are processed securely. VAT included in all institutional tiers.</p>
+                    <p className="mt-8 text-center text-[10px] text-zinc-500 italic">Monthly subscription with automatic billing. Tokens accumulate every month and never expire.</p>
                 </div>
 
                 {/* CONSUMPTION TABLE */}

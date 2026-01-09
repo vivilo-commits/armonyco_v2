@@ -57,6 +57,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
     phone: '',
     photo: null,
     role: 'Executive',
+    jobRole: '',
     credits: 0
   });
 

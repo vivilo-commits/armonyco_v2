@@ -10,6 +10,7 @@ export interface UserProfile {
     phone?: string;
     photo?: string | null;
     role: string; // Relaxed for plumbing compatibility
+    jobRole?: string; // Job Role / Title field
     credits: number;
 }
 

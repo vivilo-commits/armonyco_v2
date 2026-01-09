@@ -8,6 +8,7 @@ export const mockUserProfile: UserProfile = {
     phone: '+1 (555) 0123-4567',
     photo: null,
     role: UserRole.EXECUTIVE,
+    jobRole: 'Regional Operations Director',
     credits: 25000,
 };
 

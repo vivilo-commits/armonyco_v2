@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle } from '../ui/Icons';
+import { CheckCircle, Zap } from '../ui/Icons';
 
 export interface Plan {
     id: number;
@@ -10,6 +10,8 @@ export interface Plan {
     features: string[];
     badge?: string;
     isCustom?: boolean;
+    popular?: boolean;
+    units?: string;
 }
 
 interface PlanCardProps {
@@ -27,101 +29,100 @@ export const PlanCard: React.FC<PlanCardProps> = ({
     badge,
     className = '',
 }) => {
+    const isPopular = plan.popular || plan.badge === '🔥 MOST POPULAR';
+
     return (
         <button
             onClick={onSelect}
             className={`
-                relative p-6 rounded-2xl border-2 transition-all duration-300
-                flex flex-col gap-4 text-left w-full
+                relative rounded-[2.5rem] border transition-all duration-300
+                flex flex-col text-left w-full overflow-hidden py-10 px-6
+                bg-white
                 ${selected
-                    ? 'border-[var(--color-brand-accent)] bg-[var(--color-brand-accent)]/5 scale-[1.02] shadow-xl'
-                    : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-text-main)] hover:shadow-lg'
+                    ? 'border-[var(--color-brand-accent)] shadow-[0_0_30px_rgba(212,175,55,0.15)]'
+                    : 'border-zinc-200 hover:border-zinc-300 hover:shadow-lg'
                 }
                 ${className}
             `}
         >
-            {/* Badge */}
-            {(badge || plan.badge) && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-[var(--color-brand-accent)] text-black text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap">
-                        {badge || plan.badge}
+            {/* Selected Badge */}
+            {selected && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+                    <span className="bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase tracking-widest px-4 py-1.5 rounded-b-xl shadow-lg whitespace-nowrap">
+                        Selected Plan
                     </span>
                 </div>
             )}
 
-            {/* Header */}
-            <div className="text-center">
-                <h3 className="text-sm uppercase tracking-[0.2em] font-black text-[var(--color-brand-accent)] mb-2">
+            {/* Popular Badge */}
+            {isPopular && !selected && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+                    <span className="bg-[var(--color-brand-accent)] text-black text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-b-xl shadow-lg whitespace-nowrap">
+                        Most Popular
+                    </span>
+                </div>
+            )}
+
+            {/* Plan Name */}
+            <div className="text-center flex flex-col items-center">
+                <h3 className="text-[var(--color-brand-accent)] text-[12px] font-black uppercase tracking-[0.25em] mb-4">
                     {plan.name}
                 </h3>
 
                 {plan.isCustom ? (
-                    <div className="py-4">
-                        <p className="text-2xl font-bold text-[var(--color-text-main)]">
-                            Contact Us
-                        </p>
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                            Custom Quote
+                    <div className="mb-2">
+                        <span className="text-[28px] font-bold text-zinc-900">Contact Us</span>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Bespoke Quote</p>
+                        <p className="text-[11px] text-[var(--color-brand-accent)] font-bold uppercase tracking-widest mt-2">
+                            {plan.units || '500+ Units'}
                         </p>
                     </div>
                 ) : (
-                    <>
-                        <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-4xl font-bold text-[var(--color-text-main)]">
-                                €{plan.price.toLocaleString('en-US')}
+                    <div className="mb-2 flex flex-col items-center">
+                        <div className="flex items-baseline">
+                            <span className="text-[42px] font-bold text-zinc-900 leading-none">
+                                €{plan.price.toLocaleString('de-DE')}
                             </span>
-                            <span className="text-sm text-[var(--color-text-muted)]">/month</span>
+                            <span className="text-zinc-500 text-[18px] font-medium">/mo</span>
                         </div>
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                            VAT excluded • Monthly billing
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1.5">VAT included</p>
+                        <p className="text-[11px] text-[var(--color-brand-accent)] font-bold uppercase tracking-widest mt-2 italic">
+                            €5/unit • {plan.units || 'Up to 50 units'}
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Credits Box */}
+            <div className="w-full mt-6 pt-6 border-t border-zinc-100 text-center">
+                <span className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-brand-accent)] block mb-2">
+                    {plan.isCustom ? 'Scope' : 'Includes'}
+                </span>
+                {plan.isCustom ? (
+                    <span className="text-[14px] font-bold text-zinc-700">Institutional Project</span>
+                ) : (
+                    <>
+                        <span className="text-[24px] font-bold text-zinc-900">
+                            {plan.credits.toLocaleString('de-DE')}
+                        </span>
+                        <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-1">
+                            ArmoCredits©
                         </p>
                     </>
                 )}
             </div>
 
-            {/* Monthly Tokens */}
-            {!plan.isCustom && (
-                <div className="text-center py-4 bg-gradient-to-br from-[var(--color-brand-accent)]/10 to-[var(--color-brand-accent)]/5 rounded-lg border border-[var(--color-brand-accent)]/20">
-                    <p className="text-3xl font-bold text-[var(--color-text-main)]">
-                        {(plan.tokens || plan.credits * 100).toLocaleString('en-US')}
-                    </p>
-                    <p className="text-[10px] uppercase font-black text-[var(--color-brand-accent)] tracking-wider mt-1">
-                        Tokens/Month
-                    </p>
-                    <p className="text-[9px] text-[var(--color-text-muted)] mt-1.5 px-2">
-                        ⚡ Tokens accumulate every month
-                    </p>
+            {/* CTA Button */}
+            <div className="mt-6 w-full flex justify-center">
+                <div
+                    className={`px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all duration-300 whitespace-nowrap ${selected
+                        ? 'bg-transparent border border-zinc-300 text-zinc-600'
+                        : 'bg-[var(--color-brand-accent)] border border-[var(--color-brand-accent)] text-black hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]'
+                        }`}
+                >
+                    {selected ? 'Selected' : plan.isCustom ? 'Contact Sales' : 'Select Plan'}
                 </div>
-            )}
-
-            {/* Features */}
-            <div className="flex-1">
-                <p className="text-xs uppercase font-black text-[var(--color-text-muted)] tracking-wider mb-3">
-                    {plan.isCustom ? 'Includes:' : 'Included Features:'}
-                </p>
-                <ul className="space-y-2">
-                    {plan.features.map((feature, index) => (
-                        <li
-                            key={index}
-                            className="flex items-start gap-2 text-sm text-[var(--color-text-main)]"
-                        >
-                            <CheckCircle
-                                size={16}
-                                className="text-emerald-400 shrink-0 mt-0.5"
-                            />
-                            <span>{feature}</span>
-                        </li>
-                    ))}
-                </ul>
             </div>
-
-            {/* Selected indicator */}
-            {selected && (
-                <div className="flex items-center justify-center gap-2 py-2 bg-[var(--color-brand-accent)] text-black rounded-lg font-bold text-sm">
-                    <CheckCircle size={18} />
-                    <span>Selected Plan</span>
-                </div>
-            )}
         </button>
     );
 };
