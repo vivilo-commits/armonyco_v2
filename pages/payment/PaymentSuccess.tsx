@@ -102,6 +102,25 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                 return;
             }
 
+            // Validate that email and password are present
+            if (!registrationData.email || !registrationData.password) {
+                console.error('[PaymentSuccess] ❌ Missing email or password in registration data');
+                setStatus('error');
+                setErrorMessage('Dati di registrazione incompleti (email o password mancante). Riprova la registrazione.');
+                localStorage.removeItem('pending_registration');
+                return;
+            }
+
+            if (registrationData.password.length < 6) {
+                console.error('[PaymentSuccess] ❌ Password too short');
+                setStatus('error');
+                setErrorMessage('Password troppo corta. Riprova la registrazione.');
+                localStorage.removeItem('pending_registration');
+                return;
+            }
+
+            console.log('[PaymentSuccess] ✅ All validations passed. Proceeding with registration...');
+
             // 4. Create Supabase account and save data
             setStatus('creating_account');
             console.log('[PaymentSuccess] Creating account with Stripe data...');

@@ -189,10 +189,39 @@ export function updateRegistrationDraft(updates: Partial<RegistrationDraft['data
  */
 export async function completeRegistration(data: CompleteRegistrationData): Promise<RegistrationResult> {
     try {
-        console.log('[Registration] Starting registration for:', data.email);
+        // ============================================================================
+        // VALIDATION - Ensure email and password are present before calling Supabase
+        // ============================================================================
+        
+        if (!data.email || !data.password) {
+            console.error('[Registration] ❌ Missing email or password');
+            return {
+                success: false,
+                error: 'Email and password are required',
+            };
+        }
+
+        if (data.password.length < 6) {
+            console.error('[Registration] ❌ Password too short');
+            return {
+                success: false,
+                error: 'Password must be at least 6 characters',
+            };
+        }
+
+        if (!data.email.includes('@')) {
+            console.error('[Registration] ❌ Invalid email format');
+            return {
+                success: false,
+                error: 'Invalid email format',
+            };
+        }
+
+        console.log('[Registration] ✅ Validation passed. Starting registration for:', data.email);
         console.log('[Registration] Full data:', {
             email: data.email,
-            passwordLength: data.password?.length,
+            hasPassword: true,
+            passwordLength: data.password.length,
             firstName: data.firstName,
             lastName: data.lastName,
             businessName: data.businessName,

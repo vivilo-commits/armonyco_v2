@@ -321,3 +321,226 @@ body {
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: white !important;
 }
+
+/* ==========================================================================
+   PRODUCT TOGGLE SWITCH STYLES
+   ========================================================================== */
+
+/* Toggle Switch Container */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Toggle Switch Base */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Slider Background */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #4b5563;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Slider Circle */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Active State (ON) */
+input:checked + .slider {
+  background-color: #10b981;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Hover State (only when not disabled) */
+input:not(:disabled) + .slider:hover {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 
+              0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+input:checked:not(:disabled) + .slider:hover {
+  background-color: #059669;
+}
+
+/* Disabled State (loading or paused) */
+input:disabled + .slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #6b7280;
+}
+
+/* Toggle Label */
+.toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 60px;
+  transition: color 0.3s ease;
+}
+
+.toggle-label.active {
+  color: #10b981;
+}
+
+.toggle-label.inactive {
+  color: #9ca3af;
+}
+
+/* Loading Spinner Animation */
+.loading-spinner {
+  display: inline-block;
+  animation: pulse 1s infinite;
+  color: #3b82f6;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Status Column Badges */
+.status-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 16px;
+}
+
+.status-icon.active {
+  color: #10b981;
+  animation: pulse-icon 2s infinite;
+}
+
+.status-icon.paused {
+  color: #f59e0b;
+}
+
+.status-icon.idle {
+  color: #6b7280;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.inactive {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.status-badge.paused {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Success Toast */
+.success-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #10b981;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  animation: slideIn 0.3s ease-out;
+}
+
+.success-toast.fade-out {
+  animation: slideOut 0.3s ease-in;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+  .toggle-container {
+    justify-content: center;
+  }
+  
+  .toggle-label {
+    display: none; /* Hide label on mobile to save space */
+  }
+  
+  .success-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+}

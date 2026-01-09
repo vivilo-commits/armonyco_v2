@@ -8,6 +8,8 @@ import { useUserProfile } from '../../src/hooks/useAuth';
 import { units, unitGroups, Unit, UnitGroup } from '../../data/portfolio';
 import { ProductModule } from '../../src/types';
 import { productService } from '../../src/services/product.service';
+import { activateProduct, deactivateProduct } from '../../src/services/products.service';
+import { supabase } from '../../src/lib/supabase';
 
 export const ProductManagement: React.FC = () => {
     const { data: modules, status: modulesStatus } = useProducts();
@@ -22,6 +24,15 @@ export const ProductManagement: React.FC = () => {
     const [selectedModule, setSelectedModule] = useState<ProductModule | null>(null);
     const [showActivationModal, setShowActivationModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [localModules, setLocalModules] = useState<ProductModule[]>([]);
+
+    // Update local modules when data changes
+    React.useEffect(() => {
+        if (modules) {
+            setLocalModules(modules);
+        }
+    }, [modules]);
 
     // Reload products after changes
     const reloadProducts = useCallback(() => {
@@ -70,7 +81,87 @@ export const ProductManagement: React.FC = () => {
         }
     };
 
-    const filteredModules = modules?.filter(m => {
+    // Toast notification helper
+    const showSuccessToast = (message: string) => {
+        const toast = document.createElement('div');
+        toast.className = 'success-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    };
+
+    // Handle toggle switch for activate/deactivate products
+    const handleToggle = async (productId: string, currentlyActive: boolean, productName: string) => {
+        // Get current user
+        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
+        if (!user) {
+            alert('Please login to manage products');
+            return;
+        }
+
+        const newStatus = currentlyActive ? 'inactive' : 'active';
+
+        // Confirmation before deactivating
+        if (currentlyActive) {
+            const confirmed = window.confirm(
+                `Are you sure you want to disable "${productName}"?\n\nThis feature will no longer be available.`
+            );
+            if (!confirmed) return;
+        }
+
+        // Prevent multiple simultaneous operations
+        if (togglingId) {
+            console.log('[Products] Another operation in progress');
+            return;
+        }
+
+        try {
+            // Show loading state
+            setTogglingId(productId);
+
+            // Call the appropriate service function
+            const success = currentlyActive
+                ? await deactivateProduct(productId)
+                : await activateProduct(productId);
+
+            if (!success) {
+                throw new Error('Failed to toggle product');
+            }
+
+            console.log(`[Products] ✅ Updated product ${productId} to ${newStatus}`);
+
+            // Update UI locally immediately (optimistic update)
+            setLocalModules(prevModules =>
+                prevModules.map(p =>
+                    p.id === productId
+                        ? {
+                            ...p,
+                            status: newStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
+                            isActive: newStatus === 'active',
+                            isPurchased: newStatus === 'active' ? true : p.isPurchased,
+                            isPaused: false,
+                        }
+                        : p
+                )
+            );
+
+            // Show success feedback
+            showSuccessToast(`${productName} ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+
+        } catch (error) {
+            console.error('[Products] ❌ Error toggling product:', error);
+            alert(`Failed to ${newStatus === 'active' ? 'activate' : 'deactivate'} ${productName}. Please try again.`);
+        } finally {
+            // Remove loading state
+            setTogglingId(null);
+        }
+    };
+
+    const filteredModules = localModules?.filter(m => {
         const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             m.code.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'ALL' || m.category === selectedCategory;
@@ -199,27 +290,75 @@ export const ProductManagement: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${getStatusColor(module)}`}>
-                                            {module.isPurchased ? (
-                                                module.isPaused ? (
-                                                    <><Pause size={12} /> Paused</>
-                                                ) : (
-                                                    <><Play size={12} className="fill-current" /> Operational</>
-                                                )
+                                        <div className="status-container flex items-center gap-2">
+                                            {/* Dynamic Icon */}
+                                            {module.isActive ? (
+                                                <span className="status-icon active text-emerald-500">⚡</span>
+                                            ) : module.isPaused ? (
+                                                <span className="status-icon paused text-amber-500">⏸</span>
                                             ) : (
-                                                <><Zap size={12} /> Idle</>
+                                                <span className="status-icon idle text-zinc-600">○</span>
                                             )}
+
+                                            {/* Status Badge */}
+                                            <span className={`status-badge px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                                module.isActive
+                                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                                                    : module.isPaused
+                                                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                                                    : 'bg-zinc-600/10 text-zinc-600 border-zinc-600/30'
+                                            }`}>
+                                                {module.isActive ? 'Active' : module.isPaused ? 'Paused' : 'Inactive'}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-5 text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-[10px] font-black uppercase tracking-widest hover:text-white"
-                                            onClick={() => handleManageActivation(module)}
-                                        >
-                                            Configure <ChevronRight size={14} className="ml-1" />
-                                        </Button>
+                                        <div className="toggle-container flex items-center gap-3 justify-end">
+                                            {/* Toggle Switch */}
+                                            <label className="toggle-switch relative inline-block w-12 h-6 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={module.isActive || false}
+                                                    disabled={module.isPaused || togglingId === module.id}
+                                                    onChange={() => handleToggle(module.id, module.isActive || false, module.name)}
+                                                    className="opacity-0 w-0 h-0"
+                                                />
+                                                <span className={`slider absolute top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
+                                                    module.isActive
+                                                        ? 'bg-emerald-500'
+                                                        : module.isPaused || togglingId === module.id
+                                                        ? 'bg-zinc-700 opacity-50 cursor-not-allowed'
+                                                        : 'bg-zinc-700'
+                                                } before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:rounded-full before:transition-transform before:duration-300 ${
+                                                    module.isActive ? 'before:translate-x-6' : ''
+                                                }`}></span>
+                                            </label>
+
+                                            {/* Toggle Label */}
+                                            <span className={`toggle-label text-xs font-bold min-w-[60px] ${
+                                                module.isActive ? 'text-emerald-500' : 'text-zinc-500'
+                                            }`}>
+                                                {togglingId === module.id ? (
+                                                    <span className="loading-spinner inline-block animate-pulse text-blue-500">●</span>
+                                                ) : module.isPaused ? (
+                                                    'Paused'
+                                                ) : module.isActive ? (
+                                                    'Active'
+                                                ) : (
+                                                    'Inactive'
+                                                )}
+                                            </span>
+
+                                            {/* Optional: Keep configure button for additional settings */}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-[9px] font-black uppercase tracking-widest hover:text-white opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                                                onClick={() => handleManageActivation(module)}
+                                            >
+                                                <Shield size={12} />
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

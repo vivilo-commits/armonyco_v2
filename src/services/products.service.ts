@@ -122,6 +122,112 @@ export async function getProductsWithStatus(): Promise<ProductModule[]> {
 }
 
 /**
+ * Toggle product status: active <-> inactive
+ */
+export async function toggleUserProduct(
+    userId: string,
+    productId: string,
+    newStatus: 'active' | 'inactive'
+): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    // Check if activation exists
+    const { data: existing } = await supabase
+        .from('user_product_activations')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .maybeSingle();
+
+    if (existing) {
+        // UPDATE existing status
+        const { error } = await supabase
+            .from('user_product_activations')
+            .update({
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id);
+
+        if (error) throw error;
+    } else {
+        // INSERT new activation
+        const { error } = await supabase
+            .from('user_product_activations')
+            .insert({
+                user_id: userId,
+                product_id: productId,
+                status: newStatus,
+            });
+
+        if (error) throw error;
+    }
+
+    console.log(`[Products] Feature ${productId} set to ${newStatus} for user ${userId}`);
+}
+
+/**
+ * Pause product temporarily
+ */
+export async function pauseUserProduct(userId: string, productId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const { error } = await supabase
+        .from('user_product_activations')
+        .update({
+            status: 'paused',
+            updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('product_id', productId);
+
+    if (error) throw error;
+}
+
+/**
+ * Check if user has active product
+ */
+export async function hasActiveProduct(
+    userId: string,
+    productId: string
+): Promise<boolean> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase
+        .from('user_product_activations')
+        .select('status')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error('[Products] Error checking user product:', error);
+        throw error;
+    }
+
+    return data?.status === 'active';
+}
+
+/**
+ * Get only active products for user
+ */
+export async function getActiveUserProducts(userId: string): Promise<DBProduct[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase
+        .from('user_product_activations')
+        .select(`
+            products (*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active');
+
+    if (error) throw error;
+
+    return (data || []).map(d => d.products as any).filter(Boolean);
+}
+
+/**
  * Activate a product for user
  */
 export async function activateProduct(productId: string): Promise<boolean> {
@@ -241,4 +347,8 @@ export const productsService = {
     deactivateProduct,
     activateAllProducts,
     deactivateAllProducts,
+    toggleUserProduct,
+    pauseUserProduct,
+    hasActiveProduct,
+    getActiveUserProducts,
 };
