@@ -5,6 +5,7 @@ import { WebApp } from './pages/WebApp';
 import { PaymentSuccess } from './pages/payment/PaymentSuccess';
 import { PaymentCancel } from './pages/payment/PaymentCancel';
 import { PaymentFailed } from './pages/payment/PaymentFailed';
+import { ResetPassword } from './pages/ResetPassword';
 import { validateConfig } from './src/config/api.config';
 import { getSession, onAuthStateChange, signOut, User } from './src/lib/supabase';
 
@@ -74,13 +75,14 @@ const App: React.FC = () => {
     };
   }, []);
 
-  type ViewState = 'landing' | 'solutions' | 'solutions-pm' | 'solutions-ins' | 'solutions-inv' | 'solutions-ent' | 'payment-success' | 'payment-cancel' | 'payment-failed';
+  type ViewState = 'landing' | 'solutions' | 'solutions-pm' | 'solutions-ins' | 'solutions-inv' | 'solutions-ent' | 'payment-success' | 'payment-cancel' | 'payment-failed' | 'reset-password';
   const [currentView, setCurrentView] = useState<ViewState>(() => {
     // Check URL path to determine initial view
     const path = window.location.pathname;
     if (path.includes('/payment/success')) return 'payment-success';
     if (path.includes('/payment/cancel')) return 'payment-cancel';
     if (path.includes('/payment/failed')) return 'payment-failed';
+    if (path.includes('/reset-password')) return 'reset-password';
     return 'landing';
   });
 
@@ -176,6 +178,19 @@ const App: React.FC = () => {
       <PaymentFailed
         onRetry={() => setCurrentView('landing')}
         onGoHome={() => setCurrentView('landing')}
+      />
+    );
+  }
+
+  if (currentView === 'reset-password') {
+    return (
+      <ResetPassword
+        onSuccess={() => {
+          // User has been signed out in ResetPassword component
+          // Auth state change listener will handle the logout
+          setCurrentView('landing');
+        }}
+        onError={() => setCurrentView('landing')}
       />
     );
   }

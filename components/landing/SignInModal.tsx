@@ -9,9 +9,10 @@ interface SignInModalProps {
     isOpen: boolean;
     onClose: () => void;
     onLogin: (data?: any) => void;
+    onForgotPassword: () => void;
 }
 
-export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLogin }) => {
+export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLogin, onForgotPassword }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +83,12 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                         <input type="checkbox" className="rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-0 cursor-pointer" />
                         Remember me
                     </label>
-                    <button className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors">Forgot password?</button>
+                    <button 
+                        onClick={onForgotPassword}
+                        className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
+                    >
+                        Password dimenticata?
+                    </button>
                 </div>
 
                 <div className="flex justify-center mt-6">

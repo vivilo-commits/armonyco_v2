@@ -11,6 +11,7 @@ import { ModuleListModal, ModuleSuite } from '../components/landing/ModuleListMo
 import { SignInModal } from '../components/landing/SignInModal';
 import { SignUpWizard } from '../components/landing/SignUpWizard';
 import { ContactModal } from '../components/landing/ContactModal';
+import { ForgotPasswordModal } from '../components/landing/ForgotPasswordModal';
 
 // --- Types ---
 interface LandingPageProps {
@@ -23,6 +24,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
     const [selectedSuite, setSelectedSuite] = useState<ModuleSuite | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -115,6 +117,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
                 isOpen={isSignInOpen}
                 onClose={() => setIsSignInOpen(false)}
                 onLogin={() => onLogin()}
+                onForgotPassword={() => {
+                    setIsSignInOpen(false);
+                    setIsForgotPasswordOpen(true);
+                }}
             />
 
             <SignUpWizard
@@ -136,6 +142,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigateSol
                 isOpen={!!selectedSuite}
                 onClose={() => setSelectedSuite(null)}
                 suite={selectedSuite}
+            />
+
+            <ForgotPasswordModal
+                isOpen={isForgotPasswordOpen}
+                onClose={() => setIsForgotPasswordOpen(false)}
+                onBackToSignIn={() => {
+                    setIsForgotPasswordOpen(false);
+                    setIsSignInOpen(true);
+                }}
             />
         </div>
     );
