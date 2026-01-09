@@ -1,11 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 /**
  * API Endpoint: Check if user has active product
  * 
@@ -20,6 +15,37 @@ const supabase = createClient(
  * }
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // ========== DEBUG LOGGING (RIMUOVERE DOPO DEBUG) ==========
+  console.log('[ENV CHECK] Environment variables status:', {
+    hasUrl: !!process.env.VITE_SUPABASE_URL,
+    hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    urlValue: process.env.VITE_SUPABASE_URL || 'MISSING',
+    allSupabaseEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+  });
+
+  // Verifica che le env vars siano presenti
+  if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[ENV CHECK] ❌ Missing environment variables!');
+    return res.status(500).json({
+      error: 'Server configuration error: Missing environment variables',
+      debug: {
+        hasUrl: !!process.env.VITE_SUPABASE_URL,
+        hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        availableSupabaseKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE')),
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  console.log('[ENV CHECK] ✅ All environment variables present');
+  // ========== END DEBUG LOGGING ==========
+
+  // IMPORTANTE: Creazione del client Supabase QUI, DOPO la verifica delle env vars
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
