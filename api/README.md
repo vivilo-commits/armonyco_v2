@@ -139,3 +139,4 @@ Gli endpoint saranno disponibili su `http://localhost:3000/api/...`
 - **CVV:** Qualsiasi 3 cifre
 - **CAP:** Qualsiasi 5 cifre
 
+

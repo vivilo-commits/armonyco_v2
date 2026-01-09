@@ -35,10 +35,10 @@ interface SignUpWizardProps {
 
 const STEPS = [
     'Account Base',
-    'Business Details',
-    'Plan Selection',
-    'Payment',
-    'Confirmation'
+    'Dati Aziendali',
+    'Selezione Piano',
+    'Pagamento',
+    'Conferma'
 ];
 
 const PLANS: Plan[] = [
@@ -49,11 +49,11 @@ const PLANS: Plan[] = [
         tokens: 2500000, // 25,000 credits × 100
         price: 249,
         features: [
-            '2.5M tokens per month',
-            'Tokens accumulate',
+            '2,5M tokens al mese',
+            'I tokens si accumulano',
             'Dashboard analytics',
             'Email support',
-            'Complete documentation'
+            'Documentazione completa'
         ],
     },
     {
@@ -62,11 +62,11 @@ const PLANS: Plan[] = [
         credits: 100000,
         tokens: 10000000, // 100,000 credits × 100
         price: 999,
-        badge: '🔥 Most Popular',
+        badge: '🔥 Più Popolare',
         features: [
-            '10M tokens per month',
-            'Tokens accumulate',
-            'Advanced dashboard',
+            '10M tokens al mese',
+            'I tokens si accumulano',
+            'Dashboard avanzata',
             'Priority support',
             'API access',
             'Custom reports'
@@ -79,13 +79,13 @@ const PLANS: Plan[] = [
         tokens: 25000000, // 250,000 credits × 100
         price: 2499,
         features: [
-            '25M tokens per month',
-            'Tokens accumulate',
-            'Enterprise dashboard',
-            '24/7 dedicated support',
-            'Unlimited API',
+            '25M tokens al mese',
+            'I tokens si accumulano',
+            'Dashboard enterprise',
+            '24/7 support dedicato',
+            'API illimitata',
             'White label',
-            'Guaranteed SLA'
+            'SLA garantito'
         ],
     },
     {
@@ -95,11 +95,11 @@ const PLANS: Plan[] = [
         price: 0,
         isCustom: true,
         features: [
-            'Unlimited tokens',
-            'Institutional project',
-            'Dedicated account manager',
-            'Complete customization',
-            'Enterprise contract'
+            'Tokens illimitati',
+            'Progetto istituzionale',
+            'Account manager dedicato',
+            'Customizzazione completa',
+            'Contratto enterprise'
         ],
     },
 ];
@@ -135,7 +135,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         cap: '',
         city: '',
         province: '',
-        country: 'Italy',
+        country: 'Italia',
         phone: '',
         sdiCode: '',
         pecEmail: '',
@@ -153,7 +153,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             const draft = getRegistrationDraft();
             if (draft) {
                 setFormData(prev => ({ ...prev, ...draft.data }));
-                // Don't restore step automatically for security
+                // Non ripristinare lo step automaticamente per sicurezza
                 console.log('[SignUp] Draft recuperato dal localStorage');
             }
         }
@@ -174,7 +174,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
     const updateField = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-        // Remove field error when user modifies
+        // Rimuovi errore del campo quando l'utente modifica
         if (errors[field]) {
             setErrors(prev => {
                 const newErrors = { ...prev };
@@ -206,7 +206,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
         if (step === 3) {
             if (!formData.planId) {
-                setErrors({ plan: 'Select a plan to continue' });
+                setErrors({ plan: 'Seleziona un piano per continuare' });
                 return false;
             }
         }
@@ -225,7 +225,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             console.log('[SignUp] ❌ Validation FAILED. Errors:', errors);
-            // Scroll to first error
+            // Scroll al primo errore
             const firstErrorElement = document.querySelector('[class*="text-red"]');
             if (firstErrorElement) {
                 firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -264,7 +264,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         onClose();
     };
 
-    // Step 3: Plan selection
+    // Step 3: Selezione piano
     const handleSelectPlan = (plan: Plan) => {
         if (plan.isCustom) {
             onContact();
@@ -277,15 +277,15 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         updateField('planCredits', plan.credits);
     };
 
-    // Step 4: Payment
+    // Step 4: Pagamento
     const handlePayment = async () => {
         if (!validateCurrentStep()) return;
 
-        // Verify Stripe is configured
+        // Verifica che Stripe sia configurato
         if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-                setErrors({
-                    payment: 'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables. See CONFIGURAZIONE_VERCEL.md'
-                });
+            setErrors({ 
+                payment: 'Stripe non è configurato. Configura VITE_STRIPE_PUBLIC_KEY nel file .env.local' 
+            });
             return;
         }
 
@@ -295,6 +295,34 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         try {
             console.log('[SignUp] Starting Stripe payment flow...');
             console.log('[SignUp] Plan:', formData.planName, 'Credits:', formData.planCredits);
+            
+            // Save ALL registration data to localStorage BEFORE redirect
+            const pendingRegistration = {
+                email: formData.email,
+                password: formData.password,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                businessName: formData.businessName,
+                vatNumber: formData.vatNumber,
+                fiscalCode: formData.fiscalCode,
+                address: formData.address,
+                civicNumber: formData.civicNumber,
+                cap: formData.cap,
+                city: formData.city,
+                province: formData.province,
+                country: formData.country,
+                phone: formData.phone,
+                sdiCode: formData.sdiCode,
+                pecEmail: formData.pecEmail,
+                planId: formData.planId,
+                planName: formData.planName,
+                planPrice: formData.planPrice,
+                planCredits: formData.planCredits,
+                timestamp: Date.now(),
+            };
+            
+            localStorage.setItem('pending_registration', JSON.stringify(pendingRegistration));
+            console.log('[SignUp] Registration data saved to localStorage');
             
             // Payment reale con Stripe
             await initiatePayment({
@@ -313,7 +341,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             });
             
             // Se initiatePayment non lancia errori, il redirect è in corso
-            // Don't set isSubmitting to false because user will be redirected
+            // Non impostare isSubmitting a false perché l'utente verrà reindirizzato
             console.log('[SignUp] Redirecting to Stripe Checkout...');
         } catch (error: any) {
             console.error('[SignUp] ❌ Payment error:', error);
@@ -324,7 +352,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             });
             
             setErrors({ 
-                payment: error.message || 'Error during payment. Check Stripe configuration.' 
+                payment: error.message || 'Errore durante il pagamento. Verifica la configurazione di Stripe.' 
             });
             setIsSubmitting(false);
         }
@@ -385,16 +413,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                 }, 3000);
             } else {
                 console.error('[SignUp] Registration failed:', result.error);
-                const errorMessage = result.error || 'Error during registration';
+                const errorMessage = result.error || 'Errore durante la registrazione';
                 
-                // If email is already registered, go back to step 1 and show error in email field
+                // Se l'email è già registrata, torna allo step 1 e mostra l'errore nel campo email
                 if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
                     setStep(1);
                     setErrors({ 
-                        email: 'This email is already registered. Try logging in instead.',
-                        general: 'This email is already registered. Try logging in instead.'
+                        email: 'Questa email è già registrata. Prova a fare login invece.',
+                        general: 'Questa email è già registrata. Prova a fare login invece.'
                     });
-                    // Scroll to email field after a brief delay to allow render
+                    // Scroll al campo email dopo un breve delay per permettere il render
                     setTimeout(() => {
                         const emailInput = document.querySelector('input[type="email"]');
                         if (emailInput) {
@@ -405,7 +433,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                 } else {
                     // Per altri errori, mostra nel banner generale
                     setErrors({ general: errorMessage });
-                    // Scroll to error banner
+                    // Scroll al banner di errore
                     setTimeout(() => {
                         const errorBanner = document.querySelector('[class*="bg-red-500"]');
                         if (errorBanner) {
@@ -417,14 +445,14 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
             }
         } catch (error: any) {
             console.error('[SignUp] Registration exception:', error);
-            const errorMessage = error.message || 'Error during registration';
+            const errorMessage = error.message || 'Errore durante la registrazione';
             
-            // If email is already registered, go back to step 1 and show error in email field
+            // Se l'email è già registrata, torna allo step 1 e mostra l'errore nel campo email
             if (errorMessage.includes('Email già registrata') || errorMessage.includes('already registered')) {
                 setStep(1);
                 setErrors({ 
-                    email: 'This email is already registered. Try logging in instead.',
-                    general: 'This email is already registered. Try logging in instead.'
+                    email: 'Questa email è già registrata. Prova a fare login invece.',
+                    general: 'Questa email è già registrata. Prova a fare login invece.'
                 });
                 // Scroll al campo email dopo un breve delay per permettere il render
                 setTimeout(() => {
@@ -477,7 +505,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                         <div className="mx-6 mt-4 p-4 bg-red-500/20 border-2 border-red-500/50 rounded-lg text-red-400 text-sm flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             <AlertTriangle size={20} className="flex-shrink-0 text-red-400" />
                             <div className="flex-1">
-                                <p className="font-semibold text-red-300 mb-1">Registration Error</p>
+                                <p className="font-semibold text-red-300 mb-1">Errore di registrazione</p>
                                 <p>{errors.general}</p>
                             </div>
                         </div>
@@ -496,21 +524,21 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                         {step === 1 && (
                             <div className="max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
                                 <div className="text-center mb-6">
-                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Create Your Account</h2>
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Crea il tuo Account</h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                                        Start by entering your personal information
+                                        Inizia inserendo i tuoi dati personali
                                     </p>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FloatingInput
-                                        label="First Name *"
+                                        label="Nome *"
                                         value={formData.firstName}
                                         onChange={e => updateField('firstName', e.target.value)}
                                         error={errors.firstName}
                                     />
                                     <FloatingInput
-                                        label="Last Name *"
+                                        label="Cognome *"
                                         value={formData.lastName}
                                         onChange={e => updateField('lastName', e.target.value)}
                                         error={errors.lastName}
@@ -523,7 +551,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     value={formData.email}
                                     onChange={e => updateField('email', e.target.value)}
                                     error={errors.email}
-                                    placeholder="name@example.com"
+                                    placeholder="nome@example.com"
                                 />
 
                                 <div>
@@ -542,7 +570,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                 </div>
 
                                 <FloatingInput
-                                    label="Confirm Password *"
+                                    label="Conferma Password *"
                                     type="password"
                                     value={formData.confirmPassword}
                                     onChange={e => updateField('confirmPassword', e.target.value)}
@@ -558,7 +586,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                             className="mt-1 w-5 h-5 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-brand-accent)] focus:ring-2 focus:ring-[var(--color-brand-accent)]"
                                         />
                                         <span className="text-sm text-[var(--color-text-main)] group-hover:text-[var(--color-text-main)]">
-                                            I accept the{' '}
+                                            Accetto i{' '}
                                             <button
                                                 type="button"
                                                 onClick={e => {
@@ -567,9 +595,9 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                                 }}
                                                 className="text-[var(--color-brand-accent)] underline hover:no-underline"
                                             >
-                                                Terms and Conditions
+                                                Termini e Condizioni
                                             </button>
-                                            {' '}and Privacy Policy *
+                                            {' '}e la Privacy Policy *
                                         </span>
                                     </label>
                                     {errors.acceptTerms && (
@@ -579,18 +607,18 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                             </div>
                         )}
 
-                        {/* STEP 2: Business Details */}
+                        {/* STEP 2: Dati Aziendali */}
                         {step === 2 && (
                             <div className="max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
                                 <div className="text-center mb-6">
-                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Business Details</h2>
+                                    <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Dati Aziendali</h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                                        Information required for billing
+                                        Informazioni necessarie per la fatturazione
                                     </p>
                                 </div>
 
                                 <FloatingInput
-                                    label="Business Name *"
+                                    label="Ragione Sociale *"
                                     value={formData.businessName}
                                     onChange={e => updateField('businessName', e.target.value)}
                                     error={errors.businessName}
@@ -599,7 +627,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <FloatingInput
-                                            label="VAT Number *"
+                                            label="Partita IVA *"
                                             value={formData.vatNumber}
                                             onChange={e => updateField('vatNumber', e.target.value)}
                                             error={errors.vatNumber}
@@ -618,16 +646,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     </div>
 
                                     <FloatingInput
-                                        label="Fiscal Code"
+                                        label="Codice Fiscale"
                                         value={formData.fiscalCode}
                                         onChange={e => updateField('fiscalCode', e.target.value)}
                                         error={errors.fiscalCode}
-                                        placeholder="Optional if different from VAT"
+                                        placeholder="Opzionale se diverso da P.IVA"
                                     />
                                 </div>
 
                                 <FloatingInput
-                                    label="Business Phone"
+                                    label="Telefono Aziendale"
                                     type="tel"
                                     value={formData.phone}
                                     onChange={e => updateField('phone', e.target.value)}
@@ -637,20 +665,20 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-4">
-                                        Legal Address
+                                        Sede Legale
                                     </h3>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="md:col-span-2">
                                             <FloatingInput
-                                                label="Street/Square *"
+                                                label="Via/Piazza *"
                                                 value={formData.address}
                                                 onChange={e => updateField('address', e.target.value)}
                                                 error={errors.address}
                                             />
                                         </div>
                                         <FloatingInput
-                                            label="Civic Number"
+                                            label="Numero Civico"
                                             value={formData.civicNumber}
                                             onChange={e => updateField('civicNumber', e.target.value)}
                                         />
@@ -658,28 +686,28 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                                         <FloatingInput
-                                            label="Postal Code"
+                                            label="CAP"
                                             value={formData.cap}
                                             onChange={e => updateField('cap', e.target.value)}
                                             error={errors.cap}
                                             placeholder="00100"
                                         />
                                         <FloatingInput
-                                            label="City *"
+                                            label="Città *"
                                             value={formData.city}
                                             onChange={e => updateField('city', e.target.value)}
                                             error={errors.city}
                                         />
                                         <div>
                                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] block mb-2">
-                                                Province
+                                                Provincia
                                             </label>
                                             <select
                                                 value={formData.province}
                                                 onChange={e => updateField('province', e.target.value)}
                                                 className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 py-3 text-sm focus:border-[var(--color-brand-accent)] outline-none"
                                             >
-                                                <option value="">Select...</option>
+                                                <option value="">Seleziona...</option>
                                                 {ITALIAN_PROVINCES.map(prov => (
                                                     <option key={prov.code} value={prov.code}>
                                                         {prov.name} ({prov.code})
@@ -691,7 +719,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                     <div className="mt-6">
                                         <FloatingInput
-                                            label="Country *"
+                                            label="Nazione *"
                                             value={formData.country}
                                             onChange={e => updateField('country', e.target.value)}
                                             error={errors.country}
@@ -701,40 +729,40 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-2">
-                                        Electronic Invoicing (Optional)
+                                        Fatturazione Elettronica (Opzionale)
                                     </h3>
                                     <p className="text-xs text-[var(--color-text-muted)] mb-4">
-                                        SDI Code or PEC for electronic invoices - completely optional
+                                        Codice SDI o PEC per fatture elettroniche - completamente opzionale
                                     </p>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FloatingInput
-                                            label="SDI Code (optional)"
+                                            label="Codice SDI (opzionale)"
                                             value={formData.sdiCode}
                                             onChange={e => updateField('sdiCode', e.target.value)}
                                             placeholder="XXXXXXX"
                                         />
                                         <FloatingInput
-                                            label="PEC (optional)"
+                                            label="PEC (opzionale)"
                                             type="email"
                                             value={formData.pecEmail}
                                             onChange={e => updateField('pecEmail', e.target.value)}
-                                            placeholder="company@pec.it"
+                                            placeholder="azienda@pec.it"
                                         />
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* STEP 3: Plan Selection */}
+                        {/* STEP 3: Selezione Piano */}
                         {step === 3 && (
                             <div className="space-y-6 animate-in fade-in duration-300">
                                 <div className="text-center mb-8">
                                     <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
-                                        Choose Your Plan
+                                        Scegli il Tuo Piano
                                     </h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                                        Select the plan that best fits your needs
+                                        Seleziona il piano più adatto alle tue esigenze
                                     </p>
                                 </div>
 
@@ -756,19 +784,19 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                 {priceBreakdown && formData.planId > 0 && (
                                     <div className="max-w-md mx-auto mt-8 p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
                                         <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-4">
-                                            Cost Summary
+                                            Riepilogo Costi
                                         </h3>
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">Subtotal:</span>
+                                                <span className="text-[var(--color-text-muted)]">Subtotale:</span>
                                                 <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">VAT 22%:</span>
+                                                <span className="text-[var(--color-text-muted)]">IVA 22%:</span>
                                                 <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
                                             </div>
                                             <div className="flex justify-between pt-3 border-t border-[var(--color-border)] text-lg font-bold">
-                                                <span>Total:</span>
+                                                <span>Totale:</span>
                                                 <span className="text-[var(--color-brand-accent)]">
                                                     {formatEuro(priceBreakdown.total)}
                                                 </span>
@@ -778,59 +806,59 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                 )}
 
                                 <p className="text-center text-xs text-[var(--color-text-muted)] italic mt-6">
-                                    Monthly subscription with automatic billing. Tokens accumulate every month and never expire.
+                                    Abbonamento mensile con fatturazione automatica. I tokens si accumulano ogni mese e non scadono.
                                 </p>
                             </div>
                         )}
 
-                        {/* STEP 4: Payment */}
+                        {/* STEP 4: Pagamento */}
                         {step === 4 && priceBreakdown && (
                             <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300">
                                 <div className="text-center mb-6">
                                     <h2 className="text-2xl font-bold text-[var(--color-text-main)]">
-                                        Confirm and Payment
+                                        Conferma e Pagamento
                                     </h2>
                                     <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                                        Verify your information and proceed to payment
+                                        Verifica i dati e procedi al pagamento
                                     </p>
                                 </div>
 
-                                {/* Order Summary */}
+                                {/* Riepilogo Ordine */}
                                 <div className="bg-[var(--color-brand-accent)]/10 border-2 border-[var(--color-brand-accent)] rounded-xl p-6">
                                     <h3 className="text-lg font-bold text-[var(--color-text-main)] mb-4">
-                                        📋 Order Summary
+                                        📋 Riepilogo Ordine
                                     </h3>
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <p className="font-bold text-[var(--color-text-main)]">
-                                                    {formData.planName} Plan
+                                                    Piano {formData.planName}
                                                 </p>
                                                 <p className="text-xs text-[var(--color-brand-accent)]">
-                                                    ⚡ {(formData.planCredits * 100).toLocaleString('en-US')} tokens/month
+                                                    ⚡ {(formData.planCredits * 100).toLocaleString('it-IT')} tokens/mese
                                                 </p>
                                                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                                                    Tokens accumulate monthly
+                                                    I tokens si accumulano mensilmente
                                                 </p>
                                             </div>
                                             <button
                                                 onClick={() => goToStep(3)}
                                                 className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
                                             >
-                                                Edit
+                                                Modifica
                                             </button>
                                         </div>
                                         <div className="border-t border-[var(--color-border)] pt-3 space-y-2 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">Subtotal:</span>
+                                                <span className="text-[var(--color-text-muted)]">Subtotale:</span>
                                                 <span className="font-medium">{formatEuro(priceBreakdown.subtotal)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[var(--color-text-muted)]">VAT 22%:</span>
+                                                <span className="text-[var(--color-text-muted)]">IVA 22%:</span>
                                                 <span className="font-medium">{formatEuro(priceBreakdown.taxAmount)}</span>
                                             </div>
                                             <div className="flex justify-between pt-2 border-t border-[var(--color-border)] text-xl font-bold">
-                                                <span>Total/Month:</span>
+                                                <span>Totale/Mese:</span>
                                                 <span className="text-[var(--color-brand-accent)]">
                                                     {formatEuro(priceBreakdown.total)}
                                                 </span>
@@ -839,22 +867,22 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Billing Details */}
+                                {/* Dati Fiscali */}
                                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6">
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-bold text-[var(--color-text-main)]">
-                                            🏢 Billing Details
+                                            🏢 Dati Fatturazione
                                         </h3>
                                         <button
                                             onClick={() => goToStep(2)}
                                             className="text-xs text-[var(--color-brand-accent)] underline hover:no-underline"
                                         >
-                                            Edit
+                                            Modifica
                                         </button>
                                     </div>
                                     <div className="text-sm space-y-1 text-[var(--color-text-muted)]">
                                         <p><strong className="text-[var(--color-text-main)]">{formData.businessName}</strong></p>
-                                        <p>VAT: {formData.vatNumber}</p>
+                                        <p>P.IVA: {formData.vatNumber}</p>
                                         <p>{formData.address} {formData.civicNumber}</p>
                                         <p>{formData.cap} {formData.city} ({formData.province})</p>
                                         {formData.sdiCode && <p>SDI: {formData.sdiCode}</p>}
@@ -862,16 +890,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Payment Information */}
+                                {/* Informazioni pagamento */}
                                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
-                                    <h3 className="text-sm font-bold text-blue-400 mb-3">ℹ️ Subscription Information</h3>
+                                    <h3 className="text-sm font-bold text-blue-400 mb-3">ℹ️ Informazioni Abbonamento</h3>
                                     <ul className="text-xs text-[var(--color-text-muted)] space-y-2">
-                                        <li>• Secure payment handled by Stripe</li>
-                                        <li>• Tokens are credited immediately and accumulate every month</li>
-                                        <li>• Automatic monthly billing</li>
-                                        <li>• You will receive the invoice via email within 24 hours</li>
-                                        <li>• You can cancel the subscription at any time</li>
-                                        <li>• You can use credit/debit cards or SEPA transfer</li>
+                                        <li>• Pagamento sicuro gestito da Stripe</li>
+                                        <li>• I tokens vengono accreditati immediatamente e si accumulano ogni mese</li>
+                                        <li>• Fatturazione automatica mensile</li>
+                                        <li>• Riceverai la fattura via email entro 24 ore</li>
+                                        <li>• Puoi cancellare l'abbonamento in qualsiasi momento</li>
+                                        <li>• Puoi utilizzare carte di credito/debito o bonifico SEPA</li>
                                     </ul>
                                 </div>
 
@@ -883,7 +911,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                             </div>
                         )}
 
-                        {/* STEP 5: Success Confirmation */}
+                        {/* STEP 5: Conferma Successo */}
                         {step === 5 && (
                             <div className="max-w-2xl mx-auto text-center space-y-8 animate-in fade-in duration-500 py-8">
                                 <div className="w-24 h-24 mx-auto bg-emerald-500 rounded-full flex items-center justify-center animate-in zoom-in duration-500">
@@ -892,16 +920,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div>
                                     <h2 className="text-3xl font-bold text-[var(--color-text-main)] mb-3">
-                                        Welcome to Armonyco! 🎉
+                                        Benvenuto in Armonyco! 🎉
                                     </h2>
                                     <p className="text-lg text-[var(--color-text-muted)]">
-                                        Your account has been created successfully
+                                        Il tuo account è stato creato con successo
                                     </p>
                                 </div>
 
                                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-left space-y-4">
                                     <h3 className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-center mb-6">
-                                        Account Summary
+                                        Riepilogo Account
                                     </h3>
                                     <div className="space-y-3 text-sm">
                                         <div className="flex justify-between">
@@ -909,19 +937,19 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                             <span className="font-medium text-[var(--color-text-main)]">{formData.email}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-[var(--color-text-muted)]">Plan:</span>
+                                            <span className="text-[var(--color-text-muted)]">Piano:</span>
                                             <span className="font-medium text-[var(--color-text-main)]">{formData.planName}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-[var(--color-text-muted)]">Credits:</span>
+                                            <span className="text-[var(--color-text-muted)]">Crediti:</span>
                                             <span className="font-bold text-[var(--color-brand-accent)]">
-                                                {formData.planCredits.toLocaleString('en-US')} ArmoCredits©
+                                                {formData.planCredits.toLocaleString('it-IT')} ArmoCredits©
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-[var(--color-text-muted)]">Activation Date:</span>
+                                            <span className="text-[var(--color-text-muted)]">Data attivazione:</span>
                                             <span className="font-medium text-[var(--color-text-main)]">
-                                                {new Date().toLocaleDateString('en-US')}
+                                                {new Date().toLocaleDateString('it-IT')}
                                             </span>
                                         </div>
                                     </div>
@@ -929,7 +957,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6">
                                     <p className="text-sm text-[var(--color-text-muted)]">
-                                        📧 We have sent a confirmation email with all details to{' '}
+                                        📧 Abbiamo inviato un'email di conferma con tutti i dettagli a{' '}
                                         <strong className="text-[var(--color-text-main)]">{formData.email}</strong>
                                     </p>
                                 </div>
@@ -943,10 +971,10 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                         }}
                                         className="w-full md:w-auto px-12"
                                     >
-                                        Go to Dashboard →
+                                        Vai alla Dashboard →
                                     </Button>
                                     <p className="text-xs text-[var(--color-text-muted)] mt-4">
-                                        You will be redirected automatically in a few seconds...
+                                        Sarai reindirizzato automaticamente tra pochi secondi...
                                     </p>
                                 </div>
                             </div>
@@ -963,7 +991,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     onClick={prevStep}
                                     disabled={isSubmitting}
                                 >
-                                    Back
+                                    Indietro
                                 </Button>
                             ) : (
                                 <div></div>
@@ -976,7 +1004,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     onClick={nextStep}
                                     disabled={isSubmitting}
                                 >
-                                    Continue
+                                    Continua
                                 </Button>
                             ) : (
                                 <Button
@@ -986,7 +1014,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     disabled={isSubmitting}
                                     isLoading={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Processing...' : 'Proceed to Payment'}
+                                    {isSubmitting ? 'Elaborazione...' : 'Procedi al Pagamento'}
                                 </Button>
                             )}
                         </div>

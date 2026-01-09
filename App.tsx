@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { LandingPage } from './pages/LandingPage';
 import { SolutionsPage } from './pages/SolutionsPage';
 import { WebApp } from './pages/WebApp';
+import { PaymentSuccess } from './pages/payment/PaymentSuccess';
+import { PaymentCancel } from './pages/payment/PaymentCancel';
+import { PaymentFailed } from './pages/payment/PaymentFailed';
 import { validateConfig } from './src/config/api.config';
 import { getSession, onAuthStateChange, signOut, User } from './src/lib/supabase';
 
@@ -71,8 +74,15 @@ const App: React.FC = () => {
     };
   }, []);
 
-  type ViewState = 'landing' | 'solutions' | 'solutions-pm' | 'solutions-ins' | 'solutions-inv' | 'solutions-ent';
-  const [currentView, setCurrentView] = useState<ViewState>('landing');
+  type ViewState = 'landing' | 'solutions' | 'solutions-pm' | 'solutions-ins' | 'solutions-inv' | 'solutions-ent' | 'payment-success' | 'payment-cancel' | 'payment-failed';
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+    // Check URL path to determine initial view
+    const path = window.location.pathname;
+    if (path.includes('/payment/success')) return 'payment-success';
+    if (path.includes('/payment/cancel')) return 'payment-cancel';
+    if (path.includes('/payment/failed')) return 'payment-failed';
+    return 'landing';
+  });
 
   const handleLogin = useCallback((data?: any) => {
     // For backward compatibility with email login flow
@@ -139,6 +149,36 @@ const App: React.FC = () => {
       />
     );
   };
+
+  // Render payment pages
+  if (currentView === 'payment-success') {
+    return (
+      <PaymentSuccess 
+        onComplete={() => {
+          setIsAuthenticated(true);
+          setCurrentView('landing');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'payment-cancel') {
+    return (
+      <PaymentCancel
+        onRetry={() => setCurrentView('landing')}
+        onGoHome={() => setCurrentView('landing')}
+      />
+    );
+  }
+
+  if (currentView === 'payment-failed') {
+    return (
+      <PaymentFailed
+        onRetry={() => setCurrentView('landing')}
+        onGoHome={() => setCurrentView('landing')}
+      />
+    );
+  }
 
   return (
     <>

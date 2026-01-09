@@ -88,8 +88,8 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
                 email: data.email,
                 userId: data.userId, // Important for linking subscription
                 metadata: data.metadata,
-                successUrl: `${window.location.origin}/registration/success?session_id={CHECKOUT_SESSION_ID}`,
-                cancelUrl: `${window.location.origin}/registration?step=4&error=payment_cancelled`,
+                successUrl: `${window.location.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+                cancelUrl: `${window.location.origin}/payment/cancel`,
             }),
         });
 
@@ -156,36 +156,20 @@ export async function createCheckoutSession(data: CheckoutSessionData): Promise<
 }
 
 /**
- * Redirects to Stripe Checkout
+ * Redirects to Stripe Checkout using the checkout session URL
+ * NOTE: stripe.redirectToCheckout() is deprecated, use direct URL redirect instead
  */
-export async function redirectToCheckout(sessionId: string): Promise<void> {
-    console.log('[Payment] Redirecting to Stripe Checkout, session:', sessionId);
+export async function redirectToCheckout(checkoutUrl: string): Promise<void> {
+    console.log('[Payment] Redirecting to Stripe Checkout URL');
     
-    // Verify Stripe is configured
-    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-        throw new Error(
-            'Stripe not configured. Set VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard → Settings → Environment Variables'
-        );
+    if (!checkoutUrl) {
+        throw new Error('Checkout URL is required');
     }
-    
-    const stripe = await getStripe();
-    
-    if (!stripe) {
-        console.error('[Payment] ❌ Stripe not initialized');
-        throw new Error('Stripe not configured correctly. Verify VITE_STRIPE_PUBLIC_KEY in Vercel Dashboard.');
-    }
-
-    console.log('[Payment] Stripe instance loaded, redirecting...');
 
     try {
-        // redirectToCheckout is available on @stripe/stripe-js Stripe instance
-        const { error } = await (stripe as any).redirectToCheckout({ sessionId });
-
-        if (error) {
-            console.error('[Stripe] ❌ Redirect error:', error);
-            throw new Error(error.message || 'Error redirecting to Stripe');
-        }
-
+        // Direct redirect to Stripe Checkout URL (replaces deprecated stripe.redirectToCheckout())
+        window.location.href = checkoutUrl;
+        
         console.log('[Payment] ✅ Redirect started successfully');
     } catch (error: any) {
         console.error('[Payment] ❌ Error during redirect:', error);
@@ -210,8 +194,12 @@ export async function initiatePayment(data: CheckoutSessionData): Promise<void> 
 
         console.log('[Payment] Step 2: Redirecting to Stripe Checkout...');
         
-        // Redirect to Stripe Checkout
-        await redirectToCheckout(session.sessionId);
+        // Redirect to Stripe Checkout using the URL directly
+        if (!session.url) {
+            throw new Error('Checkout URL not available');
+        }
+        
+        await redirectToCheckout(session.url);
         
         // If we get here without errors, redirect is in progress
         // User will be taken to Stripe
@@ -240,28 +228,37 @@ export interface PaymentStatus {
  */
 export async function verifyPaymentStatus(sessionId: string): Promise<PaymentStatus> {
     try {
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
         const endpoint = `${backendUrl}/api/stripe/verify-payment`;
 
-        const response = await fetch(`${endpoint}?session_id=${sessionId}`, {
-            method: 'GET',
+        const response = await fetch(endpoint, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ sessionId }),
         });
 
         if (!response.ok) {
-            throw new Error('Payment verification error');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Payment verification error');
         }
 
         const result = await response.json();
         
-        return {
-            status: result.status || 'failed',
-            paymentIntentId: result.paymentIntentId,
-            amount: result.amount,
-            metadata: result.metadata,
-        };
+        if (result.verified) {
+            return {
+                status: 'success',
+                paymentIntentId: result.paymentIntentId,
+                amount: result.amountTotal,
+                metadata: result.metadata,
+            };
+        } else {
+            return {
+                status: 'failed',
+                error: result.message || 'Payment not verified',
+            };
+        }
     } catch (error: any) {
         console.error('[Payment] Error verifying status:', error);
         return {
@@ -366,6 +363,142 @@ export function formatEuro(amount: number): string {
 }
 
 // ============================================================================
+// PAYMENT INTENT (One-time payments with PaymentElement)
+// ============================================================================
+
+export interface PaymentIntentData {
+    amount: number; // in cents
+    currency?: string;
+    email: string;
+    userId?: string;
+    metadata?: Record<string, string>;
+    description?: string;
+}
+
+export interface PaymentIntentResponse {
+    clientSecret: string;
+    paymentIntentId: string;
+    customerId: string;
+    amount: number;
+    currency: string;
+    status: string;
+}
+
+/**
+ * Creates a Stripe Payment Intent for one-time payments
+ * Returns client secret for use with PaymentElement
+ */
+export async function createPaymentIntent(data: PaymentIntentData): Promise<PaymentIntentResponse> {
+    try {
+        const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        const endpoint = `${backendUrl}/api/checkout/create-payment-intent`;
+
+        console.log('[Payment] Creating payment intent:', {
+            endpoint,
+            amount: data.amount,
+            email: data.email,
+        });
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount: data.amount,
+                currency: data.currency || 'eur',
+                email: data.email,
+                userId: data.userId,
+                metadata: data.metadata || {},
+                description: data.description,
+            }),
+        });
+
+        console.log('[Payment] Response status:', response.status);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ 
+                error: 'Unknown error',
+                message: `HTTP ${response.status}: ${response.statusText}` 
+            }));
+            
+            console.error('[Payment] API Error:', errorData);
+            
+            if (response.status === 404) {
+                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocalhost && !import.meta.env.VITE_API_URL) {
+                    throw new Error(
+                        'API endpoint not found (404). ' +
+                        'In local development, use `vercel dev` instead of `npm run dev` to run APIs, ' +
+                        'or configure VITE_API_URL in .env.local to point to a Vercel deployment.'
+                    );
+                } else {
+                    throw new Error(
+                        `API endpoint not found (404): ${endpoint}. ` +
+                        'Verify that APIs are deployed on Vercel or that VITE_API_URL is configured correctly.'
+                    );
+                }
+            }
+            
+            throw new Error(errorData.message || errorData.error || 'Error creating payment intent');
+        }
+
+        const result = await response.json();
+        console.log('[Payment] Payment intent created:', {
+            paymentIntentId: result.paymentIntentId,
+            hasClientSecret: !!result.clientSecret,
+        });
+
+        if (!result.clientSecret) {
+            throw new Error('Client secret not received from server');
+        }
+
+        return {
+            clientSecret: result.clientSecret,
+            paymentIntentId: result.paymentIntentId,
+            customerId: result.customerId,
+            amount: result.amount,
+            currency: result.currency,
+            status: result.status,
+        };
+    } catch (error: any) {
+        console.error('[Payment] ❌ Error creating payment intent:', error);
+        throw new Error(error.message || 'Unable to initialize payment. Check configuration.');
+    }
+}
+
+/**
+ * Retrieves payment intent status
+ */
+export async function getPaymentIntentStatus(paymentIntentId: string): Promise<{
+    status: string;
+    amount: number;
+    currency: string;
+    metadata?: Record<string, string>;
+}> {
+    try {
+        const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        const endpoint = `${backendUrl}/api/stripe/payment-intent/${paymentIntentId}`;
+
+        const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to retrieve payment intent status');
+        }
+
+        return await response.json();
+    } catch (error: any) {
+        console.error('[Payment] Error retrieving payment intent status:', error);
+        throw error;
+    }
+}
+
+// ============================================================================
 // EXPORT SERVICE
 // ============================================================================
 
@@ -375,6 +508,8 @@ export const paymentService = {
     redirectToCheckout,
     initiatePayment,
     verifyPaymentStatus,
+    createPaymentIntent,
+    getPaymentIntentStatus,
     mockPayment,
     mockPaymentFlow,
     calculatePriceBreakdown,

@@ -59,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
     // Assuming standard React setup.
 
     const content = (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto py-12 scrollbar-hide">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto py-16 md:py-20 scrollbar-hide">
             {/* Backdrop */}
             <div
                 className={`fixed inset-0 bg-[var(--color-background)]/60 backdrop-blur-md transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
