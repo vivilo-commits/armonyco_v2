@@ -11,9 +11,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-
-// IMPORTANT: Install with npm install stripe @supabase/supabase-js
-// import Stripe from 'stripe';
+import Stripe from 'stripe';
 
 // ============================================================================
 // HELPER: Initialize Supabase with service_role to write tokens
@@ -111,10 +109,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // IMPORTANTE: Decommentare quando hai configurato Stripe
-        /*
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-            apiVersion: '2024-11-20.acacia',
+        // Verify Stripe is configured
+        if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+            console.log('[Webhook] 📩 Mock webhook received (Stripe not configured)');
+            const mockEvent = req.body;
+            console.log('[Webhook] Mock event type:', mockEvent?.type || 'unknown');
+            
+            return res.status(200).json({ 
+                received: true,
+                message: 'MOCK: Webhook processed (Stripe not configured)' 
+            });
+        }
+
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+            apiVersion: '2025-02-24.acacia',
         });
 
         const sig = req.headers['stripe-signature'] as string;
@@ -332,6 +340,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             // ----------------------------------------------------------------
+            // PAYMENT INTENT SUCCEEDED - One-time payment successful
+            // ----------------------------------------------------------------
+            case 'payment_intent.succeeded': {
+                const paymentIntent = event.data.object as Stripe.PaymentIntent;
+                console.log('[Webhook] ✅ Payment Intent succeeded:', paymentIntent.id);
+
+                const metadata = paymentIntent.metadata || {};
+                const userId = metadata.user_id;
+                const credits = metadata.credits ? parseInt(metadata.credits) : null;
+                const planId = metadata.plan_id ? parseInt(metadata.plan_id) : null;
+                const planName = metadata.plan_name || 'One-time payment';
+
+                // If credits are specified in metadata, add tokens to user
+                if (userId && credits) {
+                    const planInfo = planId ? PLAN_CREDITS[planId] : null;
+                    const description = planInfo 
+                        ? `${planInfo.name} Plan - One-time payment`
+                        : `${planName} - One-time payment`;
+
+                    await addTokensToUser(
+                        userId,
+                        credits,
+                        'payment_one_time',
+                        description,
+                        paymentIntent.id
+                    );
+
+                    console.log('[Webhook] ✅ Tokens added for one-time payment');
+                } else {
+                    console.log('[Webhook] ℹ️ Payment succeeded but no credits to assign (metadata missing)');
+                }
+
+                // TODO: Send confirmation email to user
+                // TODO: Update order/payment status in database if needed
+
+                break;
+            }
+
+            // ----------------------------------------------------------------
+            // PAYMENT INTENT PAYMENT FAILED - One-time payment failed
+            // ----------------------------------------------------------------
+            case 'payment_intent.payment_failed': {
+                const paymentIntent = event.data.object as Stripe.PaymentIntent;
+                console.log('[Webhook] ❌ Payment Intent failed:', paymentIntent.id);
+
+                const metadata = paymentIntent.metadata || {};
+                const userId = metadata.user_id;
+                const email = metadata.email || paymentIntent.receipt_email;
+
+                // Log failure reason
+                if (paymentIntent.last_payment_error) {
+                    console.error('[Webhook] Payment error:', {
+                        code: paymentIntent.last_payment_error.code,
+                        message: paymentIntent.last_payment_error.message,
+                        type: paymentIntent.last_payment_error.type,
+                    });
+                }
+
+                // TODO: Send notification email to user about failed payment
+                // TODO: Log failure for analytics
+                // TODO: Possibly retry payment if applicable
+
+                break;
+            }
+
+            // ----------------------------------------------------------------
             // Other events
             // ----------------------------------------------------------------
             default:
@@ -339,19 +413,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         return res.status(200).json({ received: true });
-        */
-
-        // ====================================================================
-        // MOCK RESPONSE for development (when Stripe is not configured)
-        // ====================================================================
-        console.log('[Webhook] 📩 Mock webhook received');
-        const mockEvent = req.body;
-        console.log('[Webhook] Mock event type:', mockEvent?.type || 'unknown');
-        
-        return res.status(200).json({ 
-            received: true,
-            message: 'MOCK: Webhook processed (Stripe not configured)' 
-        });
     } catch (error: any) {
         console.error('[Webhook] ❌ Error processing webhook:', error);
         return res.status(500).json({ 

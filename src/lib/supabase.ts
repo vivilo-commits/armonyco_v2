@@ -111,5 +111,63 @@ export async function resetPassword(email: string) {
   if (error) throw error;
 }
 
+// ============================================================================
+// SUBSCRIPTION HELPERS
+// ============================================================================
+
+export interface CreateSubscriptionData {
+  userId: string;
+  planId: number;
+  stripeCustomerId: string;
+  stripeSubscriptionId?: string;
+  expiresAt?: string;
+}
+
+/**
+ * Create user subscription in database
+ * Subscription expires 1 month from creation by default
+ */
+export async function createUserSubscription(data: CreateSubscriptionData) {
+  if (!supabase) throw new Error('Supabase not configured');
+
+  console.log('[Supabase] Creating user subscription:', data);
+
+  // Calculate expiration date: 1 month from now
+  const expiresAt = data.expiresAt || calculateExpirationDate(1);
+
+  const { data: subscription, error } = await supabase
+    .from('user_subscriptions')
+    .insert({
+      user_id: data.userId,
+      plan_id: data.planId,
+      stripe_customer_id: data.stripeCustomerId,
+      stripe_subscription_id: data.stripeSubscriptionId || null,
+      status: 'active',
+      started_at: new Date().toISOString(),
+      expires_at: expiresAt,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Supabase] Error creating subscription:', error);
+    throw error;
+  }
+
+  console.log('[Supabase] Subscription created successfully:', subscription);
+  return subscription;
+}
+
+/**
+ * Calculate expiration date from current date
+ * @param months Number of months to add
+ * @returns ISO date string
+ */
+function calculateExpirationDate(months: number): string {
+  const now = new Date();
+  const expiration = new Date(now.setMonth(now.getMonth() + months));
+  return expiration.toISOString();
+}
+
 // Re-export types for convenience
 export type { User, Session, AuthError };

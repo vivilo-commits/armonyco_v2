@@ -3,7 +3,7 @@
  * Multi-step registration flow management with localStorage and completion
  */
 
-import { signUpWithEmail, supabase } from '../lib/supabase';
+import { signUpWithEmail, supabase, createUserSubscription } from '../lib/supabase';
 import { 
     updateProfileInDB, 
     updateOrganizationInDB, 
@@ -81,6 +81,8 @@ export interface CompleteRegistrationData {
     // Payment
     stripeSessionId?: string;
     paymentIntentId?: string;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
 }
 
 export interface RegistrationResult {
@@ -321,16 +323,34 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.log('[Registration] Billing saved successfully');
         }
 
-        // 5. Save plan/payment information (optional - for tracking)
-        if (supabase && data.stripeSessionId) {
-            await supabase
-                .from('user_subscriptions')
-                .insert({
-                    user_id: userId,
-                    plan_id: data.planId,
-                    status: 'active',
-                    started_at: new Date().toISOString(),
+        // 5. Save subscription with Stripe data
+        if (data.stripeCustomerId) {
+            try {
+                console.log('[Registration] Creating subscription with Stripe data...');
+                await createUserSubscription({
+                    userId,
+                    planId: data.planId,
+                    stripeCustomerId: data.stripeCustomerId,
+                    stripeSubscriptionId: data.stripeSubscriptionId,
+                    // Expiration calculated automatically (1 month from now)
                 });
+                console.log('[Registration] Subscription created successfully');
+            } catch (error: any) {
+                console.error('[Registration] Error creating subscription:', error);
+                // Save error state for retry
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('pending_subscription', JSON.stringify({
+                        userId,
+                        planId: data.planId,
+                        stripeCustomerId: data.stripeCustomerId,
+                        stripeSubscriptionId: data.stripeSubscriptionId,
+                    }));
+                }
+                // Don't fail the entire registration, but log the error
+                console.warn('[Registration] Subscription creation failed but user account was created');
+            }
+        } else {
+            console.warn('[Registration] No Stripe customer ID provided, subscription not created');
         }
 
         console.log('[Registration] Registration completed successfully');

@@ -78,6 +78,30 @@ File: 003_create_token_history.sql
 - Funzione `log_token_transaction()` per registrare automaticamente le transazioni
 - Policy RLS per sicurezza
 
+#### 4️⃣ Migrazione 004: RLS Policies per user_subscriptions (IMPORTANTE)
+
+```bash
+File: 004_user_subscriptions_policies.sql
+```
+
+⚠️ **Questa migrazione è IMPORTANTE** per proteggere i dati delle subscription.
+
+1. Apri il file `004_user_subscriptions_policies.sql`
+2. Copia tutto il contenuto
+3. Nel SQL Editor, crea una nuova query
+4. Incolla il contenuto
+5. Clicca su **"Run"**
+6. ✅ Verifica che appaia "Success"
+
+**Cosa crea:**
+- Policy RLS per SELECT (users can view own subscription)
+- Policy RLS per INSERT (service can insert subscriptions)
+- Policy RLS per UPDATE (users can update own subscription)
+- Policy RLS per ALL (admin can manage all subscriptions)
+- Indici per performance su user_id, status, expires_at, stripe_customer_id
+
+**Documentazione correlata:** `IMPLEMENTAZIONE_SUBSCRIPTIONS.md`
+
 ## ✅ Verifica Installazione
 
 Dopo aver eseguito le migrazioni, verifica che tutto sia stato creato correttamente:
@@ -94,7 +118,7 @@ WHERE table_schema = 'public'
   AND table_name IN ('user_tokens', 'token_history', 'user_subscriptions');
 ```
 
-Dovresti vedere 2 o 3 righe (3 se hai eseguito anche la migrazione opzionale).
+Dovresti vedere 2 o 3 righe (3 se hai eseguito anche la migrazione 003 opzionale).
 
 ### Verifica Colonne user_tokens
 
@@ -124,6 +148,20 @@ Dovresti vedere:
 - `stripe_customer_id` (character varying)
 - `stripe_subscription_id` (character varying)
 
+### Verifica RLS Policies
+
+```sql
+SELECT schemaname, tablename, policyname, permissive, roles, cmd 
+FROM pg_policies 
+WHERE tablename = 'user_subscriptions';
+```
+
+Dovresti vedere almeno 4 policy:
+- `Users can view own subscription`
+- `Service can insert subscriptions`
+- `Users can update own subscription`
+- `Admin can manage all subscriptions`
+
 ### Test Inserimento (Opzionale)
 
 **⚠️ SOLO PER TEST:** Prova a inserire un record di test:
@@ -150,6 +188,13 @@ Se qualcosa va storto, ogni file di migrazione contiene una sezione **ROLLBACK**
 Esegui in ordine inverso:
 
 ```sql
+-- 4. Rollback migrazione 004 (se eseguita)
+DROP POLICY IF EXISTS "Users can view own subscription" ON public.user_subscriptions;
+DROP POLICY IF EXISTS "Service can insert subscriptions" ON public.user_subscriptions;
+DROP POLICY IF EXISTS "Users can update own subscription" ON public.user_subscriptions;
+DROP POLICY IF EXISTS "Admin can manage all subscriptions" ON public.user_subscriptions;
+ALTER TABLE public.user_subscriptions DISABLE ROW LEVEL SECURITY;
+
 -- 3. Rollback migrazione 003 (se eseguita)
 DROP FUNCTION IF EXISTS log_token_transaction;
 DROP TABLE IF EXISTS token_history CASCADE;
@@ -206,7 +251,12 @@ Dopo aver completato le migrazioni:
 
 ---
 
-**Versione:** 1.0.0  
-**Data:** 2026-01-08  
+**Versione:** 1.1.0  
+**Data:** 2026-01-09  
 **Progetto:** Armonyco v2 - Sistema Abbonamenti con Tokens
+
+**Changelog:**
+- 2026-01-09: Aggiunta migrazione 004 (RLS Policies)
+- 2026-01-08: Migrazioni iniziali 001-003
+
 

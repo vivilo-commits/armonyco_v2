@@ -1,18 +1,30 @@
 /**
  * Vercel Serverless Function
- * Creates a Stripe Checkout session for RECURRING SUBSCRIPTIONS
+ * Creates a Stripe Checkout session
  * 
- * IMPORTANT: Mode changed from 'payment' to 'subscription'
+ * Supports both:
+ * - 'subscription' mode: Recurring subscriptions (uses Price IDs)
+ * - 'payment' mode: One-time payments (uses price_data)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// IMPORTANT: Install with npm install stripe
 import Stripe from 'stripe';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS headers - allow localhost:3000 for local development
+    const origin = req.headers.origin || '';
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://localhost:3000',
+    ];
+    
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -28,18 +40,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { 
             planId, 
             planName, 
-            amount,      // Monthly price in cents (e.g. 24900 for €249)
+            amount,      // Price in cents (e.g. 24900 for €249)
             credits,     // Plan credits (tokens = credits × 100)
             email, 
             userId,      // User ID for linking
             metadata,    // Additional metadata
             successUrl, 
-            cancelUrl 
+            cancelUrl,
+            mode = 'subscription'  // 'payment' for one-time, 'subscription' for recurring
         } = req.body;
 
         // Input validation
-        if (!planId || !amount || !email) {
-            return res.status(400).json({ error: 'Missing required fields: planId, amount, email' });
+        if (!amount || !email) {
+            return res.status(400).json({ error: 'Missing required fields: amount, email' });
+        }
+
+        // Validate mode
+        if (mode !== 'payment' && mode !== 'subscription') {
+            return res.status(400).json({ error: 'Invalid mode. Must be "payment" or "subscription"' });
+        }
+
+        // For subscription mode, planId is required
+        if (mode === 'subscription' && !planId) {
+            return res.status(400).json({ error: 'Missing required field: planId (required for subscription mode)' });
         }
 
         // Verify Stripe is configured
@@ -95,86 +118,128 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // ================================================================
-        // STEP 2: Create Stripe Checkout SUBSCRIPTION session
+        // STEP 2: Create Stripe Checkout Session
         // ================================================================
 
-        // NOTE: You must create Price IDs in Stripe dashboard and configure them as environment variables
-        const STRIPE_PRICE_IDS: Record<number, string> = {
-            1: process.env.STRIPE_PRICE_STARTER || '',  // STARTER plan
-            2: process.env.STRIPE_PRICE_PRO || '',      // PRO plan
-            3: process.env.STRIPE_PRICE_ELITE || '',   // ELITE plan
-        };
+        // Determine origin for success/cancel URLs
+        const origin = req.headers.origin || req.headers.host 
+            ? `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`
+            : 'http://localhost:3000';
 
-        const priceId = STRIPE_PRICE_IDS[planId];
-        
-        if (!priceId) {
-            const envVarName = planId === 1 ? 'STRIPE_PRICE_STARTER' : 
-                              planId === 2 ? 'STRIPE_PRICE_PRO' : 
-                              planId === 3 ? 'STRIPE_PRICE_ELITE' : 'STRIPE_PRICE_*';
-            
-            return res.status(400).json({ 
-                error: 'Price ID not configured',
-                message: `Price ID for plan ${planId} is not configured. Set ${envVarName} in Vercel environment variables.`
-            });
-        }
-        
-        // Verify Price ID format
-        if (!priceId.startsWith('price_')) {
-            return res.status(400).json({ 
-                error: 'Invalid Price ID',
-                message: `Price ID "${priceId}" has invalid format. Must start with "price_".`
-            });
-        }
+        // Default URLs if not provided - IMPORTANT: {CHECKOUT_SESSION_ID} will be replaced by Stripe
+        const finalSuccessUrl = successUrl || `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+        const finalCancelUrl = cancelUrl || `${origin}/payment/cancel`;
 
-        const session = await stripe.checkout.sessions.create({
-            customer: customer.id,
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price: priceId,  // Usa Price ID invece di price_data
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',  // CHANGED FROM 'payment' TO 'subscription'
-            success_url: successUrl,
-            cancel_url: cancelUrl,
-            
-            // Metadata for webhook
-            subscription_data: {
+        let sessionConfig: Stripe.Checkout.SessionCreateParams;
+
+        if (mode === 'payment') {
+            // ============================================================
+            // ONE-TIME PAYMENT MODE
+            // ============================================================
+            sessionConfig = {
+                customer: customer.id,
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'eur',
+                            product_data: {
+                                name: planName || 'One-time Payment',
+                                description: credits ? `${credits} credits` : undefined,
+                            },
+                            unit_amount: amount, // Amount in cents
+                        },
+                        quantity: 1,
+                    },
+                ],
+                mode: 'payment',
+                success_url: finalSuccessUrl,
+                cancel_url: finalCancelUrl,
                 metadata: {
-                    plan_id: planId.toString(),
-                    plan_name: planName,
-                    credits: credits.toString(),
+                    plan_id: planId?.toString() || '',
+                    plan_name: planName || 'One-time Payment',
+                    credits: credits?.toString() || '0',
                     user_id: userId || '',
+                    ...metadata,
                 },
-            },
-            
-            metadata: {
-                plan_id: planId.toString(),
-                plan_name: planName,
-                credits: credits.toString(),
-                user_id: userId || '',
-            },
+                allow_promotion_codes: true,
+            };
 
-            // Allow promo codes
-            allow_promotion_codes: true,
-            
-            // Collect billing address
-            billing_address_collection: 'required',
-            
-            // Tax ID collection for Italian billing
-            tax_id_collection: {
-                enabled: true,
-            },
-        });
+            console.log('[Stripe] Creating one-time payment session...');
+        } else {
+            // ============================================================
+            // SUBSCRIPTION MODE
+            // ============================================================
+            // NOTE: You must create Price IDs in Stripe dashboard and configure them as environment variables
+            const STRIPE_PRICE_IDS: Record<number, string> = {
+                1: process.env.STRIPE_PRICE_STARTER || '',  // STARTER plan
+                2: process.env.STRIPE_PRICE_PRO || '',      // PRO plan
+                3: process.env.STRIPE_PRICE_ELITE || '',   // ELITE plan
+            };
 
-        console.log('[Stripe] Subscription session creata:', session.id);
+            const priceId = STRIPE_PRICE_IDS[planId!];
+            
+            if (!priceId) {
+                const envVarName = planId === 1 ? 'STRIPE_PRICE_STARTER' : 
+                                  planId === 2 ? 'STRIPE_PRICE_PRO' : 
+                                  planId === 3 ? 'STRIPE_PRICE_ELITE' : 'STRIPE_PRICE_*';
+                
+                return res.status(400).json({ 
+                    error: 'Price ID not configured',
+                    message: `Price ID for plan ${planId} is not configured. Set ${envVarName} in Vercel environment variables.`
+                });
+            }
+            
+            // Verify Price ID format
+            if (!priceId.startsWith('price_')) {
+                return res.status(400).json({ 
+                    error: 'Invalid Price ID',
+                    message: `Price ID "${priceId}" has invalid format. Must start with "price_".`
+                });
+            }
+
+            sessionConfig = {
+                customer: customer.id,
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price: priceId,
+                        quantity: 1,
+                    },
+                ],
+                mode: 'subscription',
+                success_url: finalSuccessUrl,
+                cancel_url: finalCancelUrl,
+                subscription_data: {
+                    metadata: {
+                        plan_id: planId!.toString(),
+                        plan_name: planName || '',
+                        credits: credits?.toString() || '0',
+                        user_id: userId || '',
+                    },
+                },
+                metadata: {
+                    plan_id: planId!.toString(),
+                    plan_name: planName || '',
+                    credits: credits?.toString() || '0',
+                    user_id: userId || '',
+                    ...metadata,
+                },
+                allow_promotion_codes: true,
+            };
+
+            console.log('[Stripe] Creating subscription session...');
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionConfig);
+
+        console.log(`[Stripe] ${mode === 'payment' ? 'Payment' : 'Subscription'} session created:`, session.id);
 
         return res.status(200).json({
             sessionId: session.id,
             url: session.url,
             customerId: customer.id,
-            mode: 'subscription',
+            mode: mode,
         });
     } catch (error: any) {
         console.error('[API] ❌ Error creating checkout session:', error);
