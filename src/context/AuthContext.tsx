@@ -8,12 +8,19 @@ import {
     User,
     Session
 } from '../lib/supabase';
+import { 
+    checkSubscriptionStatus, 
+    type SubscriptionCheckResult 
+} from '../middleware/subscription-check';
 
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    subscription: SubscriptionCheckResult | null;
+    hasValidSubscription: boolean;
+    checkSubscription: () => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
     error: string | null;
@@ -32,8 +39,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
     const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [subscription, setSubscription] = useState<SubscriptionCheckResult | null>(null);
 
     const clearError = useCallback(() => setError(null), []);
+
+    // Check subscription status
+    const checkSubscription = useCallback(async () => {
+        if (!user?.id) {
+            setSubscription(null);
+            return;
+        }
+
+        try {
+            const result = await checkSubscriptionStatus(user.id);
+            setSubscription(result);
+        } catch (err) {
+            console.error('[Auth] Error checking subscription:', err);
+            setSubscription(null);
+        }
+    }, [user?.id]);
 
     // Initialize auth state
     useEffect(() => {
@@ -43,6 +67,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
                 setSession(currentSession);
                 setUser(currentSession?.user ?? null);
                 onAuthChange?.(!!currentSession, currentSession?.user ?? null);
+                
+                // Check subscription if user is authenticated
+                if (currentSession?.user) {
+                    const result = await checkSubscriptionStatus(currentSession.user.id);
+                    setSubscription(result);
+                }
             } catch (err) {
                 console.error('[Auth] Init error:', err);
             } finally {
@@ -53,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
         initAuth();
 
         // Subscribe to auth changes
-        const { data: { subscription } } = onAuthStateChange((event, newSession) => {
+        const { data: { subscription: authSubscription } } = onAuthStateChange(async (event, newSession) => {
             console.log('[Auth] State change:', event);
             setSession(newSession);
             setUser(newSession?.user ?? null);
@@ -62,11 +92,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
             if (event === 'SIGNED_OUT') {
                 setUser(null);
                 setSession(null);
+                setSubscription(null);
+            } else if (event === 'SIGNED_IN' && newSession?.user) {
+                // Check subscription on sign in
+                const result = await checkSubscriptionStatus(newSession.user.id);
+                setSubscription(result);
             }
         });
 
         return () => {
-            subscription.unsubscribe();
+            authSubscription.unsubscribe();
         };
     }, [onAuthChange]);
 
@@ -106,6 +141,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
         session,
         isLoading,
         isAuthenticated: !!user,
+        subscription,
+        hasValidSubscription: subscription?.active ?? false,
+        checkSubscription,
         signIn,
         signOut,
         error,
