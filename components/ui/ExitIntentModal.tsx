@@ -20,7 +20,7 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
     const [hasShown, setHasShown] = useState(false);
 
     const handleMouseLeave = useCallback((e: MouseEvent) => {
-        // Trigger solo se mouse esce verso l'alto (per chiudere tab)
+        // Trigger only if mouse exits upward (to close tab)
         if (e.clientY <= 0 && !hasShown && isEnabled) {
             setIsOpen(true);
             setHasShown(true);
@@ -56,12 +56,12 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={handleContinue}
-            title="Stai abbandonando la registrazione"
+            title="You are leaving the registration"
             width="md"
             showCloseButton={false}
         >
             <div className="space-y-6 p-6">
-                {/* Icona e messaggio */}
+                {/* Icon and message */}
                 <div className="flex flex-col items-center text-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center">
                         <AlertCircle size={32} className="text-orange-400" />
@@ -69,19 +69,19 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
 
                     <div>
                         <h3 className="text-xl font-bold text-[var(--color-text-main)] mb-2">
-                            Non perdere i tuoi progressi!
+                            Don't lose your progress!
                         </h3>
                         <p className="text-sm text-[var(--color-text-muted)]">
-                            Hai compilato alcuni dati. Vuoi salvare i tuoi progressi 
-                            per completare la registrazione in seguito?
+                            You have filled in some data. Do you want to save your progress 
+                            to complete the registration later?
                         </p>
                     </div>
                 </div>
 
-                {/* Features salvate */}
+                {/* Saved features */}
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4">
                     <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
-                        Cosa viene salvato:
+                        What is saved:
                     </p>
                     <ul className="space-y-2 text-sm text-[var(--color-text-main)]">
                         <li className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
                         onClick={handleContinue}
                         className="w-full"
                     >
-                        Continua Registrazione
+                        Continue Registration
                     </Button>
 
                     <Button
@@ -114,14 +114,14 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
                         onClick={handleSaveAndExit}
                         className="w-full"
                     >
-                        Salva e Esci
+                        Save and Exit
                     </Button>
 
                     <button
                         onClick={handleExitWithoutSaving}
                         className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
                     >
-                        Esci senza salvare
+                        Exit without saving
                     </button>
                 </div>
             </div>

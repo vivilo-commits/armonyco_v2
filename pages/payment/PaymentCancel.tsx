@@ -74,10 +74,10 @@ export const PaymentCancel: React.FC<PaymentCancelProps> = ({
                         {/* Title */}
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-3">
-                                Pagamento Annullato
+                                Payment Cancelled
                             </h1>
                             <p className="text-lg text-zinc-400">
-                                Hai annullato il processo di pagamento
+                                You cancelled the payment process
                             </p>
                         </div>
 
@@ -85,12 +85,12 @@ export const PaymentCancel: React.FC<PaymentCancelProps> = ({
                         <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 text-left">
                             <h3 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">
                                 <span>ℹ️</span>
-                                <span>Cosa è Successo?</span>
+                                <span>What Happened?</span>
                             </h3>
                             <ul className="text-sm text-zinc-300 space-y-2">
-                                <li>• Non è stato effettuato alcun addebito sulla tua carta</li>
-                                <li>• I tuoi dati di registrazione sono stati salvati in sicurezza</li>
-                                <li>• Puoi completare il pagamento in qualsiasi momento</li>
+                                <li>• No charge was made to your card</li>
+                                <li>• Your registration data has been safely saved</li>
+                                <li>• You can complete the payment at any time</li>
                             </ul>
                         </div>
 
@@ -102,7 +102,7 @@ export const PaymentCancel: React.FC<PaymentCancelProps> = ({
                                 leftIcon={<CreditCard size={18} />}
                                 className="min-w-[220px]"
                             >
-                                Riprova il Pagamento
+                                Retry Payment
                             </Button>
                             <Button
                                 variant="secondary"
@@ -110,15 +110,15 @@ export const PaymentCancel: React.FC<PaymentCancelProps> = ({
                                 leftIcon={<ChevronLeft size={18} />}
                                 className="min-w-[220px]"
                             >
-                                Torna alla Home
+                                Back to Home
                             </Button>
                         </div>
 
                         {/* Note */}
                         <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
                             <p className="text-xs text-zinc-500">
-                                💡 <strong>Nota:</strong> I tuoi dati sono salvati localmente e verranno 
-                                cancellati automaticamente dopo 24 ore. Non preoccuparti, non hai perso nulla!
+                                💡 <strong>Note:</strong> Your data is saved locally and will be 
+                                automatically deleted after 24 hours. Don't worry, you haven't lost anything!
                             </p>
                         </div>
                     </div>
@@ -127,9 +127,9 @@ export const PaymentCancel: React.FC<PaymentCancelProps> = ({
                 {/* Footer */}
                 <div className="text-center mt-8">
                     <p className="text-xs text-zinc-600">
-                        Hai domande sul processo di pagamento?{' '}
+                        Have questions about the payment process?{' '}
                         <a href="mailto:support@armonyco.com" className="text-emerald-400 hover:underline">
-                            Contatta il supporto
+                            Contact support
                         </a>
                     </p>
                 </div>

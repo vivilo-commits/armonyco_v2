@@ -42,7 +42,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (!sessionId) {
                 console.error('[PaymentSuccess] No session_id in URL');
                 setStatus('error');
-                setErrorMessage('Session ID non trovato nell\'URL. Contatta il supporto.');
+                setErrorMessage('Session ID not found in URL. Contact support.');
                 return;
             }
 
@@ -63,7 +63,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
 
             if (!verifyResponse.ok) {
                 const errorData = await verifyResponse.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Errore durante la verifica del pagamento');
+                throw new Error(errorData.message || 'Error during payment verification');
             }
 
             const verifyResult = await verifyResponse.json();
@@ -71,7 +71,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (!verifyResult.verified) {
                 console.error('[PaymentSuccess] Payment not verified:', verifyResult);
                 setStatus('error');
-                setErrorMessage('Il pagamento non è stato completato. Riprova o contatta il supporto.');
+                setErrorMessage('Payment not completed. Try again or contact support.');
                 return;
             }
 
@@ -83,7 +83,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (!pendingDataStr) {
                 console.error('[PaymentSuccess] No pending registration data in localStorage');
                 setStatus('error');
-                setErrorMessage('Dati di registrazione non trovati. I dati potrebbero essere scaduti. Riprova la registrazione.');
+                setErrorMessage('Registration data not found. Data may have expired. Try registration again.');
                 return;
             }
 
@@ -97,7 +97,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (dataAge > maxAge) {
                 console.error('[PaymentSuccess] Registration data expired');
                 setStatus('error');
-                setErrorMessage('I dati di registrazione sono scaduti. Riprova la registrazione.');
+                setErrorMessage('Registration data has expired. Try registration again.');
                 localStorage.removeItem('pending_registration');
                 return;
             }
@@ -106,7 +106,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (!registrationData.email || !registrationData.password) {
                 console.error('[PaymentSuccess] ❌ Missing email or password in registration data');
                 setStatus('error');
-                setErrorMessage('Dati di registrazione incompleti (email o password mancante). Riprova la registrazione.');
+                setErrorMessage('Incomplete registration data (missing email or password). Try registration again.');
                 localStorage.removeItem('pending_registration');
                 return;
             }
@@ -114,7 +114,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (registrationData.password.length < 6) {
                 console.error('[PaymentSuccess] ❌ Password too short');
                 setStatus('error');
-                setErrorMessage('Password troppo corta. Riprova la registrazione.');
+                setErrorMessage('Password too short. Try registration again.');
                 localStorage.removeItem('pending_registration');
                 return;
             }
@@ -154,8 +154,8 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
             if (!result.success) {
                 console.error('[PaymentSuccess] Registration failed:', result.error);
                 setStatus('error');
-                setErrorMessage(result.error || 'Errore durante la creazione dell\'account');
-                // NON cancellare i dati dal localStorage per permettere retry
+                setErrorMessage(result.error || 'Error creating account');
+                // DO NOT delete data from localStorage to allow retry
                 return;
             }
 
@@ -185,7 +185,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
         } catch (error: any) {
             console.error('[PaymentSuccess] Error:', error);
             setStatus('error');
-            setErrorMessage(error.message || 'Errore imprevisto durante la registrazione');
+            setErrorMessage(error.message || 'Unexpected error during registration');
         }
     };
 
@@ -220,10 +220,10 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-3">
-                                    Verifica Pagamento...
+                                    Verifying Payment...
                                 </h1>
                                 <p className="text-zinc-400">
-                                    Stiamo verificando il tuo pagamento con Stripe
+                                    We are verifying your payment with Stripe
                                 </p>
                             </div>
                         </div>
@@ -237,10 +237,10 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-3">
-                                    Creazione Account...
+                                    Creating Account...
                                 </h1>
                                 <p className="text-zinc-400">
-                                    Il tuo pagamento è stato verificato. Stiamo creando il tuo account.
+                                    Your payment has been verified. We are creating your account.
                                 </p>
                             </div>
                         </div>
@@ -255,17 +255,17 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
 
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-3">
-                                    Benvenuto in Armonyco! 🎉
+                                    Welcome to Armonyco! 🎉
                                 </h1>
                                 <p className="text-lg text-zinc-400">
-                                    Il tuo account è stato creato con successo
+                                    Your account has been successfully created
                                 </p>
                             </div>
 
                             {userData && (
                                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 text-left space-y-3">
                                     <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider text-center mb-4">
-                                        Riepilogo Account
+                                        Account Summary
                                     </h3>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
@@ -273,13 +273,13 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                                             <span className="font-medium text-white">{userData.email}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-zinc-400">Piano:</span>
+                                            <span className="text-zinc-400">Plan:</span>
                                             <span className="font-medium text-white">{userData.planName}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-zinc-400">Crediti:</span>
+                                            <span className="text-zinc-400">Credits:</span>
                                             <span className="font-bold text-emerald-400">
-                                                {userData.planCredits.toLocaleString('it-IT')} ArmoCredits©
+                                                {userData.planCredits.toLocaleString('en-US')} ArmoCredits©
                                             </span>
                                         </div>
                                     </div>
@@ -288,13 +288,13 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
 
                             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
                                 <p className="text-sm text-zinc-300">
-                                    📧 Ti abbiamo inviato un'email di conferma con tutti i dettagli
+                                    📧 We have sent you a confirmation email with all the details
                                 </p>
                             </div>
 
                             <div className="pt-4">
                                 <p className="text-sm text-zinc-500">
-                                    Sarai reindirizzato alla dashboard tra pochi secondi...
+                                    You will be redirected to the dashboard in a few seconds...
                                 </p>
                             </div>
                         </div>
@@ -309,10 +309,10 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
 
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-3">
-                                    Errore durante la Registrazione
+                                    Registration Error
                                 </h1>
                                 <p className="text-zinc-400">
-                                    Si è verificato un problema durante la creazione del tuo account
+                                    A problem occurred while creating your account
                                 </p>
                             </div>
 
@@ -320,7 +320,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                                 <div className="flex items-start gap-3">
                                     <AlertTriangle size={24} className="text-red-400 flex-shrink-0 mt-0.5" />
                                     <div className="text-left">
-                                        <p className="font-semibold text-red-300 mb-1">Dettagli Errore</p>
+                                        <p className="font-semibold text-red-300 mb-1">Error Details</p>
                                         <p className="text-sm text-red-400">{errorMessage}</p>
                                     </div>
                                 </div>
@@ -332,21 +332,21 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                                     onClick={handleRetry}
                                     className="min-w-[200px]"
                                 >
-                                    🔄 Riprova
+                                    🔄 Retry
                                 </Button>
                                 <Button
                                     variant="secondary"
                                     onClick={handleGoHome}
                                     className="min-w-[200px]"
                                 >
-                                    Torna alla Home
+                                    Back to Home
                                 </Button>
                             </div>
 
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
                                 <p className="text-xs text-zinc-500">
-                                    💡 <strong>Nota:</strong> Il tuo pagamento è stato elaborato correttamente. 
-                                    Se l'errore persiste, contatta il supporto con il codice sessione dall'URL.
+                                    💡 <strong>Note:</strong> Your payment was processed successfully. 
+                                    If the error persists, contact support with the session code from the URL.
                                 </p>
                             </div>
                         </div>
@@ -356,7 +356,7 @@ export const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) =>
                 {/* Footer */}
                 <div className="text-center mt-8">
                     <p className="text-xs text-zinc-600">
-                        Hai bisogno di aiuto? Contatta il supporto a{' '}
+                        Need help? Contact support at{' '}
                         <a href="mailto:support@armonyco.com" className="text-emerald-400 hover:underline">
                             support@armonyco.com
                         </a>

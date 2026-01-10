@@ -23,7 +23,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
         // STEP 1: Exchange token for valid session
         const exchangeTokenForSession = async () => {
             if (!supabase) {
-                setError('Supabase non configurato');
+                setError('Supabase not configured');
                 setIsCheckingMode(false);
                 return;
             }
@@ -39,7 +39,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                 // Verify we have the necessary parameters
                 if (!tokenHash || type !== 'recovery') {
                     console.log('[ResetPassword] Missing or invalid recovery parameters');
-                    setError('Link non valido o scaduto. Richiedi un nuovo link di recupero.');
+                    setError('Invalid or expired link. Request a new recovery link.');
                     setIsCheckingMode(false);
                     return;
                 }
@@ -53,14 +53,14 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
 
                 if (verifyError) {
                     console.error('[ResetPassword] Verify OTP error:', verifyError);
-                    setError(`Errore: ${verifyError.message}`);
+                    setError(`Error: ${verifyError.message}`);
                     setIsCheckingMode(false);
                     return;
                 }
 
                 if (!data.session) {
                     console.error('[ResetPassword] No session created');
-                    setError('Impossibile creare una sessione valida. Richiedi un nuovo link.');
+                    setError('Unable to create a valid session. Request a new link.');
                     setIsCheckingMode(false);
                     return;
                 }
@@ -71,7 +71,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
 
             } catch (err) {
                 console.error('[ResetPassword] Unexpected error during token exchange:', err);
-                setError('Errore imprevisto durante la verifica del link.');
+                setError('Unexpected error during link verification.');
                 setIsCheckingMode(false);
             }
         };
@@ -95,22 +95,22 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
 
         // Validation
         if (!newPassword || !confirmPassword) {
-            setError('Compila entrambi i campi');
+            setError('Fill in both fields');
             return;
         }
 
         if (newPassword.length < 6) {
-            setError('La password deve essere lunga almeno 6 caratteri');
+            setError('Password must be at least 6 characters long');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setError('Le password non corrispondono');
+            setError('Passwords do not match');
             return;
         }
 
         if (!supabase) {
-            setError('Supabase non configurato');
+            setError('Supabase not configured');
             return;
         }
 
@@ -145,7 +145,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
 
         } catch (err: any) {
             console.error('[ResetPassword] Update failed:', err);
-            setError(err.message || 'Errore durante l\'aggiornamento della password');
+            setError(err.message || 'Error updating password');
             setIsLoading(false);
         }
     };
@@ -162,7 +162,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
             <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-                    <span className="text-zinc-400 text-sm">Verifica link in corso...</span>
+                    <span className="text-zinc-400 text-sm">Verifying link...</span>
                 </div>
             </div>
         );
@@ -180,14 +180,14 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                     </div>
                     
                     <h2 className="text-2xl font-bold text-center text-[var(--color-text-main)] mb-4">
-                        ✅ Password Aggiornata!
+                        ✅ Password Updated!
                     </h2>
                     
                     <p className="text-center text-[var(--color-text-muted)] mb-6">
-                        La tua password è stata modificata con successo.
+                        Your password has been changed successfully.
                         <br />
                         <br />
-                        Verrai reindirizzato al login...
+                        You will be redirected to login...
                     </p>
 
                     <div className="flex justify-center">
@@ -210,14 +210,14 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                     </div>
                     
                     <h2 className="text-2xl font-bold text-center text-[var(--color-text-main)] mb-4">
-                        Link Non Valido
+                        Invalid Link
                     </h2>
                     
                     <p className="text-center text-[var(--color-text-muted)] mb-6">
-                        Il link di recupero password è scaduto o non è valido.
+                        The password recovery link has expired or is not valid.
                         <br />
                         <br />
-                        Richiedi un nuovo link per reimpostare la password.
+                        Request a new link to reset your password.
                     </p>
 
                     <Button
@@ -225,7 +225,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                         onClick={onError}
                         className="w-full justify-center"
                     >
-                        Torna alla Home
+                        Back to Home
                     </Button>
                 </div>
             </div>
@@ -247,11 +247,11 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                 </div>
 
                 <h2 className="text-2xl font-bold text-center text-[var(--color-text-main)] mb-2">
-                    Imposta Nuova Password
+                    Set New Password
                 </h2>
                 
                 <p className="text-center text-[var(--color-text-muted)] text-sm mb-8">
-                    Scegli una password sicura per il tuo account
+                    Choose a secure password for your account
                 </p>
 
                 {error && (
@@ -262,7 +262,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
 
                 <div className="space-y-6">
                     <FloatingInput
-                        label="Nuova Password"
+                        label="New Password"
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
@@ -285,15 +285,15 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                                 />
                             </div>
                             <p className="text-xs text-[var(--color-text-muted)]">
-                                {passwordStrength < 40 ? '⚠️ Password debole' :
-                                 passwordStrength < 70 ? '✓ Password media' :
-                                 '✓ Password forte'}
+                                {passwordStrength < 40 ? '⚠️ Weak password' :
+                                 passwordStrength < 70 ? '✓ Medium password' :
+                                 '✓ Strong password'}
                             </p>
                         </div>
                     )}
 
                     <FloatingInput
-                        label="Conferma Password"
+                        label="Confirm Password"
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -310,7 +310,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                             className="w-full justify-center"
                             disabled={!newPassword || !confirmPassword || isLoading}
                         >
-                            {isLoading ? 'Aggiornamento...' : 'Aggiorna Password'}
+                            {isLoading ? 'Updating...' : 'Update Password'}
                         </Button>
                     </div>
                 </div>
@@ -321,7 +321,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({ onSuccess, onError
                         className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
                         disabled={isLoading}
                     >
-                        Torna alla Home
+                        Back to Home
                     </button>
                 </div>
             </div>
