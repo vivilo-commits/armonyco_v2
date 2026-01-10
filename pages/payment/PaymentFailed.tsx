@@ -48,7 +48,7 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
     };
 
     const handleContactSupport = () => {
-        window.location.href = 'mailto:support@armonyco.com?subject=Problema con il Pagamento';
+        window.location.href = 'mailto:support@armonyco.com?subject=Payment Problem';
     };
 
     return (
@@ -74,10 +74,10 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                         {/* Title */}
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-3">
-                                Pagamento Non Riuscito
+                                Payment Failed
                             </h1>
                             <p className="text-lg text-zinc-400">
-                                Si è verificato un problema durante l'elaborazione del pagamento
+                                A problem occurred while processing the payment
                             </p>
                         </div>
 
@@ -85,14 +85,14 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-left">
                             <h3 className="text-sm font-bold text-red-400 mb-3 flex items-center gap-2">
                                 <AlertTriangle size={16} />
-                                <span>Possibili Cause</span>
+                                <span>Possible Causes</span>
                             </h3>
                             <ul className="text-sm text-zinc-300 space-y-2">
-                                <li>• Fondi insufficienti sulla carta</li>
-                                <li>• Carta scaduta o non valida</li>
-                                <li>• Limite di spesa raggiunto</li>
-                                <li>• La banca ha rifiutato la transazione</li>
-                                <li>• Errore temporaneo di connessione</li>
+                                <li>• Insufficient funds on card</li>
+                                <li>• Expired or invalid card</li>
+                                <li>• Spending limit reached</li>
+                                <li>• Bank declined the transaction</li>
+                                <li>• Temporary connection error</li>
                             </ul>
                         </div>
 
@@ -100,13 +100,13 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                         <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 text-left">
                             <h3 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">
                                 <span>💡</span>
-                                <span>Cosa Fare</span>
+                                <span>What to Do</span>
                             </h3>
                             <ul className="text-sm text-zinc-300 space-y-2">
-                                <li>1. Verifica i dati della tua carta di credito</li>
-                                <li>2. Assicurati di avere fondi sufficienti</li>
-                                <li>3. Contatta la tua banca se il problema persiste</li>
-                                <li>4. Riprova con un altro metodo di pagamento</li>
+                                <li>1. Verify your credit card details</li>
+                                <li>2. Make sure you have sufficient funds</li>
+                                <li>3. Contact your bank if the problem persists</li>
+                                <li>4. Try again with another payment method</li>
                             </ul>
                         </div>
 
@@ -118,14 +118,14 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                                 leftIcon={<CreditCard size={18} />}
                                 className="min-w-[200px]"
                             >
-                                Riprova il Pagamento
+                                Retry Payment
                             </Button>
                             <Button
                                 variant="secondary"
                                 onClick={handleContactSupport}
                                 className="min-w-[200px]"
                             >
-                                Contatta il Supporto
+                                Contact Support
                             </Button>
                         </div>
 
@@ -135,15 +135,15 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                                 className="text-sm text-zinc-500 hover:text-zinc-400 flex items-center gap-1"
                             >
                                 <ChevronLeft size={16} />
-                                Torna alla Home
+                                Back to Home
                             </button>
                         </div>
 
                         {/* Note */}
                         <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
                             <p className="text-xs text-zinc-500">
-                                🔒 <strong>Sicurezza:</strong> Non è stato addebitato alcun importo. 
-                                I tuoi dati di registrazione sono salvati in sicurezza e puoi riprovare quando vuoi.
+                                🔒 <strong>Security:</strong> No amount was charged. 
+                                Your registration data is safely saved and you can try again whenever you want.
                             </p>
                         </div>
                     </div>
@@ -152,7 +152,7 @@ export const PaymentFailed: React.FC<PaymentFailedProps> = ({
                 {/* Footer */}
                 <div className="text-center mt-8">
                     <p className="text-xs text-zinc-600">
-                        Pagamenti sicuri elaborati da{' '}
+                        Secure payments processed by{' '}
                         <a 
                             href="https://stripe.com" 
                             target="_blank" 

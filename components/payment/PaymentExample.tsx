@@ -57,8 +57,8 @@ export const PaymentExample: React.FC<PaymentExampleProps> = ({
                 console.log('[PaymentExample] Payment intent created:', result.paymentIntentId);
             } catch (err: any) {
                 console.error('[PaymentExample] Error initializing payment:', err);
-                setError(err.message || 'Errore nell\'inizializzazione del pagamento');
-                onError?.(err.message || 'Errore nell\'inizializzazione del pagamento');
+                setError(err.message || 'Error initializing payment');
+                onError?.(err.message || 'Error initializing payment');
             } finally {
                 setIsLoading(false);
             }
@@ -100,7 +100,7 @@ export const PaymentExample: React.FC<PaymentExampleProps> = ({
                 <div className="flex items-start space-x-2">
                     <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <h3 className="text-sm font-medium text-red-800">Errore</h3>
+                        <h3 className="text-sm font-medium text-red-800">Error</h3>
                         <p className="text-sm text-red-600 mt-1">{error}</p>
                     </div>
                 </div>

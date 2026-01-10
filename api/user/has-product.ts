@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
  * }
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // ========== DEBUG LOGGING (RIMUOVERE DOPO DEBUG) ==========
+  // ========== DEBUG LOGGING (REMOVE AFTER DEBUG) ==========
   console.log('[ENV CHECK] Environment variables status:', {
     hasUrl: !!process.env.VITE_SUPABASE_URL,
     hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     allSupabaseEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
   });
 
-  // Verifica che le env vars siano presenti
+  // Verify that the environment variables are present
   if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('[ENV CHECK] ❌ Missing environment variables!');
     return res.status(500).json({
@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('[ENV CHECK] ✅ All environment variables present');
   // ========== END DEBUG LOGGING ==========
 
-  // IMPORTANTE: Creazione del client Supabase QUI, DOPO la verifica delle env vars
+  // IMPORTANT: Supabase client creation HERE, AFTER the environment variables verification
   const supabase = createClient(
     process.env.VITE_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY

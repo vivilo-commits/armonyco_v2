@@ -101,9 +101,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             if (submitError) {
                 // Payment failed
                 console.error('[Payment] Error:', submitError);
-                setError(submitError.message || 'Errore durante il pagamento');
+                setError(submitError.message || 'Error during payment');
                 setPaymentStatus('failed');
-                onError?.(submitError.message || 'Errore durante il pagamento');
+                onError?.(submitError.message || 'Error during payment');
                 setIsLoading(false);
                 return;
             }
@@ -126,17 +126,17 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                     setPaymentStatus('processing');
                 } else {
                     // Other status (requires_payment_method, etc.)
-                    setError('Il pagamento non è stato completato. Riprova.');
+                    setError('Payment not completed. Try again.');
                     setPaymentStatus('failed');
                     setIsLoading(false);
                 }
             }
         } catch (err: any) {
             console.error('[Payment] Unexpected error:', err);
-            setError(err.message || 'Errore imprevisto durante il pagamento');
+            setError(err.message || 'Unexpected error during payment');
             setPaymentStatus('failed');
             setIsLoading(false);
-            onError?.(err.message || 'Errore imprevisto durante il pagamento');
+            onError?.(err.message || 'Unexpected error during payment');
         }
     };
 
@@ -147,9 +147,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                 <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                     <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">Pagamento completato!</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Payment completed!</h3>
                 <p className="text-gray-600 text-center">
-                    Il tuo pagamento di {formattedAmount} è stato elaborato con successo.
+                    Your payment of {formattedAmount} has been successfully processed.
                 </p>
                 {paymentIntentId && (
                     <p className="text-sm text-gray-500">
@@ -165,11 +165,11 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         return (
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
                 <Loader className="w-8 h-8 text-blue-600 animate-spin" />
-                <h3 className="text-xl font-semibold text-gray-900">Elaborazione pagamento...</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Processing payment...</h3>
                 <p className="text-gray-600 text-center">
-                    Il tuo pagamento di {formattedAmount} è in elaborazione.
+                    Your payment of {formattedAmount} is being processed.
                     <br />
-                    Riceverai una conferma via email una volta completato.
+                    You will receive a confirmation via email once completed.
                 </p>
             </div>
         );
@@ -191,7 +191,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                 <div className="flex items-start space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <p className="text-sm font-medium text-red-800">Errore</p>
+                        <p className="text-sm font-medium text-red-800">Error</p>
                         <p className="text-sm text-red-600">{error}</p>
                     </div>
                 </div>
@@ -206,16 +206,16 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                 {isLoading ? (
                     <>
                         <Loader className="w-4 h-4 mr-2 animate-spin" />
-                        Elaborazione...
+                        Processing...
                     </>
                 ) : (
-                    `Paga ${formattedAmount}`
+                    `Pay ${formattedAmount}`
                 )}
             </Button>
 
             {/* Security Notice */}
             <p className="text-xs text-gray-500 text-center">
-                I tuoi dati di pagamento sono protetti e crittografati. Non memorizziamo le informazioni della carta.
+                Your payment data is protected and encrypted. We do not store card information.
             </p>
         </form>
     );

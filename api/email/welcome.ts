@@ -1,11 +1,11 @@
 /**
  * Vercel Serverless Function
- * Invia email di benvenuto dopo registrazione
+ * Send welcome email after registration
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// IMPORTANTE: Installare un servizio email (es. SendGrid, Resend, AWS SES)
+// IMPORTANT: Install an email service (e.g. SendGrid, Resend, AWS SES)
 // npm install @sendgrid/mail
 // import sgMail from '@sendgrid/mail';
 
@@ -30,14 +30,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // IMPORTANTE: Decommentare quando hai configurato SendGrid
+        // IMPORTANT: Uncomment when you have configured SendGrid
         /*
         sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
         const msg = {
             to,
             from: process.env.FROM_EMAIL || 'noreply@armonyco.com',
-            subject: subject || 'Benvenuto in Armonyco!',
+            subject: subject || 'Welcome to Armonyco!',
             html: generateWelcomeEmailHTML(data),
         };
 
@@ -82,19 +82,19 @@ function generateWelcomeEmailHTML(data: any): string {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎉 Benvenuto in Armonyco!</h1>
+            <h1>🎉 Welcome to Armonyco!</h1>
         </div>
         <div class="content">
-            <h2>Ciao ${data.firstName},</h2>
-            <p>Il tuo account è stato creato con successo!</p>
-            <p><strong>Piano:</strong> ${data.planName}</p>
+            <h2>Hello ${data.firstName},</h2>
+            <p>Your account has been successfully created!</p>
+            <p><strong>Plan:</strong> ${data.planName}</p>
             <p><strong>Credits:</strong> ${data.credits.toLocaleString('en-US')} ArmoCredits©</p>
             <center>
-                <a href="${data.dashboardUrl}" class="button">Vai alla Dashboard</a>
+                <a href="${data.dashboardUrl}" class="button">Go to Dashboard</a>
             </center>
             <p style="margin-top: 30px;">
-                A presto,<br>
-                <strong>Il Team Armonyco</strong>
+                See you soon,<br>
+                <strong>The Armonyco Team</strong>
             </p>
         </div>
     </div>

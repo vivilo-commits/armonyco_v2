@@ -23,14 +23,14 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
     const handleResetRequest = async () => {
         if (!email) {
-            setError('Inserisci la tua email');
+            setError('Enter your email');
             return;
         }
 
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            setError('Inserisci un indirizzo email valido');
+            setError('Enter a valid email address');
             return;
         }
 
@@ -43,7 +43,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
             setEmail('');
         } catch (err: any) {
             console.error('Password reset request failed:', err);
-            setError(err.message || 'Errore durante l\'invio dell\'email. Riprova più tardi.');
+            setError(err.message || 'Error sending email. Try again later.');
         } finally {
             setIsLoading(false);
         }
@@ -73,7 +73,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={handleClose}
-            title="Recupera Password"
+            title="Recover Password"
             width="sm"
         >
             <div className="p-8 space-y-6">
@@ -86,7 +86,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                         </div>
 
                         <p className="text-center text-[var(--color-text-muted)] text-sm">
-                            Inserisci la tua email e ti invieremo un link per reimpostare la password
+                            Enter your email and we will send you a link to reset your password
                         </p>
 
                         {error && (
@@ -112,7 +112,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                                 isLoading={isLoading}
                                 className="w-full justify-center"
                             >
-                                {isLoading ? 'Invio in corso...' : 'Invia Link di Recupero'}
+                                {isLoading ? 'Sending...' : 'Send Recovery Link'}
                             </Button>
                             
                             <button 
@@ -120,7 +120,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                                 className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
                                 disabled={isLoading}
                             >
-                                Torna al Login
+                                Back to Login
                             </button>
                         </div>
                     </>
@@ -134,16 +134,16 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
                         <div className="text-center space-y-4">
                             <h3 className="text-xl font-semibold text-[var(--color-text-main)]">
-                                Email Inviata! ✅
+                                Email Sent! ✅
                             </h3>
                             <p className="text-[var(--color-text-muted)] text-sm">
-                                Ti abbiamo inviato un'email con le istruzioni per recuperare la password.
+                                We have sent you an email with instructions to recover your password.
                                 <br />
                                 <br />
-                                Controlla la tua casella di posta e clicca sul link per reimpostare la password.
+                                Check your inbox and click the link to reset your password.
                             </p>
                             <p className="text-xs text-[var(--color-text-muted)]">
-                                Non hai ricevuto l'email? Controlla anche la cartella spam.
+                                Didn't receive the email? Also check your spam folder.
                             </p>
                         </div>
 
@@ -153,7 +153,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                                 onClick={handleBackToSignIn}
                                 className="w-full justify-center"
                             >
-                                Torna al Login
+                                Back to Login
                             </Button>
                         </div>
                     </>
