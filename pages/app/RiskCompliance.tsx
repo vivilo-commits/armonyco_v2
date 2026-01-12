@@ -86,7 +86,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
     const humanInterventionLog = React.useMemo(() => {
         if (!executions?.length) return [];
         return executions.filter(e => e.status !== 'success').slice(0, 5).map(exec => ({
-            id: exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 12),
+            id: (exec.truth_identity ?? exec.n8n_execution_id ?? 'N/A').slice(0, 12),
             time: new Date(exec.started_at).toLocaleTimeString('en-US'),
             actor: exec.agent_name || 'SYSTEM',
             reason: exec.workflow_name?.toUpperCase().replace(/ /g, '_').slice(0, 15) || 'WORKFLOW_ERROR',
@@ -101,7 +101,7 @@ export const RiskComplianceView: React.FC<RiskComplianceProps> = ({ view = 'over
         if (!executions?.length) return [];
         // Use failed or long-running executions as "ungoverned signals"
         return executions.filter(e => e.status !== 'success' || (e.duration_ms && e.duration_ms > 60000)).slice(0, 5).map(exec => ({
-            id: `TRC-${exec.n8n_execution_id.slice(-5)}`,
+            id: `TRC-${exec.n8n_execution_id?.slice(-5) || '00000'}`,
             source: `${exec.agent_name || 'System'} (${exec.perimeter || 'Unknown'})`,
             content: exec.workflow_name || 'Workflow execution',
             cat: exec.status !== 'success' ? 'FAILED_EXEC' : 'LONG_RUNNING',

@@ -55,7 +55,7 @@ export const ARSView: React.FC = () => {
     const verificationStream = React.useMemo(() => {
         if (!executions?.length) return [];
         return executions.slice(0, 5).map(exec => ({
-            id: exec.truth_identity?.slice(0, 10) || exec.n8n_execution_id.slice(0, 10),
+            id: (exec.truth_identity ?? exec.n8n_execution_id ?? 'N/A').slice(0, 10),
             type: exec.workflow_name || 'Workflow Execution',
             req: exec.perimeter || 'Standard Verification',
             status: exec.status === 'success' ? 'VERIFIED' : 'PENDING',

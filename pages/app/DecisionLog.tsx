@@ -173,7 +173,7 @@ export const DecisionLog: React.FC = () => {
                                         {new Date(exec.started_at).toLocaleString('en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                     </td>
                                     <td className="px-6 py-5 text-white font-black group-hover:text-[var(--color-brand-accent)] transition-colors italic tracking-tighter">
-                                        {exec.truth_identity?.slice(0, 12) || exec.n8n_execution_id.slice(0, 8)}
+                                        {(exec.truth_identity ?? exec.n8n_execution_id ?? 'N/A').slice(0, 12)}
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className={`px-2 py-1 rounded text-[9px] font-bold border ${exec.trigger_source === 'message' || exec.trigger_channel === 'WhatsApp' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
