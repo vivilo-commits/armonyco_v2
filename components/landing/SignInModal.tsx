@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { ArrowRight } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
@@ -15,6 +16,7 @@ interface SignInModalProps {
 export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLogin, onForgotPassword }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -72,11 +74,22 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                 />
                 <FloatingInput
                     label="Password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={handleKeyDown}
                     bgClass="bg-[var(--color-surface)]"
+                    endIcon={
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors cursor-pointer focus:outline-none"
+                            aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                    }
                 />
                 <div className="flex justify-between items-center text-xs">
                     <label className="flex items-center gap-2 text-[var(--color-text-muted)] cursor-pointer">

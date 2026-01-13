@@ -3,6 +3,7 @@ import React from 'react';
 interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   startIcon?: React.ReactNode;
+  endIcon?: React.ReactNode; // Icon at the end (e.g., password toggle)
   bgClass?: string; // Matches the container background
   labelClass?: string;
   error?: string; // Error message to display
@@ -11,6 +12,7 @@ interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 export const FloatingInput: React.FC<FloatingInputProps> = ({
   label,
   startIcon,
+  endIcon,
   bgClass = 'bg-[var(--color-surface)]',
   labelClass = '',
   className = '',
@@ -37,9 +39,16 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
               : 'border-[var(--color-border)] focus:border-[var(--color-brand-accent)]'
             }
             ${startIcon ? 'pl-10' : ''}
+            ${endIcon ? 'pr-10' : ''}
             ${className}
           `}
         />
+
+        {endIcon && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
+            {endIcon}
+          </div>
+        )}
 
         <label
           className={`
