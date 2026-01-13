@@ -191,9 +191,13 @@ export const logsService = {
 export async function getN8nExecutions(limit: number = 100): Promise<any[]> {
     if (!supabase) return [];
 
+    const user = await getCurrentUser();
+    if (!user) return [];
+
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('*')
+        .eq('company_uid', user.id)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -211,9 +215,13 @@ export async function getN8nExecutions(limit: number = 100): Promise<any[]> {
 export async function getAgentStats(): Promise<any[]> {
     if (!supabase) return [];
 
+    const user = await getCurrentUser();
+    if (!user) return [];
+
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('agent_name, status, duration_ms, governance_verdict')
+        .eq('company_uid', user.id)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -247,12 +255,16 @@ export async function getAgentStats(): Promise<any[]> {
 export async function getExecutionVelocity(): Promise<{ time: string; value: number }[]> {
     if (!supabase) return [];
 
+    const user = await getCurrentUser();
+    if (!user) return [];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('created_at')
+        .eq('company_uid', user.id)
         .gte('created_at', today.toISOString())
         .order('created_at', { ascending: true });
 

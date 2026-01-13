@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAsync } from './useAsync';
 import { logService } from '../services/log.service';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 
 /**
  * Hook to get decision logs with realtime updates
@@ -163,9 +163,13 @@ export const useN8nExecutions = () => {
     const fetchExecutions = useCallback(async (): Promise<N8nExecution[]> => {
         if (!supabase) return [];
 
+        const user = await getCurrentUser();
+        if (!user) return [];
+
         const { data, error } = await supabase
             .from('n8n_executions')
             .select('*')
+            .eq('company_uid', user.id)
             .order('created_at', { ascending: false });
 
         if (error) {
