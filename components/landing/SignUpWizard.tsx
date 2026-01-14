@@ -147,21 +147,21 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
         planCredits: 0,
     });
 
-    // Carica draft al mount
+    // Load draft on mount
     useEffect(() => {
         if (isOpen) {
             const draft = getRegistrationDraft();
             if (draft) {
                 setFormData(prev => ({ ...prev, ...draft.data }));
-                // Non ripristinare lo step automaticamente per sicurezza
-                console.log('[SignUp] Draft recuperato dal localStorage');
+                // Don't restore step automatically for security
+                console.log('[SignUp] Draft recovered from localStorage');
             }
         }
     }, [isOpen]);
 
     // Auto-save draft (debounced)
     useEffect(() => {
-        if (!isOpen || step === 5) return; // Non salvare nello step finale
+        if (!isOpen || step === 5) return; // Don't save in final step
 
         const timeoutId = setTimeout(() => {
             if (step > 1) {
@@ -585,7 +585,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                         />
                                         <div>
                                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] block mb-2">
-                                                Provincia
+                                                Province
                                             </label>
                                             <select
                                                 value={formData.province}

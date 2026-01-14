@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verifica se utente esiste già
+    // Check if user already exists
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, email, first_name, last_name')
@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existingProfile) {
       console.log('[Invite] User already exists:', existingProfile.id);
       
-      // Verifica se è già membro dell'organizzazione
+      // Check if already a member of the organization
       const { data: existingMember } = await supabase
         .from('organization_members')
         .select('id')
@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Aggiungi utente esistente all'organizzazione
+      // Add existing user to the organization
       const { error: memberError } = await supabase
         .from('organization_members')
         .insert({
@@ -85,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Genera password temporanea
+    // Generate temporary password
     const tempPassword = 
       Math.random().toString(36).slice(-8) + 
       Math.random().toString(36).slice(-8) + 
@@ -93,18 +93,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('[Invite] Creating new user...');
 
-    // Crea utente - il trigger creerà automaticamente il profilo con role='AppUser'
+    // Create user - trigger will automatically create profile with role='AppUser'
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password: tempPassword,
       email_confirm: true,
       user_metadata: {
-        firstName,         // Per il trigger (snake_case fallback)
+        firstName,         // For the trigger (snake_case fallback)
         lastName,
-        first_name: firstName,  // Supporta entrambi i formati
+        first_name: firstName,  // Support both formats
         last_name: lastName,
         phone: phone || '',
-        role: 'AppUser',   // ← IMPORTANTE: dice al trigger di NON creare organizzazione
+        role: 'AppUser',   // ← IMPORTANT: tells trigger NOT to create organization
       },
     });
 
@@ -118,10 +118,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[Invite] User created:', authData.user.id);
 
-    // Aspetta che il trigger finisca
+    // Wait for trigger to finish
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Verifica che il profilo sia stato creato dal trigger
+    // Verify that profile was created by trigger
     const { data: newProfile, error: profileCheckError } = await supabase
       .from('profiles')
       .select('id, role')
@@ -139,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[Invite] Profile created by trigger:', newProfile);
 
-    // Aggiungi a organization_members
+    // Add to organization_members
     console.log('[Invite] Adding to organization:', organizationId);
     const { error: memberError } = await supabase
       .from('organization_members')
@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (memberError) {
       console.error('[Invite] Member error:', memberError);
-      // Rollback: elimina utente
+      // Rollback: delete user
       await supabase.auth.admin.deleteUser(authData.user.id);
       return res.status(500).json({ 
         error: 'Failed to add user to organization',

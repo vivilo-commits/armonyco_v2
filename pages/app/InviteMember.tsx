@@ -29,9 +29,9 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <Card padding="lg" className="max-w-md text-center">
           <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Accesso Negato</h2>
+          <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
           <p className="text-zinc-400">
-            Solo gli Admin dell'organizzazione possono invitare membri.
+            Only organization Admins can invite members.
           </p>
         </Card>
       </div>
@@ -64,7 +64,7 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Errore durante l\'invito del collaboratore');
+        throw new Error(result.error || 'Error while inviting collaborator');
       }
 
       // Success!
@@ -107,11 +107,11 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
               <Plus className="absolute -bottom-1 -right-1 w-3 h-3 text-emerald-500 bg-black rounded-full" />
             </div>
             <h1 className="text-2xl font-light text-white uppercase tracking-tight">
-              Invita Collaboratore
+              Invite Collaborator
             </h1>
           </div>
           <p className="text-zinc-500 text-sm">
-            Aggiungi un nuovo membro alla tua organizzazione
+            Add a new member to your organization
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
           <div className="mb-6 bg-red-500/10 border-2 border-red-500/30 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
             <AlertCircle size={24} className="text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-400 font-bold text-sm mb-1">Errore</p>
+              <p className="text-red-400 font-bold text-sm mb-1">Error</p>
               <p className="text-red-300/80 text-sm">{error}</p>
             </div>
           </div>
@@ -133,12 +133,12 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
               <CheckCircle size={24} className="text-emerald-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-emerald-400 font-bold text-lg mb-1">
-                  {existingUser ? 'Utente Aggiunto!' : 'Invito Inviato!'}
+                  {existingUser ? 'User Added!' : 'Invitation Sent!'}
                 </p>
                 <p className="text-emerald-300/80 text-sm">
                   {existingUser 
-                    ? `L'utente ${invitedEmail} è stato aggiunto alla tua organizzazione come Collaboratore.`
-                    : `Abbiamo creato l'account per ${invitedEmail} e aggiunto alla tua organizzazione.`
+                    ? `User ${invitedEmail} has been added to your organization as a Collaborator.`
+                    : `We created an account for ${invitedEmail} and added them to your organization.`
                   }
                 </p>
               </div>
@@ -147,7 +147,7 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
             {/* Temporary Password Box */}
             {tempPassword && !existingUser && (
               <div className="mt-4 p-4 bg-white/5 rounded-lg border border-emerald-500/30">
-                <p className="text-xs text-emerald-400 font-bold mb-2">⚠️ PASSWORD TEMPORANEA</p>
+                <p className="text-xs text-emerald-400 font-bold mb-2">⚠️ TEMPORARY PASSWORD</p>
                 <div className="flex items-center gap-2 mb-3">
                   <code className="flex-1 px-3 py-2 bg-black/40 rounded text-white font-mono text-sm border border-white/10">
                     {tempPassword}
@@ -155,14 +155,14 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
                   <button
                     onClick={() => copyToClipboard(tempPassword)}
                     className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded transition-colors"
-                    title="Copia password"
+                    title="Copy password"
                   >
                     <Copy size={16} className="text-emerald-400" />
                   </button>
                 </div>
                 <div className="text-xs text-zinc-400 space-y-1">
-                  <p>✓ Condividi questa password in modo sicuro con il collaboratore</p>
-                  <p>✓ L'utente dovrà cambiarla al primo accesso</p>
+                  <p>✓ Share this password securely with the collaborator</p>
+                  <p>✓ User must change it on first login</p>
                   <p>✓ Email: <span className="text-white font-mono">{invitedEmail}</span></p>
                 </div>
               </div>
@@ -175,12 +175,12 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
           <div className="flex items-start gap-3">
             <Info size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-zinc-300">
-              <p className="font-bold text-blue-400 mb-2">📝 Come funziona</p>
+              <p className="font-bold text-blue-400 mb-2">📝 How it works</p>
               <ol className="list-decimal list-inside space-y-2 text-zinc-400">
-                <li>Inserisci i dati del collaboratore nel form qui sotto</li>
-                <li>Il sistema crea automaticamente l'account e lo aggiunge alla tua organizzazione</li>
-                <li>Il collaboratore riceverà una password temporanea da cambiare al primo accesso</li>
-                <li>Il collaboratore avrà accesso in sola lettura ai dati dell'organizzazione</li>
+                <li>Enter the collaborator's details in the form below</li>
+                <li>The system automatically creates the account and adds it to your organization</li>
+                <li>The collaborator will receive a temporary password to change on first login</li>
+                <li>The collaborator will have read-only access to the organization's data</li>
               </ol>
             </div>
           </div>
@@ -194,32 +194,32 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="collaboratore@example.com"
+              placeholder="collaborator@example.com"
               required
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FloatingInput
-                label="Nome *"
+                label="First Name *"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Mario"
+                placeholder="John"
                 required
                 disabled={loading}
               />
 
               <FloatingInput
-                label="Cognome *"
+                label="Last Name *"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Rossi"
+                placeholder="Doe"
                 required
                 disabled={loading}
               />
             </div>
 
             <FloatingInput
-              label="Telefono (opzionale)"
+              label="Phone (optional)"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -229,8 +229,8 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
 
             {/* Organization Info */}
             <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <p className="text-xs text-zinc-500 mb-1">Organizzazione</p>
-              <p className="text-sm font-mono text-white">{currentOrgId || 'Non disponibile'}</p>
+              <p className="text-xs text-zinc-500 mb-1">Organization</p>
+              <p className="text-sm font-mono text-white">{currentOrgId || 'Not available'}</p>
             </div>
 
             <Button
@@ -240,7 +240,7 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
               leftIcon={<Users size={18} />}
               disabled={loading || !currentOrgId}
             >
-              {loading ? 'Invio in corso...' : 'Invia Invito'}
+              {loading ? 'Sending...' : 'Send Invitation'}
             </Button>
           </form>
         </Card>
@@ -248,23 +248,23 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
         {/* Additional Info */}
         <Card variant="dark" padding="md" className="mt-6">
           <div className="text-xs text-zinc-500">
-            <p className="font-bold text-zinc-400 mb-2">ℹ️ Informazioni sui Ruoli</p>
+            <p className="font-bold text-zinc-400 mb-2">ℹ️ Role Information</p>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-emerald-500 font-bold">•</span>
-                <span><strong className="text-zinc-300">Collaborator:</strong> Accesso in sola lettura ai dati dell'organizzazione</span>
+                <span><strong className="text-zinc-300">Collaborator:</strong> Read-only access to organization data</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-500 font-bold">•</span>
-                <span><strong className="text-zinc-300">User:</strong> Può visualizzare e modificare dati</span>
+                <span><strong className="text-zinc-300">User:</strong> Can view and edit data</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-purple-500 font-bold">•</span>
-                <span><strong className="text-zinc-300">Admin:</strong> Pieno controllo dell'organizzazione</span>
+                <span><strong className="text-zinc-300">Admin:</strong> Full control of the organization</span>
               </li>
             </ul>
             <p className="mt-3 text-zinc-600">
-              Puoi modificare i ruoli dei membri dalla pagina "Gestione Membri"
+              You can modify member roles from the "Manage Members" page
             </p>
           </div>
         </Card>

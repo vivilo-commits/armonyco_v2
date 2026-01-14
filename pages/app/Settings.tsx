@@ -44,79 +44,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdatePlanId,
     onNavigate
 }) => {
+    // ========================================
+    // ALL HOOKS FIRST - ALWAYS CALLED
+    // ========================================
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
     const [isContactOpen, setIsContactOpen] = useState(false);
     
     // Check permissions for organization settings and Settings access
     const { canEditOrganization, canAccessSettings, loading: permissionsLoading } = usePermissions();
 
-    // Show loading state while permissions are being checked
-    if (permissionsLoading) {
-        return (
-            <div className="w-full h-screen bg-black flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-[var(--color-brand-accent)]/30 border-t-[var(--color-brand-accent)] rounded-full animate-spin" />
-                    <span className="text-zinc-400 text-sm">Verifica permessi in corso...</span>
-                </div>
-            </div>
-        );
-    }
-
-    // Redirect Collaborators - Settings are restricted to SuperAdmin and Org Admin only
-    if (!canAccessSettings) {
-        return (
-            <div className="w-full h-screen bg-black flex items-center justify-center p-6">
-                <div className="max-w-md text-center space-y-6 animate-fade-in">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center">
-                        <Shield size={40} className="text-amber-500" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-3">Accesso Limitato</h2>
-                        <p className="text-zinc-400 leading-relaxed">
-                            La sezione Settings è disponibile solo per gli Amministratori dell'organizzazione.
-                        </p>
-                        <p className="text-zinc-500 text-sm mt-4">
-                            Come Collaboratore, hai accesso in sola lettura alle funzionalità principali della piattaforma. 
-                            Contatta l'amministratore della tua organizzazione se hai bisogno di modificare le impostazioni.
-                        </p>
-                    </div>
-                    <div className="pt-4">
-                        <button 
-                            onClick={() => onNavigate?.('dashboard')} 
-                            className="px-6 py-3 bg-[var(--color-brand-accent)] text-black rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-white transition-all"
-                        >
-                            Torna alla Dashboard
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Effect to sync prop activeView with internal state
-    useEffect(() => {
-        if (activeView) {
-            if (activeView === 'settings-profile') setActiveTab('PROFILE');
-            if (activeView === 'settings-company') setActiveTab('ORG');
-            if (activeView === 'settings-billing') setActiveTab('BILLING');
-            if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
-        }
-    }, [activeView]);
-
     // -- Profile Local State (Synced with Props) --
     const [localProfile, setLocalProfile] = useState(userProfile);
-    useEffect(() => setLocalProfile(userProfile), [userProfile]);
-
     const [emailVerified, setEmailVerified] = useState(true);
     const [phoneVerified, setPhoneVerified] = useState(false);
 
     // -- Org Local State (Synced with Props) --
     const [localOrg, setLocalOrg] = useState(organization);
-    useEffect(() => setLocalOrg(organization), [organization]);
 
     // -- Billing Details Local State --
     const [localBillingDetails, setLocalBillingDetails] = useState(billingDetails);
-    useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
 
     // -- Security State --
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -139,32 +85,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [isSavingBilling, setIsSavingBilling] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-    const handleSaveProfile = async () => {
-        setIsSavingProfile(true);
-        try {
-            await onUpdateProfile(localProfile);
-            setSaveSuccess('Profile saved!');
-            setTimeout(() => setSaveSuccess(null), 2000);
-        } catch (error) {
-            console.error('Failed to save profile:', error);
-        } finally {
-            setIsSavingProfile(false);
-        }
-    };
-
-    const handleSaveOrg = async () => {
-        setIsSavingOrg(true);
-        try {
-            await onUpdateOrganization(localOrg);
-            setSaveSuccess('Organization saved!');
-            setTimeout(() => setSaveSuccess(null), 2000);
-        } catch (error) {
-            console.error('Failed to save organization:', error);
-        } finally {
-            setIsSavingOrg(false);
-        }
-    };
-
     // -- Top Up State --
     const [showTopUpModal, setShowTopUpModal] = useState(false);
     const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack 10k after rescale
@@ -181,25 +101,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
     const [pendingPlan, setPendingPlan] = useState<{ id: number, name: string, price: number } | null>(null);
     const [isUpdatingPlan, setIsUpdatingPlan] = useState(false);
-
-    const handlePlanChange = (plan: { id: number, name: string, price: number }) => {
-        if (plan.id === activePlanId) return;
-        setPendingPlan(plan);
-        setShowPlanChangeModal(true);
-    };
-
-    const confirmPlanChange = () => {
-        setIsUpdatingPlan(true);
-        setTimeout(() => {
-            if (pendingPlan) {
-                onUpdatePlanId(pendingPlan.id);
-            }
-            setIsUpdatingPlan(false);
-            setShowPlanChangeModal(false);
-        }, 1500);
-    };
-
-    const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
 
     // -- Activation State --
     const [activationSteps, setActivationSteps] = useState([
@@ -234,6 +135,112 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     // -- Billing State --
     const [budgetLimit, setBudgetLimit] = useState<string>('500');
     const [budgetEnabled, setBudgetEnabled] = useState(false);
+
+    // Effect to sync prop activeView with internal state
+    useEffect(() => {
+        if (activeView) {
+            if (activeView === 'settings-profile') setActiveTab('PROFILE');
+            if (activeView === 'settings-company') setActiveTab('ORG');
+            if (activeView === 'settings-billing') setActiveTab('BILLING');
+            if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
+        }
+    }, [activeView]);
+
+    useEffect(() => setLocalProfile(userProfile), [userProfile]);
+    useEffect(() => setLocalOrg(organization), [organization]);
+    useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
+
+    // ========================================
+    // AFTER ALL HOOKS: CONDITIONAL LOGIC
+    // ========================================
+
+    // Show loading state while permissions are being checked
+    if (permissionsLoading) {
+        return (
+            <div className="w-full h-screen bg-black flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-[var(--color-brand-accent)]/30 border-t-[var(--color-brand-accent)] rounded-full animate-spin" />
+                    <span className="text-zinc-400 text-sm">Checking permissions...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Redirect Collaborators - Settings are restricted to SuperAdmin and Org Admin only
+    if (!canAccessSettings) {
+        return (
+            <div className="w-full h-screen bg-black flex items-center justify-center p-6">
+                <div className="max-w-md text-center space-y-6 animate-fade-in">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center">
+                        <Shield size={40} className="text-amber-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-3">Limited Access</h2>
+                        <p className="text-zinc-400 leading-relaxed">
+                            The Settings section is only available to Organization Administrators.
+                        </p>
+                        <p className="text-zinc-500 text-sm mt-4">
+                            As a Collaborator, you have read-only access to the main platform features. 
+                            Contact your organization administrator if you need to change settings.
+                        </p>
+                    </div>
+                    <div className="pt-4">
+                        <button 
+                            onClick={() => onNavigate?.('dashboard')} 
+                            className="px-6 py-3 bg-[var(--color-brand-accent)] text-black rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-white transition-all"
+                        >
+                            Torna alla Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
+
+    const handleSaveProfile = async () => {
+        setIsSavingProfile(true);
+        try {
+            await onUpdateProfile(localProfile);
+            setSaveSuccess('Profile saved!');
+            setTimeout(() => setSaveSuccess(null), 2000);
+        } catch (error) {
+            console.error('Failed to save profile:', error);
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
+    const handleSaveOrg = async () => {
+        setIsSavingOrg(true);
+        try {
+            await onUpdateOrganization(localOrg);
+            setSaveSuccess('Organization saved!');
+            setTimeout(() => setSaveSuccess(null), 2000);
+        } catch (error) {
+            console.error('Failed to save organization:', error);
+        } finally {
+            setIsSavingOrg(false);
+        }
+    };
+
+    const handlePlanChange = (plan: { id: number, name: string, price: number }) => {
+        if (plan.id === activePlanId) return;
+        setPendingPlan(plan);
+        setShowPlanChangeModal(true);
+    };
+
+    const confirmPlanChange = () => {
+        setIsUpdatingPlan(true);
+        setTimeout(() => {
+            if (pendingPlan) {
+                onUpdatePlanId(pendingPlan.id);
+            }
+            setIsUpdatingPlan(false);
+            setShowPlanChangeModal(false);
+        }, 1500);
+    };
 
     const handleValidation = (stepId: number) => {
         setValidationError(null);
@@ -1232,9 +1239,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div className="w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mb-4">
                                     <Shield size={40} className="text-amber-500" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Accesso Limitato</h3>
+                                <h3 className="text-xl font-bold text-white mb-2">Limited Access</h3>
                                 <p className="text-zinc-400 text-center max-w-md">
-                                    Solo gli Admin dell'organizzazione possono modificare le impostazioni aziendali.
+                                    Only organization Admins can modify business settings.
                                 </p>
                             </div>
                         }

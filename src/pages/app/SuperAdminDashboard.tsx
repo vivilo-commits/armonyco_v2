@@ -154,8 +154,8 @@ export default function SuperAdminDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
-          <h1 className="text-2xl font-bold mb-2">Accesso Negato</h1>
-          <p className="text-gray-600">Solo i Super Admin possono accedere a questa pagina.</p>
+          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <p className="text-gray-600">Only Super Admins can access this page.</p>
         </div>
       </div>
     );
@@ -179,7 +179,7 @@ export default function SuperAdminDashboard() {
           className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
           <ChevronLeft size={20} />
-          <span>Torna alle organizzazioni</span>
+          <span>Back to organizations</span>
         </button>
 
         {/* Organization Header */}
@@ -193,7 +193,7 @@ export default function SuperAdminDashboard() {
                   {selectedOrg.tier}
                 </span>
                 <span className="text-gray-400 text-sm">
-                  {orgMembers.length} {orgMembers.length === 1 ? 'membro' : 'membri'}
+                  {orgMembers.length} {orgMembers.length === 1 ? 'member' : 'members'}
                 </span>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function SuperAdminDashboard() {
         {/* Members List */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
           <div className="p-6 border-b border-white/10">
-            <h2 className="text-xl font-bold text-white">Membri dell'Organizzazione</h2>
+            <h2 className="text-xl font-bold text-white">Organization Members</h2>
           </div>
 
           {loadingMembers ? (
@@ -213,18 +213,18 @@ export default function SuperAdminDashboard() {
           ) : orgMembers.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               <Users size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Nessun membro in questa organizzazione</p>
+              <p>No members in this organization</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-white/5 text-left">
                   <tr>
-                    <th className="px-6 py-3 text-gray-400 font-medium">Utente</th>
+                    <th className="px-6 py-3 text-gray-400 font-medium">User</th>
                     <th className="px-6 py-3 text-gray-400 font-medium">Email</th>
-                    <th className="px-6 py-3 text-gray-400 font-medium">Ruolo Org</th>
-                    <th className="px-6 py-3 text-gray-400 font-medium">Ruolo App</th>
-                    <th className="px-6 py-3 text-gray-400 font-medium">Aggiunto il</th>
+                    <th className="px-6 py-3 text-gray-400 font-medium">Org Role</th>
+                    <th className="px-6 py-3 text-gray-400 font-medium">App Role</th>
+                    <th className="px-6 py-3 text-gray-400 font-medium">Added At</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -277,9 +277,9 @@ export default function SuperAdminDashboard() {
       {/* Organizations List */}
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
         <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">Tutte le Organizzazioni</h2>
+          <h2 className="text-xl font-bold text-white">All Organizations</h2>
           <p className="text-gray-400 text-sm mt-1">
-            Clicca su un'organizzazione per vedere i membri
+            Click on an organization to see members
           </p>
         </div>
 
@@ -293,10 +293,10 @@ export default function SuperAdminDashboard() {
             <table className="w-full">
               <thead className="bg-white/5 text-left">
                 <tr>
-                  <th className="px-6 py-3 text-gray-400 font-medium">Nome Organizzazione</th>
+                  <th className="px-6 py-3 text-gray-400 font-medium">Organization Name</th>
                   <th className="px-6 py-3 text-gray-400 font-medium">Tier</th>
-                  <th className="px-6 py-3 text-gray-400 font-medium">Creata il</th>
-                  <th className="px-6 py-3 text-gray-400 font-medium">Azioni</th>
+                  <th className="px-6 py-3 text-gray-400 font-medium">Created At</th>
+                  <th className="px-6 py-3 text-gray-400 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -404,7 +404,7 @@ function OrganizationRow({ org, onViewDetails }: OrganizationRowProps) {
           onClick={onViewDetails}
           className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors"
         >
-          Vedi Membri {memberCount !== null && `(${memberCount})`}
+          View Members {memberCount !== null && `(${memberCount})`}
         </button>
       </td>
     </tr>

@@ -84,8 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Corrected Menu Structure matching WebApp.tsx IDs exactly
   // Filter menu items based on permissions
   const menuStructure: MenuItem[] = useMemo(() => {
-    // ===== SUPER ADMIN: Solo Administration =====
-    // Se è SuperAdmin, mostra SOLO Administration (no Control Tower, no Settings, no Core Constructs)
+    // ===== SUPER ADMIN: Only Administration =====
+    // If SuperAdmin, show ONLY Administration (no Control Tower, no Settings, no Core Constructs)
     if (isAppAdmin) {
       console.log('[Sidebar] 👑 SuperAdmin detected - showing ONLY Administration');
       return [
@@ -94,12 +94,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'Administration',
           icon: Shield,
           children: [],
-          action: () => setView('dashboard') // SuperAdmin usa dashboard come administration
+          action: () => setView('dashboard') // SuperAdmin uses dashboard as administration
         }
       ];
     }
 
-    // ===== UTENTI NORMALI: Menu completo =====
+    // ===== NORMAL USERS: Complete Menu =====
     console.log('[Sidebar] 👤 Normal User - showing full menu');
     const baseMenu: MenuItem[] = [
       {
