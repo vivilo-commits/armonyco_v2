@@ -306,7 +306,7 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             firstName: data.firstName,
             lastName: data.lastName,
             phone: data.phone || '',
-            role: 'Executive', // Default admin role
+            role: 'AppUser', // ✅ FIX 1: AppUser role for normal registered users
             credits: data.planCredits || 0,
         });
 
@@ -330,25 +330,38 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.warn('[Registration] Organization save returned null, but continuing...');
         } else {
             console.log('[Registration] Organization saved successfully');
+            console.log('[Registration] Organization ID:', organization.id);
             
-            // Add user as Admin to organization_members
+            // ✅ FIX: Add user as Admin to organization_members
+            console.log('[Registration] Adding user to organization as Admin...');
+            console.log('[Registration] User ID:', userId);
+            console.log('[Registration] Organization ID:', organization.id);
+            
             try {
-                console.log('[Registration] Adding user as Admin to organization...');
-                const { error: memberError } = await supabase
+                const { data: memberData, error: memberError } = await supabase
                     .from('organization_members')
                     .insert({
-                        organization_id: organization.id,
-                        user_id: userId,
-                        role: 'Admin',
-                    });
+                        user_id: userId,                // ✅ CORRECT: underscore
+                        organization_id: organization.id, // ✅ CORRECT: underscore
+                        role: 'Admin',                   // ✅ CORRECT: Capital A
+                    })
+                    .select();
                 
                 if (memberError) {
-                    console.error('[Registration] Error adding user to organization_members:', memberError);
-                } else {
-                    console.log('[Registration] User added as Admin to organization successfully');
+                    console.error('[Registration] ❌ ERROR adding user to organization:', memberError);
+                    console.error('[Registration] Error details:', {
+                        code: memberError.code,
+                        message: memberError.message,
+                        details: memberError.details,
+                        hint: memberError.hint,
+                    });
+                    throw new Error(`Failed to add user to organization: ${memberError.message}`);
                 }
-            } catch (error) {
-                console.error('[Registration] Exception adding user to organization:', error);
+                
+                console.log('[Registration] ✅ User added to organization as Admin:', memberData);
+            } catch (error: any) {
+                console.error('[Registration] ❌ Unexpected error adding user to organization:', error);
+                throw error; // ⚠️ Block registration if this fails
             }
         }
 

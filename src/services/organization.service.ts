@@ -1,11 +1,12 @@
 import { supabase } from '../lib/supabase';
 
+// ✅ CORRECT: Role types with capital letters as per database schema
 export type OrganizationRole = 'Admin' | 'User' | 'Collaborator';
 
 export interface OrganizationMember {
   id: string;
-  organization_id: string;
-  user_id: string;
+  organization_id: string; // ✅ CORRECT: Column name WITH underscore
+  user_id: string; // ✅ CORRECT: Column name WITH underscore
   role: OrganizationRole;
   created_at: string;
   profiles?: {
@@ -36,7 +37,7 @@ export const organizationService = {
         organization_id,
         role,
         created_at,
-        profiles:user_id (
+        profiles!user_id (
           email,
           first_name,
           last_name
@@ -50,7 +51,7 @@ export const organizationService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []) as any; // Type assertion needed due to Supabase join
   },
 
   /**
@@ -167,7 +168,7 @@ export const organizationService = {
         organization_id,
         role,
         created_at,
-        profiles:user_id (
+        profiles!user_id (
           email,
           first_name,
           last_name
@@ -181,7 +182,7 @@ export const organizationService = {
       return null;
     }
 
-    return data;
+    return data as any; // Type assertion needed due to Supabase join
   },
 
   /**

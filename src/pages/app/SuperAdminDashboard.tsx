@@ -109,7 +109,7 @@ export default function SuperAdminDashboard() {
           id,
           role,
           created_at,
-          profiles:user_id (
+          profiles!user_id (
             id,
             email,
             first_name,
@@ -124,7 +124,7 @@ export default function SuperAdminDashboard() {
         console.error('[SuperAdminDashboard] ❌ Error loading members:', error);
         setOrgMembers([]);
       } else {
-        setOrgMembers(data || []);
+        setOrgMembers((data || []) as any); // Type assertion needed due to Supabase join
         console.log('[SuperAdminDashboard] ✅ Loaded', data?.length || 0, 'members');
       }
     } catch (err) {

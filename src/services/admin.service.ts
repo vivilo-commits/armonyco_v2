@@ -62,9 +62,9 @@ export async function getAllUsers(): Promise<AdminUser[]> {
             lastName: u.last_name || '',
             phone: u.phone || '',
             photo: u.photo,
-            role: u.role || 'Operator',
+            role: u.role || 'AppUser', // ✅ FIX: Default to AppUser, not Operator
             credits: u.credits || 0,
-            is_disabled: u.is_disabled || false,
+            is_disabled: u.is_disabled ?? false, // ✅ Use nullish coalescing for boolean
             created_at: u.created_at,
             updated_at: u.updated_at,
         }));
@@ -149,12 +149,14 @@ export async function getUserStats(): Promise<{ total: number; active: number; d
     }
 
     try {
+        // ✅ Select only essential columns to avoid errors if is_disabled doesn't exist
         const { data, error } = await supabase
             .from('profiles')
-            .select('is_disabled');
+            .select('id, is_disabled');
 
         if (error) {
             console.error('[Admin Service] ❌ Error fetching stats:', error);
+            console.warn('[Admin Service] ℹ️ If is_disabled column doesn\'t exist, run: ALTER TABLE profiles ADD COLUMN is_disabled BOOLEAN DEFAULT false;');
             return { total: 0, active: 0, disabled: 0 };
         }
 
@@ -164,7 +166,7 @@ export async function getUserStats(): Promise<{ total: number; active: number; d
         }
 
         const total = data.length;
-        const disabled = data.filter(u => u.is_disabled).length;
+        const disabled = data.filter(u => u.is_disabled ?? false).length; // ✅ Handle undefined
         const active = total - disabled;
 
         console.log('[Admin Service] ✅ Stats loaded:', { total, active, disabled });

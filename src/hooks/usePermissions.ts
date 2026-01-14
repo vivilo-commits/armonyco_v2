@@ -267,7 +267,7 @@ export function usePermissions(): UsePermissionsReturn {
         setCurrentOrgId(null);
         setCurrentOrgRole(null);
       } else if (data) {
-        setCurrentOrgId(data.organization_id);
+        setCurrentOrgId(data.organization_id); // ✅ CORRECT: underscore
         setCurrentOrgRole(data.role as OrgRole);
       }
     } catch (err) {
