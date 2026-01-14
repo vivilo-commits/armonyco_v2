@@ -2,145 +2,144 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log('[Invite] Request received:', req.method);
+  console.log('[Invite] Request received');
   
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Verifica variabili ambiente
-    if (!process.env.VITE_SUPABASE_URL) {
-      console.error('[Invite] Missing VITE_SUPABASE_URL');
-      return res.status(500).json({ error: 'Server configuration error: Missing SUPABASE_URL' });
+    if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[Invite] Missing environment variables');
+      return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('[Invite] Missing SUPABASE_SERVICE_ROLE_KEY');
-      return res.status(500).json({ error: 'Server configuration error: Missing SERVICE_ROLE_KEY' });
-    }
-
-    // Crea client Supabase
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
     const { email, firstName, lastName, phone, organizationId } = req.body;
 
-    console.log('[Invite] Request data:', { 
-      email, 
-      firstName, 
-      lastName, 
-      phone: phone || 'not provided',
-      organizationId 
-    });
+    console.log('[Invite] Data:', { email, firstName, lastName, organizationId });
 
-    // Validazione
     if (!email || !firstName || !lastName || !organizationId) {
-      console.error('[Invite] Missing required fields');
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['email', 'firstName', 'lastName', 'organizationId'],
-        received: { email: !!email, firstName: !!firstName, lastName: !!lastName, organizationId: !!organizationId }
-      });
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Verifica formato email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    // 1. Verifica se l'utente esiste già
-    console.log('[Invite] Checking if user exists...');
-    const { data: existingUser } = await supabase
+    // Verifica se utente esiste già
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, first_name, last_name')
       .eq('email', email)
       .maybeSingle();
 
-    if (existingUser) {
-      console.log('[Invite] User already exists:', existingUser.id);
-      return res.status(409).json({ 
-        error: 'User with this email already exists',
-        userId: existingUser.id 
+    if (existingProfile) {
+      console.log('[Invite] User already exists:', existingProfile.id);
+      
+      // Verifica se è già membro dell'organizzazione
+      const { data: existingMember } = await supabase
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', existingProfile.id)
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+
+      if (existingMember) {
+        return res.status(409).json({ 
+          error: 'User is already a member of this organization',
+          user: existingProfile
+        });
+      }
+
+      // Aggiungi utente esistente all'organizzazione
+      const { error: memberError } = await supabase
+        .from('organization_members')
+        .insert({
+          user_id: existingProfile.id,
+          organization_id: organizationId,
+          role: 'Collaborator',
+        });
+
+      if (memberError) {
+        console.error('[Invite] Error adding existing user:', memberError);
+        return res.status(500).json({ 
+          error: 'Failed to add user to organization',
+          details: memberError.message 
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Existing user added to organization',
+        user: {
+          id: existingProfile.id,
+          email: existingProfile.email,
+          firstName: existingProfile.first_name,
+          lastName: existingProfile.last_name,
+        },
       });
     }
 
-    // 2. Genera password temporanea sicura
+    // Genera password temporanea
     const tempPassword = 
       Math.random().toString(36).slice(-8) + 
-      Math.random().toString(36).slice(-8) +
-      'Aa1!'; // Assicura requisiti password
+      Math.random().toString(36).slice(-8) + 
+      'Aa1!';
     
-    console.log('[Invite] Creating auth user...');
+    console.log('[Invite] Creating new user...');
 
-    // 3. Crea utente in Supabase Auth
+    // Crea utente - il trigger creerà automaticamente il profilo con role='AppUser'
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password: tempPassword,
       email_confirm: true,
       user_metadata: {
-        firstName,
+        firstName,         // Per il trigger (snake_case fallback)
         lastName,
+        first_name: firstName,  // Supporta entrambi i formati
+        last_name: lastName,
         phone: phone || '',
-        mustChangePassword: true,
+        role: 'AppUser',   // ← IMPORTANTE: dice al trigger di NON creare organizzazione
       },
     });
 
     if (authError) {
       console.error('[Invite] Auth error:', authError);
       return res.status(500).json({ 
-        error: 'Failed to create user authentication',
+        error: 'Failed to create user',
         details: authError.message 
       });
     }
 
-    console.log('[Invite] Auth user created:', authData.user.id);
+    console.log('[Invite] User created:', authData.user.id);
 
-    // 4. Crea profilo
-    console.log('[Invite] Creating profile...');
-    const { error: profileError } = await supabase
+    // Aspetta che il trigger finisca
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Verifica che il profilo sia stato creato dal trigger
+    const { data: newProfile, error: profileCheckError } = await supabase
       .from('profiles')
-      .insert({
-        id: authData.user.id,
-        email,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || '',
-        role: 'AppUser',
-        credits: 0,
-      });
+      .select('id, role')
+      .eq('id', authData.user.id)
+      .single();
 
-    if (profileError) {
-      console.error('[Invite] Profile error:', profileError);
-      // Rollback: elimina utente auth se fallisce profile
+    if (profileCheckError || !newProfile) {
+      console.error('[Invite] Profile not created by trigger:', profileCheckError);
       await supabase.auth.admin.deleteUser(authData.user.id);
       return res.status(500).json({ 
-        error: 'Failed to create user profile',
-        details: profileError.message 
+        error: 'Failed to create user profile (trigger error)',
+        details: profileCheckError?.message 
       });
     }
 
-    console.log('[Invite] Profile created');
+    console.log('[Invite] Profile created by trigger:', newProfile);
 
-    // 5. Aggiungi a organization_members
+    // Aggiungi a organization_members
     console.log('[Invite] Adding to organization:', organizationId);
     const { error: memberError } = await supabase
       .from('organization_members')
@@ -152,16 +151,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (memberError) {
       console.error('[Invite] Member error:', memberError);
-      // Rollback: elimina utente e profile
+      // Rollback: elimina utente
       await supabase.auth.admin.deleteUser(authData.user.id);
-      await supabase.from('profiles').delete().eq('id', authData.user.id);
       return res.status(500).json({ 
         error: 'Failed to add user to organization',
         details: memberError.message 
       });
     }
 
-    console.log('[Invite] ✅ Collaborator added successfully');
+    console.log('[Invite] ✅ Collaborator invited successfully');
 
     return res.status(200).json({
       success: true,
@@ -180,7 +178,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
