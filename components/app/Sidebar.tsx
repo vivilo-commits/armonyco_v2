@@ -137,8 +137,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         id: 'settings',
         label: 'Settings',
         icon: Settings,
-        children: [],
-        action: () => setView('settings-profile')
+        children: [
+          { id: 'settings-profile', label: 'Profile' },
+          { id: 'settings-company', label: 'Organization' },
+          { id: 'settings-billing', label: 'Billing' },
+          ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
+        ],
       },
     ];
 
