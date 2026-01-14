@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedMenu, setExpandedMenu] = useState<string | null>('governance');
   
   // Get permissions for dynamic menu
-  const { canManageMembers, canEditOrganization, isAppAdmin, loading: permissionsLoading } = usePermissions();
+  const { canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, loading: permissionsLoading } = usePermissions();
 
   // Debug logging for Administration visibility
   console.log('[Sidebar] 🔍 SuperAdmin Check:', {
@@ -133,7 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'ags', label: 'AGS - Armonyco Governance Scorecard™' },
         ]
       },
-      {
+      // Settings - Only show for SuperAdmin or Org Admin (NOT Collaborators)
+      ...(canAccessSettings ? [{
         id: 'settings',
         label: 'Settings',
         icon: Settings,
@@ -143,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'settings-billing', label: 'Billing' },
           ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
         ],
-      },
+      }] : []),
     ];
 
     // Add Services menu only for Organization Admin
@@ -158,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     return baseMenu;
-  }, [setView, canManageMembers, canEditOrganization, isAppAdmin, permissionsLoading]);
+  }, [setView, canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, permissionsLoading]);
 
   const handleItemClick = (item: MenuItem) => {
     // Logic: 

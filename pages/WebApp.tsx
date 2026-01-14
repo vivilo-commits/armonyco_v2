@@ -309,6 +309,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
           onUpdateCredits={handleUpdateCredits}
           activePlanId={activePlanId}
           onUpdatePlanId={setActivePlanId}
+          onNavigate={handleSetView}
         />;
 
       case 'documentation': return <DocumentationView />;

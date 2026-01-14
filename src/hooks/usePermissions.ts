@@ -21,6 +21,7 @@ export interface UsePermissionsReturn {
   canEditOrganization: boolean;
   canViewAllStats: boolean;
   canEditOwnProfile: boolean;
+  canAccessSettings: boolean; // SuperAdmin or Org Admin can access Settings (not Collaborator)
   
   // Simplified permission checks - NOW BOOLEANS (not functions)
   canEdit: boolean; // Admin and User can edit (not Collaborator)
@@ -163,6 +164,12 @@ export function usePermissions(): UsePermissionsReturn {
     return isAppAdmin || isOrgAdmin;
   }, [isAppAdmin, isOrgAdmin]);
 
+  const canAccessSettings = useMemo(() => {
+    // Only SuperAdmin (AppAdmin) or Organization Admin can access Settings
+    // Collaborators should NOT see Settings
+    return isAppAdmin || isOrgAdmin;
+  }, [isAppAdmin, isOrgAdmin]);
+
   const canViewAllStats = useMemo(() => {
     return isAppAdmin || isOrgAdmin || isOrgCollaborator;
   }, [isAppAdmin, isOrgAdmin, isOrgCollaborator]);
@@ -292,6 +299,7 @@ export function usePermissions(): UsePermissionsReturn {
     // ✅ Permission booleans
     canManageMembers,
     canEditOrganization,
+    canAccessSettings,
     canViewAllStats,
     canEditOwnProfile,
     canEdit,
