@@ -161,11 +161,21 @@ export const useN8nExecutions = () => {
     }, []);
 
     const fetchExecutions = useCallback(async (): Promise<N8nExecution[]> => {
-        if (!supabase) return [];
+        console.log('[useN8nExecutions] fetchExecutions called, trigger:', trigger);
+        
+        if (!supabase) {
+            console.log('[useN8nExecutions] No supabase, returning empty array');
+            return [];
+        }
 
+        console.log('[useN8nExecutions] Getting current user...');
         const user = await getCurrentUser();
-        if (!user) return [];
+        if (!user) {
+            console.log('[useN8nExecutions] No user found, returning empty array');
+            return [];
+        }
 
+        console.log('[useN8nExecutions] Querying n8n_executions for user:', user.id);
         const { data, error } = await supabase
             .from('n8n_executions')
             .select('*')
@@ -173,11 +183,11 @@ export const useN8nExecutions = () => {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('[N8n Executions] Error:', error);
+            console.error('[N8n Executions] ❌ Error:', error);
             return [];
         }
 
-        console.log('[N8n Executions] Fetched:', data?.length, 'records');
+        console.log('[N8n Executions] ✅ Fetched:', data?.length, 'records');
         return data || [];
     }, [trigger]);
 

@@ -9,7 +9,9 @@ export interface AdminUser extends UserProfile {
 }
 
 /**
- * Check if current user is admin (Executive role)
+ * Check if current user is admin (AppAdmin role)
+ * @deprecated Use usePermissions().isAppAdmin() in components instead
+ * This function is kept for backward compatibility but should not be used for access control
  */
 export async function isAdmin(): Promise<boolean> {
     if (!supabase) return false;
@@ -24,117 +26,154 @@ export async function isAdmin(): Promise<boolean> {
         .single();
 
     if (error || !data) return false;
-    return data.role === 'Executive';
+    // Updated to check for AppAdmin instead of Executive
+    return data.role === 'AppAdmin';
 }
 
 /**
- * Get all users (admin only)
+ * Get all users
+ * Access control should be done in the calling component using usePermissions()
  */
 export async function getAllUsers(): Promise<AdminUser[]> {
-    if (!supabase) return [];
-
-    // Check admin permission
-    const admin = await isAdmin();
-    if (!admin) {
-        console.error('[Admin] Access denied - not an admin');
+    console.log('[Admin Service] 📞 getAllUsers called');
+    
+    if (!supabase) {
+        console.log('[Admin Service] ⚠️ Supabase not configured');
         return [];
     }
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('[Admin] Get users failed:', error);
-        return [];
+        if (error) {
+            console.error('[Admin Service] ❌ Error fetching users:', error);
+            throw error;
+        }
+
+        console.log('[Admin Service] ✅ Users loaded:', data?.length || 0);
+
+        return (data || []).map(u => ({
+            id: u.id,
+            email: u.email,
+            firstName: u.first_name || '',
+            lastName: u.last_name || '',
+            phone: u.phone || '',
+            photo: u.photo,
+            role: u.role || 'Operator',
+            credits: u.credits || 0,
+            is_disabled: u.is_disabled || false,
+            created_at: u.created_at,
+            updated_at: u.updated_at,
+        }));
+    } catch (err) {
+        console.error('[Admin Service] ❌ Exception in getAllUsers:', err);
+        throw err;
     }
-
-    return (data || []).map(u => ({
-        id: u.id,
-        email: u.email,
-        firstName: u.first_name || '',
-        lastName: u.last_name || '',
-        phone: u.phone || '',
-        photo: u.photo,
-        role: u.role || 'Operator',
-        credits: u.credits || 0,
-        is_disabled: u.is_disabled || false,
-        created_at: u.created_at,
-        updated_at: u.updated_at,
-    }));
 }
 
 /**
- * Update user role (admin only)
+ * Update user role
+ * Access control should be done in the calling component using usePermissions()
  */
 export async function updateUserRole(userId: string, role: string): Promise<boolean> {
-    if (!supabase) return false;
-
-    const admin = await isAdmin();
-    if (!admin) {
-        console.error('[Admin] Access denied');
+    console.log('[Admin Service] 📞 updateUserRole called for user:', userId, 'new role:', role);
+    
+    if (!supabase) {
+        console.log('[Admin Service] ⚠️ Supabase not configured');
         return false;
     }
 
-    const { error } = await supabase
-        .from('profiles')
-        .update({ role, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ role, updated_at: new Date().toISOString() })
+            .eq('id', userId);
 
-    if (error) {
-        console.error('[Admin] Update role failed:', error);
+        if (error) {
+            console.error('[Admin Service] ❌ Update role failed:', error);
+            throw error;
+        }
+
+        console.log('[Admin Service] ✅ Role updated successfully');
+        return true;
+    } catch (err) {
+        console.error('[Admin Service] ❌ Exception in updateUserRole:', err);
         return false;
     }
-
-    return true;
 }
 
 /**
- * Enable/disable user account (admin only)
+ * Enable/disable user account
+ * Access control should be done in the calling component using usePermissions()
  */
 export async function setUserDisabled(userId: string, disabled: boolean): Promise<boolean> {
-    if (!supabase) return false;
-
-    const admin = await isAdmin();
-    if (!admin) {
-        console.error('[Admin] Access denied');
+    console.log('[Admin Service] 📞 setUserDisabled called for user:', userId, 'disabled:', disabled);
+    
+    if (!supabase) {
+        console.log('[Admin Service] ⚠️ Supabase not configured');
         return false;
     }
 
-    const { error } = await supabase
-        .from('profiles')
-        .update({ is_disabled: disabled, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_disabled: disabled, updated_at: new Date().toISOString() })
+            .eq('id', userId);
 
-    if (error) {
-        console.error('[Admin] Set disabled failed:', error);
+        if (error) {
+            console.error('[Admin Service] ❌ Set disabled failed:', error);
+            throw error;
+        }
+
+        console.log('[Admin Service] ✅ User disabled status updated successfully');
+        return true;
+    } catch (err) {
+        console.error('[Admin Service] ❌ Exception in setUserDisabled:', err);
         return false;
     }
-
-    return true;
 }
 
 /**
- * Get user count statistics (admin only)
+ * Get user count statistics
+ * Access control should be done in the calling component using usePermissions()
  */
 export async function getUserStats(): Promise<{ total: number; active: number; disabled: number }> {
-    if (!supabase) return { total: 0, active: 0, disabled: 0 };
+    console.log('[Admin Service] 📞 getUserStats called');
+    
+    if (!supabase) {
+        console.log('[Admin Service] ⚠️ Supabase not configured');
+        return { total: 0, active: 0, disabled: 0 };
+    }
 
-    const admin = await isAdmin();
-    if (!admin) return { total: 0, active: 0, disabled: 0 };
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_disabled');
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('is_disabled');
+        if (error) {
+            console.error('[Admin Service] ❌ Error fetching stats:', error);
+            return { total: 0, active: 0, disabled: 0 };
+        }
 
-    if (error || !data) return { total: 0, active: 0, disabled: 0 };
+        if (!data) {
+            console.log('[Admin Service] ℹ️ No data returned');
+            return { total: 0, active: 0, disabled: 0 };
+        }
 
-    const total = data.length;
-    const disabled = data.filter(u => u.is_disabled).length;
-    const active = total - disabled;
+        const total = data.length;
+        const disabled = data.filter(u => u.is_disabled).length;
+        const active = total - disabled;
 
-    return { total, active, disabled };
+        console.log('[Admin Service] ✅ Stats loaded:', { total, active, disabled });
+
+        return { total, active, disabled };
+    } catch (err) {
+        console.error('[Admin Service] ❌ Exception in getUserStats:', err);
+        return { total: 0, active: 0, disabled: 0 };
+    }
 }
 
 export const adminService = {

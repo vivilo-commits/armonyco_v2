@@ -330,6 +330,26 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.warn('[Registration] Organization save returned null, but continuing...');
         } else {
             console.log('[Registration] Organization saved successfully');
+            
+            // Add user as Admin to organization_members
+            try {
+                console.log('[Registration] Adding user as Admin to organization...');
+                const { error: memberError } = await supabase
+                    .from('organization_members')
+                    .insert({
+                        organization_id: organization.id,
+                        user_id: userId,
+                        role: 'Admin',
+                    });
+                
+                if (memberError) {
+                    console.error('[Registration] Error adding user to organization_members:', memberError);
+                } else {
+                    console.log('[Registration] User added as Admin to organization successfully');
+                }
+            } catch (error) {
+                console.error('[Registration] Exception adding user to organization:', error);
+            }
         }
 
         // 4. Save billing details

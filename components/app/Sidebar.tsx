@@ -18,6 +18,7 @@ import {
   IconSizes
 } from '../ui/Icons';
 import { UserRole } from '../../src/types';
+import { usePermissions } from '../../src/hooks/usePermissions';
 
 interface UserProfile {
   firstName: string;
@@ -69,63 +70,91 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activePlanId = 1
 }) => {
   const [expandedMenu, setExpandedMenu] = useState<string | null>('governance');
+  
+  // Get permissions for dynamic menu
+  const { canManageMembers, canEditOrganization, isAppAdmin, loading: permissionsLoading } = usePermissions();
+
+  // Debug logging for Administration visibility
+  console.log('[Sidebar] 🔍 SuperAdmin Check:', {
+    permissionsLoading,
+    isAppAdminResult: isAppAdmin,
+    timestamp: new Date().toISOString()
+  });
 
   // Corrected Menu Structure matching WebApp.tsx IDs exactly
-  const menuStructure: MenuItem[] = useMemo(() => [
-    {
-      id: 'dashboard',
-      label: 'Operations Center',
-      icon: LayoutDashboard,
-      children: [],
-      action: () => setView('dashboard')
-    },
-    {
-      id: 'governance',
-      label: 'Control Tower',
-      icon: Shield,
-      children: [
-        { id: 'value', label: 'Governed Cashflow™' },
-        { id: 'log', label: 'Decision Log' },
-        { id: 'compliance', label: 'Compliance Rate™' },
-        { id: 'human-risk', label: 'Human Risk' },
-        { id: 'residual-risk', label: 'Residual Risk' },
-      ]
-    },
-    {
-      id: 'core',
-      label: 'Core Constructs',
-      icon: Database,
-      children: [
-        { id: 'aem', label: 'AEM - Armonyco Event Model™' },
-        { id: 'aos', label: 'AOS - Armonyco Operating System™' },
-        { id: 'aim', label: 'AIM - Armonyco Intelligence Matrix™' },
-        { id: 'ars', label: 'ARS - Armonyco Reliability System™' },
-        { id: 'ags', label: 'AGS - Armonyco Governance Scorecard™' },
-      ]
-    },
-    {
-      id: 'services',
-      label: 'My Services',
-      icon: Package,
-      children: [],
-      action: () => setView('products')
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      children: [],
-      action: () => setView('settings-profile')
-    },
-    {
-      id: 'admin',
-      label: 'Administration',
-      icon: Shield,
-      children: [
-        { id: 'admin-users', label: 'User Management' },
-      ]
+  // Filter menu items based on permissions
+  const menuStructure: MenuItem[] = useMemo(() => {
+    // ===== SUPER ADMIN: Solo Administration =====
+    // Se è SuperAdmin, mostra SOLO Administration (no Control Tower, no Settings, no Core Constructs)
+    if (isAppAdmin) {
+      console.log('[Sidebar] 👑 SuperAdmin detected - showing ONLY Administration');
+      return [
+        {
+          id: 'administration',
+          label: 'Administration',
+          icon: Shield,
+          children: [],
+          action: () => setView('dashboard') // SuperAdmin usa dashboard come administration
+        }
+      ];
     }
-  ], [setView]);
+
+    // ===== UTENTI NORMALI: Menu completo =====
+    console.log('[Sidebar] 👤 Normal User - showing full menu');
+    const baseMenu: MenuItem[] = [
+      {
+        id: 'dashboard',
+        label: 'Operations Center',
+        icon: LayoutDashboard,
+        children: [],
+        action: () => setView('dashboard')
+      },
+      {
+        id: 'governance',
+        label: 'Control Tower',
+        icon: Shield,
+        children: [
+          { id: 'value', label: 'Governed Cashflow™' },
+          { id: 'log', label: 'Decision Log' },
+          { id: 'compliance', label: 'Compliance Rate™' },
+          { id: 'human-risk', label: 'Human Risk' },
+          { id: 'residual-risk', label: 'Residual Risk' },
+        ]
+      },
+      {
+        id: 'core',
+        label: 'Core Constructs',
+        icon: Database,
+        children: [
+          { id: 'aem', label: 'AEM - Armonyco Event Model™' },
+          { id: 'aos', label: 'AOS - Armonyco Operating System™' },
+          { id: 'aim', label: 'AIM - Armonyco Intelligence Matrix™' },
+          { id: 'ars', label: 'ARS - Armonyco Reliability System™' },
+          { id: 'ags', label: 'AGS - Armonyco Governance Scorecard™' },
+        ]
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: Settings,
+        children: [],
+        action: () => setView('settings-profile')
+      },
+    ];
+
+    // Add Services menu only for Organization Admin
+    if (canEditOrganization) {
+      baseMenu.push({
+        id: 'services',
+        label: 'My Services',
+        icon: Package,
+        children: [],
+        action: () => setView('products')
+      });
+    }
+
+    return baseMenu;
+  }, [setView, canManageMembers, canEditOrganization, isAppAdmin, permissionsLoading]);
 
   const handleItemClick = (item: MenuItem) => {
     // Logic: 
@@ -198,6 +227,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <X size={24} />
           </button>
         </div>
+
+        {/* SuperAdmin Banner - TOP POSITION */}
+        {!permissionsLoading && isAppAdmin && !isCollapsed && (
+          <div className="mx-3 mt-4 mb-2 p-4 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg border border-purple-400/30">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-3xl">👑</span>
+              <div className="flex-1">
+                <p className="text-sm font-black text-white uppercase tracking-wider">
+                  Super Admin
+                </p>
+                <p className="text-xs text-purple-100 font-medium">
+                  Accesso completo al sistema
+                </p>
+              </div>
+            </div>
+            <div className="text-[10px] text-purple-200 bg-black/10 rounded-lg px-2 py-1.5 font-mono">
+              🛡️ Modalità Amministrazione Globale
+            </div>
+          </div>
+        )}
 
         {/* Navigation - SCROLLABLE */}
         <nav className="flex-1 overflow-y-auto scrollbar-hide py-6 px-3 space-y-2">
@@ -295,7 +344,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {userProfile?.firstName} {userProfile?.lastName}
                 </div>
                 <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.2em] mt-0.5 truncate">
-                  {getPlanName(activePlanId)}
+                  {isAppAdmin ? '👑 SUPER ADMIN' : getPlanName(activePlanId)}
                 </div>
               </div>
             </button>

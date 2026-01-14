@@ -7,6 +7,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Card } from '../../components/ui/Card';
 import { UserProfile, Organization, BillingDetails } from '../../src/types';
 import { ContactModal } from '../../components/landing/ContactModal';
+import { usePermissions } from '../../src/hooks/usePermissions';
+import { ProtectedContent } from '../../src/components/app/ProtectedContent';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -42,6 +44,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
     const [isContactOpen, setIsContactOpen] = useState(false);
+    
+    // Check permissions for organization settings
+    const { canEditOrganization } = usePermissions();
 
     // Effect to sync prop activeView with internal state
     useEffect(() => {
@@ -1174,7 +1179,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="flex-1 overflow-y-auto scrollbar-hide">
                 {activeTab === 'PROFILE' && renderProfile()}
-                {activeTab === 'ORG' && renderOrg()}
+                {activeTab === 'ORG' && (
+                    <ProtectedContent 
+                        requireAdmin
+                        fallback={
+                            <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+                                <div className="w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mb-4">
+                                    <Shield size={40} className="text-amber-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Accesso Limitato</h3>
+                                <p className="text-zinc-400 text-center max-w-md">
+                                    Solo gli Admin dell'organizzazione possono modificare le impostazioni aziendali.
+                                </p>
+                            </div>
+                        }
+                    >
+                        {renderOrg()}
+                    </ProtectedContent>
+                )}
                 {activeTab === 'BILLING' && renderBilling()}
                 {activeTab === 'ACTIVATION' && renderActivation()}
             </div>
