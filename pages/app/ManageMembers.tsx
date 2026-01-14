@@ -120,14 +120,14 @@ export const ManageMembers: React.FC = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Users className="text-[var(--color-brand-accent)] w-6 h-6" />
-            <h1 className="text-3xl font-light text-white">Gestione Membri</h1>
+            <h1 className="text-3xl font-light text-white">Manage Members</h1>
           </div>
           <p className="text-zinc-500 text-sm">
-            Gestisci i membri della tua organizzazione e i loro ruoli
+            Manage your organization members and their roles
           </p>
         </div>
         <Button leftIcon={<RefreshCw size={16} />} onClick={loadMembers} isLoading={isLoading}>
-          Ricarica
+          Reload
         </Button>
       </div>
 
@@ -237,7 +237,7 @@ export const ManageMembers: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-zinc-400">
-                      {new Date(member.created_at).toLocaleDateString('it-IT')}
+                      {new Date(member.created_at).toLocaleDateString('en-US')}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -249,7 +249,7 @@ export const ManageMembers: React.FC = () => {
                       leftIcon={<Trash2 size={14} />}
                       className="text-red-400 hover:bg-red-500/10"
                     >
-                      Rimuovi
+                      Remove
                     </Button>
                   </td>
                 </tr>

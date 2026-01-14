@@ -13,11 +13,11 @@ interface UnauthorizedViewProps {
  * Displays a styled message when user doesn't have permission to access a page/feature
  * 
  * Usage:
- * <UnauthorizedView message="Solo gli Admin possono gestire gli utenti" />
+ * <UnauthorizedView message="Only Admins can manage users" />
  */
 export const UnauthorizedView: React.FC<UnauthorizedViewProps> = ({
-  message = 'Non hai i permessi per accedere a questa pagina',
-  title = 'Accesso Negato',
+  message = 'You do not have permission to access this page',
+  title = 'Access Denied',
   showBackButton = true,
 }) => {
   const handleBack = () => {
@@ -46,10 +46,10 @@ export const UnauthorizedView: React.FC<UnauthorizedViewProps> = ({
         <div className="flex items-start gap-3">
           <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-[var(--color-text-muted)]">
-            <p className="font-semibold text-amber-500 mb-1">Permessi Richiesti</p>
+            <p className="font-semibold text-amber-500 mb-1">Permissions Required</p>
             <p>
-              Questa sezione richiede permessi speciali. Contatta l'amministratore della tua 
-              organizzazione se pensi di dover avere accesso.
+              This section requires special permissions. Contact your organization 
+              administrator if you think you should have access.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export const UnauthorizedView: React.FC<UnauthorizedViewProps> = ({
             variant="secondary"
             onClick={handleBack}
           >
-            Torna Indietro
+            Go Back
           </Button>
           <Button
             variant="ghost"

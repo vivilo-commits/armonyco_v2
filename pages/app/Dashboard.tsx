@@ -172,9 +172,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="mb-6 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
                     <AlertTriangle size={24} className="text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-amber-400 font-bold text-sm mb-1">⚠️ Modalità Solo Lettura</p>
+                        <p className="text-amber-400 font-bold text-sm mb-1">⚠️ Read-Only Mode</p>
                         <p className="text-amber-300/80 text-sm">
-                            Hai accesso in sola lettura come <strong>Collaborator</strong>. Puoi visualizzare i dati ma non modificarli.
+                            You have read-only access as a <strong>Collaborator</strong>. You can view data but not modify it.
                         </p>
                     </div>
                 </div>
@@ -213,9 +213,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <div className="flex items-start gap-3">
                         <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-amber-400 font-semibold mb-1">👀 Modalità Solo Lettura</p>
+                            <p className="text-amber-400 font-semibold mb-1">👀 Read-Only Mode</p>
                             <p className="text-amber-200/70 text-sm">
-                                Hai accesso in sola lettura come Collaborator. Puoi visualizzare tutti i dati ma non modificarli.
+                                You have read-only access as a Collaborator. You can view all data but not modify it.
                             </p>
                         </div>
                     </div>

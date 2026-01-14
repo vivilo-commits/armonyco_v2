@@ -1,44 +1,44 @@
-# API Backend per Stripe e Registrazione
+# API Backend for Stripe and Registration
 
-Queste sono le serverless functions di Vercel per gestire pagamenti Stripe e invio email.
+These are Vercel serverless functions to handle Stripe payments and email sending.
 
 ## Setup
 
-### 1. Installa dipendenze backend
+### 1. Install backend dependencies
 
 ```bash
 npm install stripe @sendgrid/mail @vercel/node
 ```
 
-### 2. Configura variabili ambiente
+### 2. Configure environment variables
 
-Crea un file `.env` o configura su Vercel Dashboard:
+Create a `.env` file or configure on Vercel Dashboard:
 
 ```env
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# SendGrid (o altro servizio email)
+# SendGrid (or other email service)
 SENDGRID_API_KEY=SG....
 FROM_EMAIL=noreply@armonyco.com
 
-# Supabase (se necessario per webhook)
+# Supabase (if needed for webhooks)
 SUPABASE_URL=https://...
 SUPABASE_SERVICE_KEY=...
 ```
 
-### 3. Configura Webhook Stripe
+### 3. Configure Stripe Webhook
 
-1. Vai su Stripe Dashboard > Developers > Webhooks
-2. Aggiungi endpoint: `https://tuodominio.com/api/webhooks/stripe`
-3. Seleziona eventi:
+1. Go to Stripe Dashboard > Developers > Webhooks
+2. Add endpoint: `https://yourdomain.com/api/webhooks/stripe`
+3. Select events:
    - `checkout.session.completed`
    - `payment_intent.succeeded`
    - `payment_intent.payment_failed`
-4. Copia il webhook secret in `STRIPE_WEBHOOK_SECRET`
+4. Copy the webhook secret to `STRIPE_WEBHOOK_SECRET`
 
-### 4. Deploy su Vercel
+### 4. Deploy to Vercel
 
 ```bash
 vercel --prod
@@ -48,7 +48,7 @@ vercel --prod
 
 ### POST /api/stripe/create-checkout
 
-Crea una sessione Stripe Checkout.
+Creates a Stripe Checkout session.
 
 **Body:**
 ```json
@@ -57,11 +57,11 @@ Crea una sessione Stripe Checkout.
   "planName": "STARTER",
   "amount": 30428,
   "credits": 25000,
-  "email": "user@azienda.it",
+  "email": "user@company.com",
   "metadata": {
-    "firstName": "Mario",
-    "lastName": "Rossi",
-    "businessName": "Azienda SRL",
+    "firstName": "John",
+    "lastName": "Doe",
+    "businessName": "Company LLC",
     "vatNumber": "12345678901"
   },
   "successUrl": "https://...",
@@ -79,7 +79,7 @@ Crea una sessione Stripe Checkout.
 
 ### GET /api/stripe/verify-payment?session_id=...
 
-Verifica lo stato di un pagamento.
+Verifies payment status.
 
 **Response:**
 ```json
@@ -93,19 +93,19 @@ Verifica lo stato di un pagamento.
 
 ### POST /api/webhooks/stripe
 
-Gestisce webhook Stripe (chiamato automaticamente da Stripe).
+Handles Stripe webhooks (called automatically by Stripe).
 
 ### POST /api/email/welcome
 
-Invia email di benvenuto.
+Sends welcome email.
 
 **Body:**
 ```json
 {
-  "to": "user@azienda.it",
-  "subject": "Benvenuto in Armonyco",
+  "to": "user@company.com",
+  "subject": "Welcome to Armonyco",
   "data": {
-    "firstName": "Mario",
+    "firstName": "John",
     "planName": "STARTER",
     "credits": 25000,
     "dashboardUrl": "https://..."
@@ -113,30 +113,30 @@ Invia email di benvenuto.
 }
 ```
 
-## Testing Locale
+## Local Testing
 
-Per testare in locale:
+To test locally:
 
 ```bash
 vercel dev
 ```
 
-Gli endpoint saranno disponibili su `http://localhost:3000/api/...`
+Endpoints will be available at `http://localhost:3000/api/...`
 
-## Note Importanti
+## Important Notes
 
-- ⚠️ Le funzioni sono in modalità MOCK finché non configuri le chiavi API
-- ⚠️ Decommentare il codice Stripe nelle funzioni dopo aver configurato le chiavi
-- ⚠️ Il webhook richiede che il body parser sia disabilitato (già configurato)
-- ⚠️ Testare con carte di test Stripe: https://stripe.com/docs/testing
+- ⚠️ Functions are in MOCK mode until you configure the API keys
+- ⚠️ Uncomment Stripe code in functions after configuring keys
+- ⚠️ Webhook requires body parser to be disabled (already configured)
+- ⚠️ Test with Stripe test cards: https://stripe.com/docs/testing
 
-## Carte di Test Stripe
+## Stripe Test Cards
 
-- **Successo:** 4242 4242 4242 4242
-- **Richiede 3D Secure:** 4000 0025 0000 3155
-- **Fallimento:** 4000 0000 0000 9995
-- **Scadenza:** Qualsiasi data futura
-- **CVV:** Qualsiasi 3 cifre
-- **CAP:** Qualsiasi 5 cifre
+- **Success:** 4242 4242 4242 4242
+- **Requires 3D Secure:** 4000 0025 0000 3155
+- **Failure:** 4000 0000 0000 9995
+- **Expiration:** Any future date
+- **CVV:** Any 3 digits
+- **ZIP:** Any 5 digits
 
 
