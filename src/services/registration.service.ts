@@ -3,7 +3,7 @@
  * Multi-step registration flow management with localStorage and completion
  */
 
-import { signUpWithEmail, supabase, createUserSubscription } from '../lib/supabase';
+import { signUpWithEmail, supabase, createOrganizationSubscription } from '../lib/supabase';
 import { 
     updateProfileInDB, 
     updateOrganizationInDB, 
@@ -385,24 +385,26 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.log('[Registration] Billing saved successfully');
         }
 
-        // 5. Save subscription with Stripe data
-        if (data.stripeCustomerId) {
+        // 5. Save subscription with Stripe data (ORGANIZATION-BASED)
+        if (data.stripeCustomerId && organization?.id) {
             try {
-                console.log('[Registration] Creating subscription with Stripe data...');
-                await createUserSubscription({
-                    userId,
+                console.log('[Registration] Creating subscription for organization:', organization.id);
+                await createOrganizationSubscription({
+                    userId, // Audit: who created the subscription
+                    organizationId: organization.id, // NEW: subscription owner
                     planId: data.planId,
                     stripeCustomerId: data.stripeCustomerId,
                     stripeSubscriptionId: data.stripeSubscriptionId,
                     // Expiration calculated automatically (1 month from now)
                 });
-                console.log('[Registration] Subscription created successfully');
+                console.log('[Registration] Organization subscription created successfully');
             } catch (error: any) {
-                console.error('[Registration] Error creating subscription:', error);
+                console.error('[Registration] Error creating organization subscription:', error);
                 // Save error state for retry
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('pending_subscription', JSON.stringify({
                         userId,
+                        organizationId: organization.id,
                         planId: data.planId,
                         stripeCustomerId: data.stripeCustomerId,
                         stripeSubscriptionId: data.stripeSubscriptionId,
@@ -412,7 +414,12 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
                 console.warn('[Registration] Subscription creation failed but user account was created');
             }
         } else {
-            console.warn('[Registration] No Stripe customer ID provided, subscription not created');
+            if (!data.stripeCustomerId) {
+                console.warn('[Registration] No Stripe customer ID provided, subscription not created');
+            }
+            if (!organization?.id) {
+                console.error('[Registration] No organization ID available, cannot create subscription');
+            }
         }
 
         console.log('[Registration] Registration completed successfully');

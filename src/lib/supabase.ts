@@ -117,6 +117,7 @@ export async function resetPassword(email: string) {
 
 export interface CreateSubscriptionData {
   userId: string;
+  organizationId: string; // NEW: Required for organization-based subscriptions
   planId: number;
   stripeCustomerId: string;
   stripeSubscriptionId?: string;
@@ -124,21 +125,30 @@ export interface CreateSubscriptionData {
 }
 
 /**
- * Create user subscription in database
+ * Create organization subscription in database
  * Subscription expires 1 month from creation by default
+ * 
+ * MIGRATION NOTE: Subscriptions now belong to organizations, not individual users
+ * - organizationId: the organization that owns the subscription (REQUIRED)
+ * - userId: audit trail for who created the subscription
  */
-export async function createUserSubscription(data: CreateSubscriptionData) {
+export async function createOrganizationSubscription(data: CreateSubscriptionData) {
   if (!supabase) throw new Error('Supabase not configured');
 
-  console.log('[Supabase] Creating user subscription:', data);
+  console.log('[Supabase] Creating organization subscription:', data);
+
+  if (!data.organizationId) {
+    throw new Error('organizationId is required for subscription creation');
+  }
 
   // Calculate expiration date: 1 month from now
   const expiresAt = data.expiresAt || calculateExpirationDate(1);
 
   const { data: subscription, error } = await supabase
-    .from('user_subscriptions')
+    .from('organization_subscriptions') // NEW: Updated table name
     .insert({
-      user_id: data.userId,
+      user_id: data.userId, // Audit: who created the subscription
+      organization_id: data.organizationId, // NEW: subscription owner
       plan_id: data.planId,
       stripe_customer_id: data.stripeCustomerId,
       stripe_subscription_id: data.stripeSubscriptionId || null,
@@ -150,13 +160,19 @@ export async function createUserSubscription(data: CreateSubscriptionData) {
     .single();
 
   if (error) {
-    console.error('[Supabase] Error creating subscription:', error);
+    console.error('[Supabase] Error creating organization subscription:', error);
     throw error;
   }
 
-  console.log('[Supabase] Subscription created successfully:', subscription);
+  console.log('[Supabase] Organization subscription created successfully:', subscription);
   return subscription;
 }
+
+/**
+ * @deprecated Use createOrganizationSubscription instead
+ * Kept for backward compatibility during migration
+ */
+export const createUserSubscription = createOrganizationSubscription;
 
 /**
  * Calculate expiration date from current date

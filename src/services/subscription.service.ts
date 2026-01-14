@@ -66,7 +66,10 @@ export async function getPlans(): Promise<SubscriptionPlan[]> {
 }
 
 /**
- * Get user's current subscription
+ * Get user's current subscription (organization-based)
+ * 
+ * MIGRATION NOTE: Subscriptions now belong to organizations
+ * This function finds the user's organization and returns its subscription
  */
 export async function getUserSubscription(): Promise<UserSubscription | null> {
     if (!supabase) return null;
@@ -74,17 +77,31 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
     const user = await getCurrentUser();
     if (!user) return null;
 
-    const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, subscription_plans(*)')
+    // 1. Get user's organization
+    const { data: membership, error: memberError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
         .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+    if (memberError || !membership) {
+        console.log('[Subscription] User has no organization membership');
+        return null;
+    }
+
+    // 2. Get organization's subscription
+    const { data, error } = await supabase
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+        .select('*, subscription_plans(*)')
+        .eq('organization_id', membership.organization_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
     if (error || !data) {
-        // Return default free tier if no subscription
+        console.log('[Subscription] No active subscription for organization');
         return null;
     }
 
@@ -109,7 +126,10 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
 }
 
 /**
- * Subscribe user to a plan
+ * Subscribe organization to a plan
+ * 
+ * MIGRATION NOTE: Subscriptions now belong to organizations
+ * This updates the organization's subscription, affecting all members
  */
 export async function subscribeToPlan(planId: number): Promise<boolean> {
     if (!supabase) return false;
@@ -117,23 +137,38 @@ export async function subscribeToPlan(planId: number): Promise<boolean> {
     const user = await getCurrentUser();
     if (!user) return false;
 
-    // Cancel any existing subscription
-    await supabase
-        .from('user_subscriptions')
-        .update({ status: 'cancelled' })
+    // 1. Get user's organization
+    const { data: membership, error: memberError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
         .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+    if (memberError || !membership) {
+        console.error('[Subscription] User has no organization');
+        return false;
+    }
+
+    // 2. Cancel any existing subscription for the organization
+    await supabase
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+        .update({ status: 'cancelled' })
+        .eq('organization_id', membership.organization_id)
         .eq('status', 'active');
 
-    // Create new subscription
+    // 3. Create new subscription for the organization
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1);
 
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .insert({
-            user_id: user.id,
+            user_id: user.id, // Audit: who created the subscription
+            organization_id: membership.organization_id, // Subscription owner
             plan_id: planId,
             status: 'active',
+            started_at: new Date().toISOString(),
             expires_at: expiresAt.toISOString(),
         });
 
@@ -146,7 +181,10 @@ export async function subscribeToPlan(planId: number): Promise<boolean> {
 }
 
 /**
- * Cancel user's subscription
+ * Cancel organization's subscription
+ * 
+ * MIGRATION NOTE: Subscriptions now belong to organizations
+ * This cancels the organization's subscription, affecting all members
  */
 export async function cancelSubscription(): Promise<boolean> {
     if (!supabase) return false;
@@ -154,10 +192,24 @@ export async function cancelSubscription(): Promise<boolean> {
     const user = await getCurrentUser();
     if (!user) return false;
 
-    const { error } = await supabase
-        .from('user_subscriptions')
-        .update({ status: 'cancelled' })
+    // 1. Get user's organization
+    const { data: membership, error: memberError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
         .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+    if (memberError || !membership) {
+        console.error('[Subscription] User has no organization');
+        return false;
+    }
+
+    // 2. Cancel organization's subscription
+    const { error } = await supabase
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+        .update({ status: 'cancelled' })
+        .eq('organization_id', membership.organization_id)
         .eq('status', 'active');
 
     if (error) {
@@ -245,7 +297,9 @@ export async function getUserSubscriptionWithTokens(): Promise<UserSubscriptionW
 }
 
 /**
- * Get Stripe Customer ID for user
+ * Get Stripe Customer ID for user's organization
+ * 
+ * MIGRATION NOTE: Stripe customers now belong to organizations
  */
 export async function getStripeCustomerId(userId?: string): Promise<string | null> {
     if (!supabase) return null;
@@ -253,10 +307,21 @@ export async function getStripeCustomerId(userId?: string): Promise<string | nul
     const targetUserId = userId || (await getCurrentUser())?.id;
     if (!targetUserId) return null;
 
-    const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('stripe_customer_id')
+    // 1. Get user's organization
+    const { data: membership, error: memberError } = await supabase
+        .from('organization_members')
+        .select('organization_id')
         .eq('user_id', targetUserId)
+        .limit(1)
+        .single();
+
+    if (memberError || !membership) return null;
+
+    // 2. Get organization's Stripe customer ID
+    const { data, error } = await supabase
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+        .select('stripe_customer_id')
+        .eq('organization_id', membership.organization_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -270,6 +335,8 @@ export async function getStripeCustomerId(userId?: string): Promise<string | nul
 /**
  * Sync subscription status from Stripe
  * Chiamata dal webhook o per sincronizzazione manuale
+ * 
+ * MIGRATION NOTE: Now syncs organization_subscriptions
  */
 export async function syncSubscriptionFromStripe(
     stripeSubscriptionId: string,
@@ -278,7 +345,7 @@ export async function syncSubscriptionFromStripe(
     if (!supabase) return false;
 
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({ status })
         .eq('stripe_subscription_id', stripeSubscriptionId);
 

@@ -38,6 +38,10 @@ export type SubscriptionStatus =
 /**
  * Checks if user has an active subscription and can access the application
  * 
+ * MIGRATION NOTE: Now checks organization-based subscriptions
+ * - First finds the user's organization
+ * - Then checks the organization's subscription status
+ * 
  * @param userId - Supabase user ID
  * @returns SubscriptionCheckResult with active status and optional message
  */
@@ -45,11 +49,37 @@ export async function checkSubscriptionStatus(
   userId: string
 ): Promise<SubscriptionCheckResult> {
   
-  // Fetch user subscription from database
-  const { data: subscription, error } = await supabase
-    .from('user_subscriptions')
-    .select('status, expires_at, payment_failed_count')
+  // 1. Get user's organization
+  const { data: membership, error: memberError } = await supabase
+    .from('organization_members')
+    .select('organization_id')
     .eq('user_id', userId)
+    .limit(1)
+    .single();
+
+  if (memberError) {
+    console.error('[SubscriptionCheck] Error fetching organization:', memberError);
+    return { 
+      active: false, 
+      status: 'none', 
+      message: 'Unable to verify organization membership' 
+    };
+  }
+
+  if (!membership) {
+    console.log('[SubscriptionCheck] User has no organization');
+    return { 
+      active: false, 
+      status: 'none', 
+      message: 'No organization found for user' 
+    };
+  }
+
+  // 2. Fetch organization subscription from database
+  const { data: subscription, error } = await supabase
+    .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+    .select('status, expires_at, payment_failed_count')
+    .eq('organization_id', membership.organization_id)
     .single();
 
   // Handle database errors
@@ -67,7 +97,7 @@ export async function checkSubscriptionStatus(
     return { 
       active: false, 
       status: 'none', 
-      message: 'No active subscription found' 
+      message: 'No active subscription found for organization' 
     };
   }
 
