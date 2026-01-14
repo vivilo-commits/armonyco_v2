@@ -7,6 +7,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Card } from '../../components/ui/Card';
 import { UserProfile, Organization, BillingDetails } from '../../src/types';
 import { ContactModal } from '../../components/landing/ContactModal';
+import { usePermissions } from '../../src/hooks/usePermissions';
+import { ProtectedContent } from '../../src/components/app/ProtectedContent';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -20,6 +22,7 @@ interface SettingsViewProps {
     onUpdateCredits: (amount: number) => void | Promise<void>;
     activePlanId: number;
     onUpdatePlanId: (id: number) => void;
+    onNavigate?: (view: string) => void;
 }
 
 type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
@@ -38,10 +41,57 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     currentCredits,
     onUpdateCredits,
     activePlanId,
-    onUpdatePlanId
+    onUpdatePlanId,
+    onNavigate
 }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
     const [isContactOpen, setIsContactOpen] = useState(false);
+    
+    // Check permissions for organization settings and Settings access
+    const { canEditOrganization, canAccessSettings, loading: permissionsLoading } = usePermissions();
+
+    // Show loading state while permissions are being checked
+    if (permissionsLoading) {
+        return (
+            <div className="w-full h-screen bg-black flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-[var(--color-brand-accent)]/30 border-t-[var(--color-brand-accent)] rounded-full animate-spin" />
+                    <span className="text-zinc-400 text-sm">Verifica permessi in corso...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // Redirect Collaborators - Settings are restricted to SuperAdmin and Org Admin only
+    if (!canAccessSettings) {
+        return (
+            <div className="w-full h-screen bg-black flex items-center justify-center p-6">
+                <div className="max-w-md text-center space-y-6 animate-fade-in">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center">
+                        <Shield size={40} className="text-amber-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-3">Accesso Limitato</h2>
+                        <p className="text-zinc-400 leading-relaxed">
+                            La sezione Settings è disponibile solo per gli Amministratori dell'organizzazione.
+                        </p>
+                        <p className="text-zinc-500 text-sm mt-4">
+                            Come Collaboratore, hai accesso in sola lettura alle funzionalità principali della piattaforma. 
+                            Contatta l'amministratore della tua organizzazione se hai bisogno di modificare le impostazioni.
+                        </p>
+                    </div>
+                    <div className="pt-4">
+                        <button 
+                            onClick={() => onNavigate?.('dashboard')} 
+                            className="px-6 py-3 bg-[var(--color-brand-accent)] text-black rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-white transition-all"
+                        >
+                            Torna alla Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Effect to sync prop activeView with internal state
     useEffect(() => {
@@ -1174,7 +1224,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="flex-1 overflow-y-auto scrollbar-hide">
                 {activeTab === 'PROFILE' && renderProfile()}
-                {activeTab === 'ORG' && renderOrg()}
+                {activeTab === 'ORG' && (
+                    <ProtectedContent 
+                        requireAdmin
+                        fallback={
+                            <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+                                <div className="w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mb-4">
+                                    <Shield size={40} className="text-amber-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Accesso Limitato</h3>
+                                <p className="text-zinc-400 text-center max-w-md">
+                                    Solo gli Admin dell'organizzazione possono modificare le impostazioni aziendali.
+                                </p>
+                            </div>
+                        }
+                    >
+                        {renderOrg()}
+                    </ProtectedContent>
+                )}
                 {activeTab === 'BILLING' && renderBilling()}
                 {activeTab === 'ACTIVATION' && renderActivation()}
             </div>

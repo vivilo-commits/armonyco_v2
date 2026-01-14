@@ -33,7 +33,7 @@ export async function getProfileFromDB(userId: string): Promise<UserProfile | nu
         lastName: data.last_name,
         phone: data.phone || '',
         photo: data.photo,
-        role: data.role || 'Executive',
+        role: data.role || 'AppUser',
         credits: data.credits || 0,
     };
 }
@@ -57,7 +57,7 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
             last_name: profile.lastName,
             phone: profile.phone,
             photo: profile.photo,
-            role: profile.role || 'Executive',
+            role: profile.role || 'AppUser',
             credits: profile.credits ?? 0,
             updated_at: new Date().toISOString(),
         }, { onConflict: 'id' })
@@ -76,7 +76,7 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
         lastName: data.last_name,
         phone: data.phone || '',
         photo: data.photo,
-        role: data.role || 'Executive',
+        role: data.role || 'AppUser',
         credits: data.credits || 0,
     };
 }
@@ -248,7 +248,7 @@ const createDefaultProfile = (user: User | null): UserProfile => ({
     email: user?.email || '',
     phone: '',
     photo: null,
-    role: 'Executive',
+    role: 'AppUser',
     credits: 0,
 });
 

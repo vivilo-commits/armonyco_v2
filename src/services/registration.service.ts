@@ -3,7 +3,7 @@
  * Multi-step registration flow management with localStorage and completion
  */
 
-import { signUpWithEmail, supabase, createUserSubscription } from '../lib/supabase';
+import { signUpWithEmail, supabase, createOrganizationSubscription } from '../lib/supabase';
 import { 
     updateProfileInDB, 
     updateOrganizationInDB, 
@@ -306,7 +306,7 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             firstName: data.firstName,
             lastName: data.lastName,
             phone: data.phone || '',
-            role: 'Executive', // Default admin role
+            role: 'AppUser', // ✅ FIX 1: AppUser role for normal registered users
             credits: data.planCredits || 0,
         });
 
@@ -330,6 +330,39 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.warn('[Registration] Organization save returned null, but continuing...');
         } else {
             console.log('[Registration] Organization saved successfully');
+            console.log('[Registration] Organization ID:', organization.id);
+            
+            // ✅ FIX: Add user as Admin to organization_members
+            console.log('[Registration] Adding user to organization as Admin...');
+            console.log('[Registration] User ID:', userId);
+            console.log('[Registration] Organization ID:', organization.id);
+            
+            try {
+                const { data: memberData, error: memberError } = await supabase
+                    .from('organization_members')
+                    .insert({
+                        user_id: userId,                // ✅ CORRECT: underscore
+                        organization_id: organization.id, // ✅ CORRECT: underscore
+                        role: 'Admin',                   // ✅ CORRECT: Capital A
+                    })
+                    .select();
+                
+                if (memberError) {
+                    console.error('[Registration] ❌ ERROR adding user to organization:', memberError);
+                    console.error('[Registration] Error details:', {
+                        code: memberError.code,
+                        message: memberError.message,
+                        details: memberError.details,
+                        hint: memberError.hint,
+                    });
+                    throw new Error(`Failed to add user to organization: ${memberError.message}`);
+                }
+                
+                console.log('[Registration] ✅ User added to organization as Admin:', memberData);
+            } catch (error: any) {
+                console.error('[Registration] ❌ Unexpected error adding user to organization:', error);
+                throw error; // ⚠️ Block registration if this fails
+            }
         }
 
         // 4. Save billing details
@@ -352,24 +385,26 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             console.log('[Registration] Billing saved successfully');
         }
 
-        // 5. Save subscription with Stripe data
-        if (data.stripeCustomerId) {
+        // 5. Save subscription with Stripe data (ORGANIZATION-BASED)
+        if (data.stripeCustomerId && organization?.id) {
             try {
-                console.log('[Registration] Creating subscription with Stripe data...');
-                await createUserSubscription({
-                    userId,
+                console.log('[Registration] Creating subscription for organization:', organization.id);
+                await createOrganizationSubscription({
+                    userId, // Audit: who created the subscription
+                    organizationId: organization.id, // NEW: subscription owner
                     planId: data.planId,
                     stripeCustomerId: data.stripeCustomerId,
                     stripeSubscriptionId: data.stripeSubscriptionId,
                     // Expiration calculated automatically (1 month from now)
                 });
-                console.log('[Registration] Subscription created successfully');
+                console.log('[Registration] Organization subscription created successfully');
             } catch (error: any) {
-                console.error('[Registration] Error creating subscription:', error);
+                console.error('[Registration] Error creating organization subscription:', error);
                 // Save error state for retry
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('pending_subscription', JSON.stringify({
                         userId,
+                        organizationId: organization.id,
                         planId: data.planId,
                         stripeCustomerId: data.stripeCustomerId,
                         stripeSubscriptionId: data.stripeSubscriptionId,
@@ -379,7 +414,12 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
                 console.warn('[Registration] Subscription creation failed but user account was created');
             }
         } else {
-            console.warn('[Registration] No Stripe customer ID provided, subscription not created');
+            if (!data.stripeCustomerId) {
+                console.warn('[Registration] No Stripe customer ID provided, subscription not created');
+            }
+            if (!organization?.id) {
+                console.error('[Registration] No organization ID available, cannot create subscription');
+            }
         }
 
         console.log('[Registration] Registration completed successfully');

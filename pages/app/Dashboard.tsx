@@ -26,6 +26,7 @@ import { Card } from '../../components/ui/Card';
 import { authService } from '../../src/services/auth.service';
 import { productService } from '../../src/services/product.service';
 import { useN8nExecutions } from '../../src/hooks/useLogs';
+import { usePermissions } from '../../src/hooks/usePermissions';
 import { UserProfile, ProductModule, DecisionRecord } from '../../src/types';
 
 interface DashboardProps {
@@ -35,10 +36,17 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
     const [modules, setModules] = React.useState<ProductModule[]>([]);
+    
+    // Check permissions
+    const { currentOrgId, currentOrgRole, isReadOnly, loading: permissionsLoading } = usePermissions();
+    
+    console.log('[Dashboard] permissionsLoading:', permissionsLoading, 'currentOrgId:', currentOrgId, 'role:', currentOrgRole);
 
     // Real data from n8n_executions
     const { data: executions, status } = useN8nExecutions();
-    const loading = status === 'pending';
+    const loading = status === 'pending' || permissionsLoading;
+    
+    console.log('[Dashboard] executions status:', status, 'combined loading:', loading);
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -128,13 +136,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         }));
     }, [executions]);
 
+    // Show loading while checking permissions
+    if (permissionsLoading) {
+        console.log('[Dashboard] ⏳ Showing permissions loading spinner...');
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                <p className="ml-4 text-zinc-400">Loading permissions...</p>
+            </div>
+        );
+    }
+
+    // Show message if user has no organization
+    if (!currentOrgId) {
+        console.log('[Dashboard] ⚠️ User has no organization');
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+                <div className="w-24 h-24 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mb-6">
+                    <AlertTriangle size={48} className="text-amber-500" />
+                </div>
+                <h1 className="text-2xl font-bold text-white mb-3">Nessuna Organizzazione</h1>
+                <p className="text-zinc-400 text-center max-w-md">
+                    Non appartieni ancora a nessuna organizzazione. Contatta l'amministratore per essere aggiunto.
+                </p>
+            </div>
+        );
+    }
+    
+    console.log('[Dashboard] ✅ Rendering dashboard content');
+
     return (
         <div className="p-8 animate-fade-in text-white">
+            {/* Read-Only Alert per Collaborator */}
+            {isReadOnly && (
+                <div className="mb-6 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
+                    <AlertTriangle size={24} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-amber-400 font-bold text-sm mb-1">⚠️ Modalità Solo Lettura</p>
+                        <p className="text-amber-300/80 text-sm">
+                            Hai accesso in sola lettura come <strong>Collaborator</strong>. Puoi visualizzare i dati ma non modificarli.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
-                <div>
+                <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                         <LayoutDashboard className="text-[var(--color-brand-accent)] w-6 h-6" />
                         <h1 className="text-2xl text-white font-light uppercase tracking-tight">Control Tower™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ institutional truth</span></h1>
+                        
+                        {/* Role Badge */}
+                        {currentOrgRole && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                currentOrgRole === 'Admin' 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                    : currentOrgRole === 'User'
+                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            }`}>
+                                {currentOrgRole}
+                            </span>
+                        )}
                     </div>
                     <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Consolidated overview of operational events and governed decision protocols.</p>
                 </div>
@@ -143,6 +206,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">Live</span>
                 </div>
             </header>
+            
+            {/* Read-Only Alert for Collaborators */}
+            {isReadOnly && (
+                <div className="mb-6 p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl animate-fade-in">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-amber-400 font-semibold mb-1">👀 Modalità Solo Lettura</p>
+                            <p className="text-amber-200/70 text-sm">
+                                Hai accesso in sola lettura come Collaborator. Puoi visualizzare tutti i dati ma non modificarli.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* KPI Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 items-stretch">

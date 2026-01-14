@@ -4,6 +4,8 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
 import { adminService, AdminUser } from '../../src/services/admin.service';
+import { usePermissions } from '../../src/hooks/usePermissions';
+import { UnauthorizedView } from '../../src/components/app/UnauthorizedView';
 
 export const AdminUsersView: React.FC = () => {
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -14,6 +16,17 @@ export const AdminUsersView: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [stats, setStats] = useState({ total: 0, active: 0, disabled: 0 });
+    
+    // Check permissions - only AppAdmin can access this page
+    const { isAppAdmin, loading: permissionsLoading, currentOrgRole } = usePermissions();
+
+    // Debug logging
+    console.log('==========================================');
+    console.log('[AdminUsers] 🔍 PERMISSIONS CHECK');
+    console.log('[AdminUsers] ⏳ permissionsLoading:', permissionsLoading);
+    console.log('[AdminUsers] 👮 currentOrgRole:', currentOrgRole);
+    console.log('[AdminUsers] 🎯 isAppAdmin result:', isAppAdmin);
+    console.log('==========================================');
 
     const loadUsers = async () => {
         setIsLoading(true);
@@ -88,6 +101,28 @@ export const AdminUsersView: React.FC = () => {
             default: return 'text-zinc-400 bg-zinc-400/10';
         }
     };
+
+    // Show loading while checking permissions
+    if (permissionsLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Only AppAdmin can access this page
+    if (!isAppAdmin) {
+        console.log('[AdminUsers] ❌ Access denied - not an AppAdmin');
+        return (
+            <UnauthorizedView 
+                message="Solo gli AppAdmin possono gestire gli utenti" 
+                title="Accesso Negato"
+            />
+        );
+    }
+
+    console.log('[AdminUsers] ✅ Access granted - user is AppAdmin');
 
     return (
         <div className="p-8 space-y-8 animate-fade-in">

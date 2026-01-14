@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar } from '../components/app/Sidebar';
 import { Dashboard } from './app/Dashboard';
 import { DecisionLog } from './app/DecisionLog';
@@ -19,6 +19,9 @@ import { UserRole, Notification, UserProfile, Organization, BillingDetails } fro
 import { Menu } from '../components/ui/Icons';
 import { authService } from '../src/services/auth.service';
 import { AdminUsersView } from './app/AdminUsers';
+import { InviteMember } from './app/InviteMember';
+import SuperAdminDashboard from '../src/pages/app/SuperAdminDashboard';
+import { usePermissions } from '../src/hooks/usePermissions';
 
 interface WebAppProps {
   onLogout: () => void;
@@ -31,22 +34,78 @@ interface WebAppProps {
 }
 
 export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
-  // Persist view in localStorage
-  const [activeView, setActiveView] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('armonyco_active_view') || 'dashboard';
-    }
+  // Get permissions for SuperAdmin check
+  const { isAppAdmin, loading: permissionsLoading } = usePermissions();
+  
+  // ===== CRITICAL FIX: Compute initial view WITHOUT storing in localStorage for SuperAdmin =====
+  const getInitialView = useCallback(() => {
+    // ALWAYS start with 'dashboard' to avoid issues
     return 'dashboard';
-  });
+  }, []);
+  
+  const [activeView, setActiveView] = useState(getInitialView);
   const [currentRole, setCurrentRole] = useState<UserRole>(UserRole.EXECUTIVE);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  
+  // Track if initial redirect was done to prevent loops
+  const hasInitialRedirect = useRef(false);
 
-  // Save view to localStorage when it changes
+  console.log('[WebApp] 🔄 Render - permissionsLoading:', permissionsLoading, 'isAppAdmin:', isAppAdmin, 'activeView:', activeView);
+
+  // Save view to localStorage when it changes (ONLY for non-SuperAdmin)
   useEffect(() => {
-    localStorage.setItem('armonyco_active_view', activeView);
-  }, [activeView]);
+    if (!permissionsLoading && !isAppAdmin) {
+      console.log('[WebApp] 💾 Saving view to localStorage:', activeView);
+      localStorage.setItem('armonyco_active_view', activeView);
+    }
+  }, [activeView, isAppAdmin, permissionsLoading]);
+
+  // ===== SUPER ADMIN: ONE-TIME redirect on initial load ONLY =====
+  useEffect(() => {
+    console.log('[WebApp] ⚡ SuperAdmin check useEffect - loading:', permissionsLoading, 'hasRedirect:', hasInitialRedirect.current);
+    
+    // Skip if still loading OR already did initial redirect
+    if (permissionsLoading || hasInitialRedirect.current) {
+      return;
+    }
+
+    // Mark that we've done the initial check
+    hasInitialRedirect.current = true;
+
+    if (isAppAdmin) {
+      console.log('[WebApp] 👑 SuperAdmin detected - ONE-TIME check');
+      if (activeView !== 'dashboard') {
+        console.log('[WebApp] 👑 Setting view to dashboard (one-time)');
+        setActiveView('dashboard');
+      } else {
+        console.log('[WebApp] 👑 Already on dashboard - no change');
+      }
+    } else {
+      console.log('[WebApp] 👤 Normal user detected');
+      // Normal user: restore from localStorage if exists
+      const savedView = localStorage.getItem('armonyco_active_view');
+      if (savedView && savedView !== activeView) {
+        console.log('[WebApp] 👤 Restoring saved view:', savedView);
+        setActiveView(savedView);
+      }
+    }
+  }, [permissionsLoading]); // ← ONLY permissionsLoading, nothing else!
+
+  // ===== WRAPPER: Prevent SuperAdmin from navigating away from dashboard =====
+  const handleSetView = useCallback((view: string) => {
+    console.log('[WebApp] 🎯 handleSetView called - view:', view, 'isAppAdmin:', isAppAdmin);
+    
+    // If SuperAdmin, block navigation to anything other than dashboard
+    if (!permissionsLoading && isAppAdmin && view !== 'dashboard') {
+      console.log('[WebApp] 🚫 SuperAdmin BLOCKED from navigating to:', view);
+      return; // Block navigation
+    }
+    
+    console.log('[WebApp] ✅ Setting view to:', view);
+    setActiveView(view);
+  }, [isAppAdmin, permissionsLoading]);
 
   // State for User, Organization, Billing (loaded from database)
   const [userProfile, setUserProfile] = useState<UserProfile>(initialData?.userProfile || {
@@ -194,6 +253,8 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   };
 
   const renderView = () => {
+    console.log('[WebApp] 🎨 renderView called - activeView:', activeView, 'isLoadingData:', isLoadingData, 'isAppAdmin:', isAppAdmin);
+    
     // Show loading while fetching data
     if (isLoadingData) {
       return (
@@ -206,8 +267,19 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
       );
     }
 
+    // ===== SUPER ADMIN: ALWAYS show SuperAdminDashboard, ignore activeView =====
+    if (!permissionsLoading && isAppAdmin) {
+      console.log('[WebApp] 👑 Rendering SuperAdminDashboard (forced)');
+      return <SuperAdminDashboard />;
+    }
+
+    // ===== NORMAL USERS: Render based on activeView =====
+    console.log('[WebApp] 👤 Rendering normal view:', activeView);
+    
     switch (activeView) {
-      case 'dashboard': return <Dashboard onNavigate={setActiveView} />;
+      case 'dashboard': 
+        // Normal users see Dashboard
+        return <Dashboard onNavigate={handleSetView} />;
       case 'value': return <GovernedValueView />;
       case 'log': return <DecisionLog />;
       case 'compliance': return <RiskComplianceView view="compliance" />;
@@ -237,12 +309,14 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
           onUpdateCredits={handleUpdateCredits}
           activePlanId={activePlanId}
           onUpdatePlanId={setActivePlanId}
+          onNavigate={handleSetView}
         />;
 
       case 'documentation': return <DocumentationView />;
       case 'support': return <SupportView />;
       case 'admin-users': return <AdminUsersView />;
-      default: return <Dashboard />;
+      case 'invite-member': return <InviteMember onBack={() => handleSetView('admin-users')} />;
+      default: return <Dashboard onNavigate={handleSetView} />;
     }
   };
 
@@ -251,7 +325,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
 
       <Sidebar
         activeView={activeView}
-        setView={setActiveView}
+        setView={handleSetView}
         onLogout={onLogout}
         currentRole={currentRole}
         setRole={setCurrentRole}

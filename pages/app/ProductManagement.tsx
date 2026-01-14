@@ -5,6 +5,8 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { useProducts } from '../../src/hooks/useProducts';
 import { useUserProfile } from '../../src/hooks/useAuth';
+import { usePermissions } from '../../src/hooks/usePermissions';
+import { UnauthorizedView } from '../../src/components/app/UnauthorizedView';
 import { units, unitGroups, Unit, UnitGroup } from '../../data/portfolio';
 import { ProductModule } from '../../src/types';
 import { productService } from '../../src/services/product.service';
@@ -14,9 +16,11 @@ import { supabase } from '../../src/lib/supabase';
 export const ProductManagement: React.FC = () => {
     const { data: modules, status: modulesStatus } = useProducts();
     const { data: userProfile } = useUserProfile();
+    
+    // Check permissions - only Admin can manage products
+    const { canEditOrganization, loading: permissionsLoading } = usePermissions();
+    
     // Governance Perimeter Sync Trigger
-
-
     const [portfolioLevel, setPortfolioLevel] = useState<'GLOBAL' | 'GROUP' | 'UNIT'>('GLOBAL');
     const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -179,6 +183,25 @@ export const ProductManagement: React.FC = () => {
         setSelectedModule(module);
         setShowActivationModal(true);
     };
+
+    // Show loading while checking permissions
+    if (permissionsLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Only Admin can manage products
+    if (!canEditOrganization) {
+        return (
+            <UnauthorizedView 
+                message="Solo gli Admin dell'organizzazione possono gestire i prodotti e servizi operativi" 
+                title="Accesso Limitato"
+            />
+        );
+    }
 
     return (
         <div className="p-8 animate-fade-in flex flex-col h-full bg-black text-white">

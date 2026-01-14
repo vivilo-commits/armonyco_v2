@@ -253,6 +253,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 /**
  * Handler for invoice.payment_succeeded event
  * Reactivates subscription and resets payment failure counter
+ * 
+ * MIGRATION NOTE: Now updates organization_subscriptions instead of user_subscriptions
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     console.log('[Webhook] Processing payment succeeded for invoice:', invoice.id);
@@ -267,7 +269,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 
     // Update subscription: reactivate account, reset failure counter
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
             status: 'active',
             payment_failed_count: 0,
@@ -281,13 +283,15 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         throw error;
     }
 
-    console.log('[Webhook] ✅ Subscription reactivated for customer:', customerId);
-    // TODO: Send email notification to user (payment successful, subscription renewed)
+    console.log('[Webhook] ✅ Organization subscription reactivated for customer:', customerId);
+    // TODO: Send email notification to all organization members (payment successful, subscription renewed)
 }
 
 /**
  * Handler for invoice.payment_failed event
  * Increments failure counter and suspends account after 3 failures
+ * 
+ * MIGRATION NOTE: Now updates organization_subscriptions instead of user_subscriptions
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
     console.log('[Webhook] Processing payment failure for invoice:', invoice.id);
@@ -302,8 +306,8 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
     // Retrieve current subscription
     const { data: subscription, error: fetchError } = await supabase
-        .from('user_subscriptions')
-        .select('payment_failed_count, user_id')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
+        .select('payment_failed_count, organization_id')
         .eq('stripe_customer_id', customerId)
         .single();
 
@@ -318,7 +322,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     const newStatus = failedCount >= 3 ? 'suspended' : 'past_due';
 
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
             status: newStatus,
             payment_failed_count: failedCount,
@@ -331,10 +335,10 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
         throw error;
     }
 
-    console.log(`[Webhook] ⚠️ Subscription status updated to ${newStatus} for customer:`, customerId);
+    console.log(`[Webhook] ⚠️ Organization subscription status updated to ${newStatus} for customer:`, customerId);
     console.log(`[Webhook] Failed payment attempts: ${failedCount}/3`);
 
-    // TODO: Send email notification to user
+    // TODO: Send email notification to all organization members
     // - If failedCount < 3: "Payment failed, please update your payment method"
     // - If failedCount >= 3: "Account suspended due to payment failures, contact support"
 }
@@ -342,6 +346,8 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 /**
  * Handler for customer.subscription.updated event
  * Updates subscription details (plan change, status change, etc.)
+ * 
+ * MIGRATION NOTE: Now updates organization_subscriptions instead of user_subscriptions
  */
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.log('[Webhook] Processing subscription update:', subscription.id);
@@ -354,7 +360,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     );
 
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
             status: subscription.status,
             stripe_subscription_id: subscription.id,
@@ -367,13 +373,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         throw error;
     }
 
-    console.log('[Webhook] ✅ Subscription updated for customer:', customerId);
+    console.log('[Webhook] ✅ Organization subscription updated for customer:', customerId);
     console.log('[Webhook] New status:', subscription.status);
 }
 
 /**
  * Handler for customer.subscription.deleted event
  * Marks subscription as cancelled
+ * 
+ * MIGRATION NOTE: Now updates organization_subscriptions instead of user_subscriptions
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.log('[Webhook] Processing subscription deletion:', subscription.id);
@@ -386,7 +394,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     );
 
     const { error } = await supabase
-        .from('user_subscriptions')
+        .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
             status: 'cancelled',
             expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -398,7 +406,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         throw error;
     }
 
-    console.log('[Webhook] ✅ Subscription cancelled for customer:', customerId);
+    console.log('[Webhook] ✅ Organization subscription cancelled for customer:', customerId);
     console.log('[Webhook] Access until:', new Date(subscription.current_period_end * 1000).toISOString());
 }
 

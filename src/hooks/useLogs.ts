@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAsync } from './useAsync';
 import { logService } from '../services/log.service';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 
 /**
  * Hook to get decision logs with realtime updates
@@ -161,19 +161,33 @@ export const useN8nExecutions = () => {
     }, []);
 
     const fetchExecutions = useCallback(async (): Promise<N8nExecution[]> => {
-        if (!supabase) return [];
-
-        const { data, error } = await supabase
-            .from('n8n_executions')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('[N8n Executions] Error:', error);
+        console.log('[useN8nExecutions] fetchExecutions called, trigger:', trigger);
+        
+        if (!supabase) {
+            console.log('[useN8nExecutions] No supabase, returning empty array');
             return [];
         }
 
-        console.log('[N8n Executions] Fetched:', data?.length, 'records');
+        console.log('[useN8nExecutions] Getting current user...');
+        const user = await getCurrentUser();
+        if (!user) {
+            console.log('[useN8nExecutions] No user found, returning empty array');
+            return [];
+        }
+
+        console.log('[useN8nExecutions] Querying n8n_executions for user:', user.id);
+        const { data, error } = await supabase
+            .from('n8n_executions')
+            .select('*')
+            .eq('company_uid', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('[N8n Executions] ❌ Error:', error);
+            return [];
+        }
+
+        console.log('[N8n Executions] ✅ Fetched:', data?.length, 'records');
         return data || [];
     }, [trigger]);
 

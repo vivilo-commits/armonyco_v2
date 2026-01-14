@@ -173,11 +173,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const supabase = getSupabaseClient();
 
-                // Create subscription record
+                // MIGRATION: Get user's organization
+                const { data: membership } = await supabase
+                    .from('organization_members')
+                    .select('organization_id')
+                    .eq('user_id', userId)
+                    .limit(1)
+                    .single();
+
+                if (!membership) {
+                    console.error('[Webhook] ❌ User has no organization');
+                    break;
+                }
+
+                // Create subscription record for ORGANIZATION
                 const { error: subError } = await supabase
-                    .from('user_subscriptions')
+                    .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
                     .insert({
-                        user_id: userId,
+                        user_id: userId, // Audit: who created it
+                        organization_id: membership.organization_id, // NEW: subscription owner
                         plan_id: planId,
                         status: 'active',
                         stripe_subscription_id: subscription.id,
@@ -201,7 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     subscription.id
                 );
 
-                console.log('[Webhook] ✅ Subscription created and tokens assigned');
+                console.log('[Webhook] ✅ Organization subscription created and tokens assigned');
                 break;
             }
 
@@ -245,7 +259,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // Update subscription expiration date
                 const supabase = getSupabaseClient();
                 await supabase
-                    .from('user_subscriptions')
+                    .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
                     .update({
                         expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
                     })
@@ -284,7 +298,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 // Update subscription
                 await supabase
-                    .from('user_subscriptions')
+                    .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
                     .update({
                         plan_id: planId,
                         expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -316,7 +330,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 // Set status to cancelled (DO NOT remove tokens!)
                 await supabase
-                    .from('user_subscriptions')
+                    .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
                     .update({
                         status: 'cancelled',
                     })
