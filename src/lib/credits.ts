@@ -332,18 +332,14 @@ export async function getOrganizationBalance(organizationId: string): Promise<nu
     .from('organization_credits')
     .select('balance')
     .eq('organization_id', organizationId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No record found, return 0
-      console.log('[Credits] No credits record found for organization:', organizationId);
-      return 0;
-    }
     console.error('[Credits] Error fetching balance:', error);
     return 0;
   }
 
+  // If data is null (record doesn't exist), return 0
   return data?.balance || 0;
 }
 
@@ -360,16 +356,13 @@ export async function getOrganizationCreditsInfo(organizationId: string) {
     .from('organization_credits')
     .select('*')
     .eq('organization_id', organizationId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      console.log('[Credits] No credits record found');
-      return null;
-    }
     console.error('[Credits] Error fetching credits info:', error);
     return null;
   }
 
+  // If data is null (record doesn't exist), return null
   return data;
 }

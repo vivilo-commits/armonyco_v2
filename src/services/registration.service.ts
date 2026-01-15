@@ -399,6 +399,81 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
                     // Expiration calculated automatically (1 month from now)
                 });
                 console.log('[Registration] Organization subscription created successfully');
+
+                // ✅ ADD CREDITS CREATION AFTER SUBSCRIPTION
+                console.log('[Registration] ================================================');
+                console.log('[Registration] Creating organization_credits record...');
+
+                try {
+                    // Step 1: Get plan credits from database
+                    console.log('[Registration] Fetching plan credits for plan ID:', data.planId);
+                    
+                    const { data: planData, error: planError } = await supabase
+                        .from('subscription_plans')
+                        .select('id, name, credits')
+                        .eq('id', data.planId)
+                        .single();
+                    
+                    if (planError) {
+                        console.error('[Registration] ❌ Error fetching plan:', planError);
+                        throw planError;
+                    }
+                    
+                    console.log('[Registration] Plan found:', planData);
+                    const initialCredits = planData?.credits || 0;
+                    console.log('[Registration] Initial credits to assign:', initialCredits);
+                    
+                    if (initialCredits === 0) {
+                        console.warn('[Registration] ⚠️ Plan has 0 credits');
+                    }
+                    
+                    // Step 2: Create organization_credits record
+                    console.log('[Registration] Inserting into organization_credits...');
+                    
+                    const creditsInsertData = {
+                        organization_id: organization.id,
+                        balance: initialCredits,
+                        total_purchased: initialCredits,
+                        total_consumed: 0,
+                        last_recharged_at: initialCredits > 0 ? new Date().toISOString() : null
+                    };
+                    
+                    console.log('[Registration] Credits data to insert:', creditsInsertData);
+                    
+                    const { data: creditsData, error: creditsError } = await supabase
+                        .from('organization_credits')
+                        .insert(creditsInsertData)
+                        .select()
+                        .single();
+                    
+                    if (creditsError) {
+                        console.error('[Registration] ❌ Error creating credits record');
+                        console.error('[Registration] Error code:', creditsError.code);
+                        console.error('[Registration] Error message:', creditsError.message);
+                        console.error('[Registration] Error details:', JSON.stringify(creditsError, null, 2));
+                        
+                        // Check if it's a permissions error
+                        if (creditsError.code === '42501') {
+                            console.error('[Registration] ❌ PERMISSION DENIED - RLS policy blocking insert');
+                            console.error('[Registration] You need to add RLS policy for organization_credits');
+                        }
+                        
+                        // Don't throw - let registration complete even if credits fail
+                        console.warn('[Registration] ⚠️ Continuing without credits (will be created by webhook)');
+                        
+                    } else {
+                        console.log('[Registration] ✅✅✅ Credits record created successfully!');
+                        console.log('[Registration] Credits record:', creditsData);
+                        console.log('[Registration] Organization ID:', creditsData.organization_id);
+                        console.log('[Registration] Initial balance:', creditsData.balance);
+                    }
+                    
+                } catch (error) {
+                    console.error('[Registration] ❌ Unexpected error during credits creation:', error);
+                    console.warn('[Registration] ⚠️ Registration will continue (webhook will handle credits)');
+                }
+
+                console.log('[Registration] ================================================');
             } catch (error: any) {
                 console.error('[Registration] Error creating organization subscription:', error);
                 // Save error state for retry
