@@ -177,22 +177,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 .from('organization_credits')
                 .select('balance')
                 .eq('organization_id', organization.id)
-                .single();
+                .maybeSingle(); // Use maybeSingle() to handle case where credits don't exist yet
 
             if (error) {
-                if (error.code === 'PGRST116') {
-                    // No record found, balance is 0
-                    console.log('[Settings] No credits record found, balance = 0');
-                    setOrganizationBalance(0);
-                } else {
-                    console.error('[Settings] Error fetching balance:', error);
-                }
+                console.error('[Settings] Error fetching balance:', error);
+                setOrganizationBalance(0);
             } else {
+                // If data is null (webhook hasn't created credits yet), show 0
                 setOrganizationBalance(data?.balance || 0);
-                console.log('[Settings] Organization balance:', data?.balance);
+                console.log('[Settings] Organization balance:', data?.balance || 0);
             }
         } catch (error) {
             console.error('[Settings] Unexpected error fetching balance:', error);
+            setOrganizationBalance(0);
         } finally {
             setLoadingBalance(false);
         }

@@ -8,9 +8,36 @@
  * - Add credits (purchase, subscription, renewal)
  * - Consume credits (workflow execution)
  * - Get current balance
+ * 
+ * ⚠️ SECURITY WARNING: This module MUST ONLY be used in server/API context!
+ * It requires SUPABASE_SERVICE_ROLE_KEY which should NEVER be exposed to the browser.
  */
 
 import { createClient } from '@supabase/supabase-js';
+
+// ============================================================================
+// SAFETY CHECKS: Prevent accidental frontend usage
+// ============================================================================
+
+// Check 1: Ensure this is NOT running in browser context
+if (typeof window !== 'undefined') {
+  throw new Error(
+    '[Credits] SECURITY ERROR: This module can ONLY be used in server/API context, not in browser. ' +
+    'Credits must be managed through backend APIs (e.g., Stripe webhook, buy-credits API).'
+  );
+}
+
+// Check 2: Ensure Service Role Key is configured
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_KEY) {
+  throw new Error(
+    '[Credits] CONFIGURATION ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable is not configured. ' +
+    'This key is required for credit management operations.'
+  );
+}
+
+// ============================================================================
+// SUPABASE CLIENT INITIALIZATION (Server-side only)
+// ============================================================================
 
 // Use service role key for admin operations
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
