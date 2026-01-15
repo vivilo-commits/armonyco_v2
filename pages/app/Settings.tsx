@@ -1459,6 +1459,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <FloatingInput 
                             label="Company Website" 
                             value="https://armonyco.io" 
+                            readOnly
+                            className="opacity-60 cursor-not-allowed"
                         />
                         
                         <div className="relative">
