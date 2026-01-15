@@ -14,6 +14,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { addCreditsToOrganization } from '../../src/lib/credits';
 
 // ============================================================================
 // CONFIGURATION: Disable body parser to read raw body for signature validation
@@ -106,6 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const planName = metadata.plan_name || 'Payment';
                 const credits = metadata.credits ? parseInt(metadata.credits) : null;
                 const action = metadata.action; // 'upgrade', 'downgrade', or undefined for new subscriptions
+                const purchaseType = metadata.type; // 'credit_purchase' for one-time credit buys
 
                 // Log checkout completion
                 console.log('[Webhook] Checkout details:', {
@@ -118,32 +120,80 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     planName,
                     credits,
                     action,
+                    purchaseType,
                 });
 
-                // Handle subscription upgrades/downgrades
-                if (session.mode === 'subscription' && action && organizationId) {
-                    console.log(`[Webhook] 🔄 Processing subscription ${action} for organization:`, organizationId);
+                // ========================================
+                // CASE A: SUBSCRIPTION (new or upgrade/downgrade)
+                // ========================================
+                if (session.mode === 'subscription' && organizationId && planId) {
+                    console.log(`[Webhook] 🔄 Processing subscription for organization:`, organizationId);
                     
-                    // If there's a previous subscription to cancel/replace
-                    const previousSubscriptionId = metadata.previousSubscriptionId || metadata.replace_subscription;
-                    if (previousSubscriptionId) {
-                        console.log('[Webhook] Marking previous subscription as replaced:', previousSubscriptionId);
-                        
-                        // The new subscription will be handled by subscription.created or subscription.updated events
-                        // Here we just log the transition
+                    // Initialize Supabase
+                    const supabase = createClient(
+                        process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!,
+                        process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
+                    );
+
+                    // Get plan credits from database
+                    const { data: plan, error: planError } = await supabase
+                        .from('subscription_plans')
+                        .select('credits, name')
+                        .eq('id', planId)
+                        .single();
+
+                    if (planError) {
+                        console.error('[Webhook] Error fetching plan:', planError);
+                        break;
+                    }
+
+                    const creditsToAdd = plan?.credits || 0;
+
+                    console.log('[Webhook] Plan details:', {
+                        planName: plan?.name,
+                        creditsToAdd
+                    });
+
+                    // 1. Upsert subscription record
+                    const subscriptionId = session.subscription as string;
+                    
+                    await supabase
+                        .from('organization_subscriptions')
+                        .upsert({
+                            organization_id: organizationId,
+                            user_id: userId,
+                            plan_id: planId,
+                            status: 'active',
+                            stripe_customer_id: session.customer as string,
+                            stripe_subscription_id: subscriptionId,
+                            started_at: new Date().toISOString(),
+                            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+                            updated_at: new Date().toISOString()
+                        });
+
+                    // 2. ✨ ADD CREDITS to organization
+                    if (creditsToAdd > 0) {
+                        await addCreditsToOrganization(organizationId, creditsToAdd, 'subscription');
+                        console.log('[Webhook] ✅ Subscription credits added:', creditsToAdd);
                     }
                 }
 
-                // For one-time payments, you might want to add tokens here
-                // For subscriptions, tokens are typically added in subscription.created event
-                if (session.mode === 'payment' && userId && credits) {
-                    console.log('[Webhook] One-time payment completed, credits:', credits);
-                    // TODO: Add tokens to user if needed
-                    // This is typically handled in payment_intent.succeeded for one-time payments
+                // ========================================
+                // CASE B: CREDIT PURCHASE (one-time payment)
+                // ========================================
+                else if (session.mode === 'payment' && purchaseType === 'credit_purchase' && organizationId && credits) {
+                    console.log('[Webhook] 💰 Processing credit purchase:', {
+                        organizationId,
+                        creditsToAdd: credits
+                    });
+
+                    // ✨ ADD CREDITS to organization
+                    await addCreditsToOrganization(organizationId, credits, 'purchase');
+                    
+                    console.log('[Webhook] ✅ Credits purchased and added:', credits);
                 }
 
                 // TODO: Send confirmation email to user/organization
-                // TODO: Update order/payment status in database if needed
 
                 break;
             }
@@ -278,14 +328,27 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     console.log('[Webhook] Processing payment succeeded for invoice:', invoice.id);
 
     const customerId = invoice.customer as string;
+    const subscriptionId = invoice.subscription as string;
 
     // Initialize Supabase client with service role key for RLS bypass
     const supabase = createClient(
-        process.env.SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_KEY! // Use service role key to bypass RLS
+        process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Update subscription: reactivate account, reset failure counter
+    // 1. Get organization subscription details
+    const { data: orgSub, error: fetchError } = await supabase
+        .from('organization_subscriptions')
+        .select('organization_id, plan_id')
+        .eq('stripe_customer_id', customerId)
+        .single();
+
+    if (fetchError) {
+        console.error('[Webhook] Error fetching subscription:', fetchError);
+        throw fetchError;
+    }
+
+    // 2. Update subscription: reactivate account, reset failure counter
     const { error } = await supabase
         .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
@@ -302,6 +365,28 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     }
 
     console.log('[Webhook] ✅ Organization subscription reactivated for customer:', customerId);
+
+    // 3. ✨ ADD CREDITS for monthly renewal
+    if (orgSub?.organization_id && orgSub?.plan_id) {
+        // Get plan credits
+        const { data: plan } = await supabase
+            .from('subscription_plans')
+            .select('credits, name')
+            .eq('id', orgSub.plan_id)
+            .single();
+
+        const creditsToAdd = plan?.credits || 0;
+
+        if (creditsToAdd > 0) {
+            await addCreditsToOrganization(orgSub.organization_id, creditsToAdd, 'renewal');
+            console.log('[Webhook] ✅ Monthly renewal - credits added:', {
+                organizationId: orgSub.organization_id,
+                creditsAdded: creditsToAdd,
+                planName: plan?.name
+            });
+        }
+    }
+
     // TODO: Send email notification to all organization members (payment successful, subscription renewed)
 }
 

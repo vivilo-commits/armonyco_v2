@@ -12,6 +12,7 @@ import { ProtectedContent } from '../../src/components/app/ProtectedContent';
 import { CurrentPlanCard } from '../../components/app/CurrentPlanCard';
 import { AvailablePlansGrid } from '../../components/app/AvailablePlansGrid';
 import { UsageTable } from '../../components/app/UsageTable';
+import { BuyCreditsModal } from '../../components/app/BuyCreditsModal';
 import { supabase } from '../../src/lib/supabase';
 
 interface SettingsViewProps {
@@ -89,10 +90,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [isSavingBilling, setIsSavingBilling] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-    // -- Top Up State --
+    // -- Top Up State (OLD - Kept for Auto Top-Up only) --
     const [showTopUpModal, setShowTopUpModal] = useState(false);
-    const [selectedPack, setSelectedPack] = useState<number>(10000); // Default pack 10k after rescale
-    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     // -- Auto Top Up State --
     const [autoTopUpEnabled, setAutoTopUpEnabled] = useState(false);
@@ -146,6 +145,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [loadingSubscription, setLoadingSubscription] = useState(false);
     const [upgradingPlan, setUpgradingPlan] = useState(false);
 
+    // -- Credits State (Organization Credits) --
+    const [organizationBalance, setOrganizationBalance] = useState<number>(0);
+    const [loadingBalance, setLoadingBalance] = useState(false);
+    const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
+
     // Effect to sync prop activeView with internal state
     useEffect(() => {
         if (activeView) {
@@ -164,8 +168,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     useEffect(() => {
         if (activeTab === 'SUBSCRIPTION' && organization?.id) {
             fetchSubscriptionData();
+            fetchOrganizationBalance();
         }
     }, [activeTab, organization?.id]);
+
+    // Fetch organization credits balance
+    const fetchOrganizationBalance = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        setLoadingBalance(true);
+        try {
+            const { data, error } = await supabase
+                .from('organization_credits')
+                .select('balance')
+                .eq('organization_id', organization.id)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // No record found, balance is 0
+                    console.log('[Settings] No credits record found, balance = 0');
+                    setOrganizationBalance(0);
+                } else {
+                    console.error('[Settings] Error fetching balance:', error);
+                }
+            } else {
+                setOrganizationBalance(data?.balance || 0);
+                console.log('[Settings] Organization balance:', data?.balance);
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching balance:', error);
+        } finally {
+            setLoadingBalance(false);
+        }
+    };
 
     // Fetch current subscription and available plans
     const fetchSubscriptionData = async () => {
@@ -356,15 +395,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const handleSaveBillingDetails = () => {
         onUpdateBillingDetails(localBillingDetails);
         setShowBillingModal(false);
-    };
-
-    const handleProcessTopUp = () => {
-        setIsProcessingPayment(true);
-        setTimeout(() => {
-            onUpdateCredits(currentCredits + selectedPack);
-            setIsProcessingPayment(false);
-            setShowTopUpModal(false);
-        }, 2000);
     };
 
     const handleEnableAutoTopUp = () => {
@@ -1026,10 +1056,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <Card variant="dark" className="shadow-2xl relative overflow-hidden h-full flex flex-col justify-between" padding="lg">
                         <div className="relative z-10">
                             <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Current Balance</div>
-                            <div className="text-4xl font-numbers font-bold text-white tracking-tight">
-                                {Math.floor(currentCredits).toLocaleString('de-DE')}
-                                <span className="text-xs text-zinc-600 block mt-1 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
-                            </div>
+                            {loadingBalance ? (
+                                <div className="flex items-center gap-2">
+                                    <RefreshCw size={20} className="text-[var(--color-brand-accent)] animate-spin" />
+                                    <span className="text-sm text-white/60">Loading...</span>
+                                </div>
+                            ) : (
+                                <div className="text-4xl font-numbers font-bold text-white tracking-tight">
+                                    {Math.floor(organizationBalance).toLocaleString('de-DE')}
+                                    <span className="text-xs text-zinc-600 block mt-1 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
+                                </div>
+                            )}
                         </div>
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={40} /></div>
                     </Card>
@@ -1058,16 +1095,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </p>
                     </Card>
 
-                    {/* 3. MANUAL TOP-UP */}
+                    {/* 3. BUY CREDITS */}
                     <Card variant="dark" className="border-white/5 flex flex-col justify-between" padding="lg">
                         <div>
-                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Top-Up Engine</div>
+                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Buy Credits</div>
                             <Button
                                 variant="primary"
-                                className="w-full justify-center !bg-white !text-black hover:!bg-zinc-200 border-0 font-black h-12"
-                                onClick={() => setShowTopUpModal(true)}
+                                className="w-full justify-center !bg-[var(--color-brand-accent)] !text-black hover:!bg-white border-0 font-black h-12"
+                                onClick={() => setShowBuyCreditsModal(true)}
                             >
-                                <Plus size={18} className="mr-2" /> RECHARGE
+                                <Plus size={18} className="mr-2" /> BUY CREDITS
                             </Button>
                         </div>
                         <div className="flex gap-1 mt-4">
@@ -1156,46 +1193,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
 
                 {/* Modals */}
-                <Modal isOpen={showTopUpModal} onClose={() => setShowTopUpModal(false)} title="Top Up ArmoCredits©">
-                    <div className="p-6">
-                        <p className="text-sm text-[var(--color-text-muted)] mb-6">Select a credit pack to add to your balance. Funds are available immediately.</p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            {[10000, 25000, 50000, 100000].map(amount => (
-                                <button
-                                    key={amount}
-                                    onClick={() => setSelectedPack(amount)}
-                                    className={`
-                                        p-6 rounded-xl border flex flex-col items-center justify-center transition-all bg-[var(--color-surface)]
-                                        ${selectedPack === amount
-                                            ? 'border-[var(--color-brand-primary)] ring-1 ring-[var(--color-brand-primary)] shadow-md bg-[var(--color-brand-primary)]/5'
-                                            : 'border-[var(--color-border)] hover:border-[var(--color-text-muted)]'
-                                        }
-                                    `}
-                                >
-                                    <span className={`text-2xl font-numbers font-bold ${selectedPack === amount ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-text-main)]'}`}>
-                                        {amount.toLocaleString('de-DE')}
-                                    </span>
-                                    <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mt-2">ArmoCredits©</span>
-                                    <span className="text-[11px] font-bold text-[var(--color-brand-primary)] mt-1">€{(amount / 100).toLocaleString('de-DE')}</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="border-t border-[var(--color-border)] pt-6 flex justify-end">
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                className="w-full md:w-auto"
-                                onClick={handleProcessTopUp}
-                                disabled={isProcessingPayment}
-                                leftIcon={isProcessingPayment ? <RefreshCw className="animate-spin" /> : <CreditCard />}
-                            >
-                                {isProcessingPayment ? 'Processing...' : 'Confirm Recharge'}
-                            </Button>
-                        </div>
-                    </div>
-                </Modal>
+                
+                {/* Buy Credits Modal - NEW SYSTEM */}
+                {organization?.id && (
+                    <BuyCreditsModal
+                        isOpen={showBuyCreditsModal}
+                        onClose={() => {
+                            setShowBuyCreditsModal(false);
+                            // Refresh balance after closing modal
+                            fetchOrganizationBalance();
+                        }}
+                        organizationId={organization.id}
+                    />
+                )}
 
                 <Modal isOpen={showAutoTopUpModal} onClose={() => setShowAutoTopUpModal(false)} title="Enable Auto Top-up">
                     <div className="p-6 max-w-md mx-auto">
