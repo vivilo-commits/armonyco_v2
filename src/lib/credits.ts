@@ -98,53 +98,161 @@ export async function addCreditsToOrganization(
   creditsToAdd: number,
   source: 'subscription' | 'purchase' | 'renewal' | 'bonus' = 'purchase'
 ) {
+  console.log('[Credits] ' + '='.repeat(60));
+  console.log('[Credits] ⚡ START: addCreditsToOrganization');
+  console.log('[Credits] Timestamp:', new Date().toISOString());
+  console.log('[Credits] Input parameters:');
+  console.log('[Credits]   - organizationId:', organizationId, '(type:', typeof organizationId, ')');
+  console.log('[Credits]   - creditsToAdd:', creditsToAdd, '(type:', typeof creditsToAdd, ')');
+  console.log('[Credits]   - source:', source);
+  console.log('[Credits] ' + '='.repeat(60));
+  
+  // Validate inputs
+  if (!organizationId) {
+    console.error('[Credits] ❌ VALIDATION ERROR: Organization ID is missing or invalid');
+    console.error('[Credits] Value:', organizationId);
+    throw new Error('Organization ID is required');
+  }
+  
+  if (!creditsToAdd || creditsToAdd <= 0) {
+    console.error('[Credits] ❌ VALIDATION ERROR: Credits amount is invalid');
+    console.error('[Credits] Value:', creditsToAdd);
+    throw new Error('Credits amount must be greater than 0');
+  }
+  
+  console.log('[Credits] ✅ Input validation passed');
+  
   if (!supabase) {
-    console.error('[Credits] Supabase not configured');
+    console.error('[Credits] ❌ Supabase not configured');
     throw new Error('Supabase not configured');
   }
 
-  console.log(`[Credits] Adding ${creditsToAdd} credits to ${organizationId} (source: ${source})`);
+  try {
+    console.log('[Credits] Step 1: Checking if organization_credits record exists...');
+    console.log('[Credits] Querying Supabase with organization_id:', organizationId);
+    
+    const { data: current, error: fetchError } = await supabase
+      .from('organization_credits')
+      .select('id, balance, total_purchased, total_consumed')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
 
-  // 1. Get current balance
-  const { data: current, error: fetchError } = await supabase
-    .from('organization_credits')
-    .select('balance, total_purchased')
-    .eq('organization_id', organizationId)
-    .single();
-
-  if (fetchError) {
-    // If doesn't exist, create it
-    if (fetchError.code === 'PGRST116') {
-      console.log('[Credits] No record found, creating new one');
-      return await initializeOrganizationCredits(organizationId, creditsToAdd);
+    if (fetchError) {
+      console.error('[Credits] ❌ Error querying existing record:', fetchError);
+      console.error('[Credits] Error code:', fetchError.code);
+      console.error('[Credits] Error message:', fetchError.message);
+      console.error('[Credits] Error details:', JSON.stringify(fetchError, null, 2));
+      throw fetchError;
     }
-    console.error('[Credits] Error fetching credits:', fetchError);
-    throw fetchError;
-  }
 
-  const newBalance = (current?.balance || 0) + creditsToAdd;
-  const newTotalPurchased = (current?.total_purchased || 0) + creditsToAdd;
+    console.log('[Credits] Query result:', current);
+    console.log('[Credits] Record exists:', !!current);
 
-  // 2. Update balance
-  const { data, error: updateError } = await supabase
-    .from('organization_credits')
-    .update({
+    // CREATE NEW RECORD
+    if (!current) {
+      console.log('[Credits] ' + '-'.repeat(50));
+      console.log('[Credits] Step 2: NO EXISTING RECORD - Creating new one...');
+      console.log('[Credits] Insert data:');
+      console.log('[Credits]   - organization_id:', organizationId);
+      console.log('[Credits]   - balance:', creditsToAdd);
+      console.log('[Credits]   - total_purchased:', creditsToAdd);
+      console.log('[Credits]   - total_consumed:', 0);
+      console.log('[Credits]   - last_recharged_at:', new Date().toISOString());
+      
+      const insertData = {
+        organization_id: organizationId,
+        balance: creditsToAdd,
+        total_purchased: creditsToAdd,
+        total_consumed: 0,
+        last_recharged_at: new Date().toISOString()
+      };
+      
+      console.log('[Credits] Calling Supabase insert...');
+      
+      const { data: newRecord, error: insertError } = await supabase
+        .from('organization_credits')
+        .insert(insertData)
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('[Credits] ❌❌❌ INSERT FAILED');
+        console.error('[Credits] Error code:', insertError.code);
+        console.error('[Credits] Error message:', insertError.message);
+        console.error('[Credits] Error details:', JSON.stringify(insertError, null, 2));
+        console.error('[Credits] Insert data was:', JSON.stringify(insertData, null, 2));
+        throw insertError;
+      }
+      
+      console.log('[Credits] ✅✅✅ SUCCESS: NEW RECORD CREATED');
+      console.log('[Credits] Created record:', JSON.stringify(newRecord, null, 2));
+      console.log('[Credits] Record ID:', newRecord?.id);
+      console.log('[Credits] Balance:', newRecord?.balance);
+      console.log('[Credits] ' + '='.repeat(60));
+      console.log('[Credits] ⚡ END: addCreditsToOrganization');
+      console.log('[Credits] ' + '='.repeat(60));
+      
+      return newRecord;
+    }
+
+    // UPDATE EXISTING RECORD
+    console.log('[Credits] ' + '-'.repeat(50));
+    console.log('[Credits] Step 2: EXISTING RECORD FOUND - Updating balance...');
+    console.log('[Credits] Current values:');
+    console.log('[Credits]   - balance:', current.balance);
+    console.log('[Credits]   - total_purchased:', current.total_purchased);
+    
+    const newBalance = (current.balance || 0) + creditsToAdd;
+    const newTotalPurchased = (current.total_purchased || 0) + creditsToAdd;
+    
+    console.log('[Credits] Calculated new values:');
+    console.log('[Credits]   - new balance:', newBalance, `(${current.balance} + ${creditsToAdd})`);
+    console.log('[Credits]   - new total_purchased:', newTotalPurchased);
+
+    const updateData = {
       balance: newBalance,
       total_purchased: newTotalPurchased,
       last_recharged_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    })
-    .eq('organization_id', organizationId)
-    .select()
-    .single();
+    };
+    
+    console.log('[Credits] Calling Supabase update...');
 
-  if (updateError) {
-    console.error('[Credits] Error updating credits:', updateError);
-    throw updateError;
+    const { data: updatedRecord, error: updateError } = await supabase
+      .from('organization_credits')
+      .update(updateData)
+      .eq('organization_id', organizationId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[Credits] ❌❌❌ UPDATE FAILED');
+      console.error('[Credits] Error code:', updateError.code);
+      console.error('[Credits] Error message:', updateError.message);
+      console.error('[Credits] Error details:', JSON.stringify(updateError, null, 2));
+      console.error('[Credits] Update data was:', JSON.stringify(updateData, null, 2));
+      throw updateError;
+    }
+
+    console.log('[Credits] ✅✅✅ SUCCESS: RECORD UPDATED');
+    console.log('[Credits] Updated record:', JSON.stringify(updatedRecord, null, 2));
+    console.log('[Credits] New balance:', updatedRecord?.balance);
+    console.log('[Credits] ' + '='.repeat(60));
+    console.log('[Credits] ⚡ END: addCreditsToOrganization');
+    console.log('[Credits] ' + '='.repeat(60));
+    
+    return updatedRecord;
+    
+  } catch (error: any) {
+    console.error('[Credits] ' + '='.repeat(60));
+    console.error('[Credits] ❌❌❌ FATAL ERROR in addCreditsToOrganization');
+    console.error('[Credits] Error type:', error?.constructor?.name);
+    console.error('[Credits] Error:', error);
+    console.error('[Credits] Error message:', error?.message);
+    console.error('[Credits] Error stack:', error?.stack);
+    console.error('[Credits] ' + '='.repeat(60));
+    throw error;
   }
-
-  console.log(`[Credits] ✅ Balance updated: ${current?.balance} → ${newBalance} (source: ${source})`);
-  return data;
 }
 
 /**

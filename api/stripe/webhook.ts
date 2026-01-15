@@ -98,9 +98,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // ----------------------------------------------------------------
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
-                console.log('[Webhook] ✅ Checkout session completed:', session.id);
-
                 const metadata = session.metadata || {};
+                
+                // ✅ ADD DETAILED LOGGING
+                console.log('='.repeat(60));
+                console.log('[Webhook] 🎯 CHECKOUT SESSION COMPLETED EVENT RECEIVED');
+                console.log('[Webhook] Timestamp:', new Date().toISOString());
+                console.log('[Webhook] Session ID:', session.id);
+                console.log('[Webhook] Mode:', session.mode);
+                console.log('[Webhook] Payment Status:', session.payment_status);
+                console.log('[Webhook] Customer ID:', session.customer);
+                console.log('[Webhook] Subscription ID:', session.subscription);
+                console.log('[Webhook] Metadata:', JSON.stringify(metadata, null, 2));
+                console.log('='.repeat(60));
+
                 const userId = metadata.user_id;
                 const organizationId = metadata.organizationId;
                 const planId = metadata.plan_id || metadata.planId ? parseInt(metadata.plan_id || metadata.planId) : null;
@@ -109,25 +120,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const action = metadata.action; // 'upgrade', 'downgrade', or undefined for new subscriptions
                 const purchaseType = metadata.type; // 'credit_purchase' for one-time credit buys
 
-                // Log checkout completion
-                console.log('[Webhook] Checkout details:', {
-                    sessionId: session.id,
-                    mode: session.mode,
-                    customerId: session.customer,
-                    userId,
-                    organizationId,
-                    planId,
-                    planName,
-                    credits,
-                    action,
-                    purchaseType,
-                });
-
                 // ========================================
                 // CASE A: SUBSCRIPTION (new or upgrade/downgrade)
                 // ========================================
-                if (session.mode === 'subscription' && organizationId && planId) {
-                    console.log(`[Webhook] 🔄 Processing subscription for organization:`, organizationId);
+                if (session.mode === 'subscription') {
+                    console.log('[Webhook] 📦 MODE: SUBSCRIPTION - Processing subscription creation...');
+                    console.log('[Webhook] Extracted values:');
+                    console.log('[Webhook]   - Organization ID:', organizationId);
+                    console.log('[Webhook]   - Plan ID:', planId);
+                    console.log('[Webhook]   - User ID:', userId);
+                    
+                    // Validate metadata
+                    if (!organizationId || !planId) {
+                        console.error('[Webhook] ❌ CRITICAL: Missing required metadata');
+                        console.error('[Webhook] organizationId:', organizationId, '(type:', typeof organizationId, ')');
+                        console.error('[Webhook] planId:', planId, '(type:', typeof planId, ')');
+                        console.error('[Webhook] Cannot proceed without metadata. Exiting.');
+                        break;
+                    }
                     
                     // Initialize Supabase
                     const supabase = createClient(
@@ -135,29 +145,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
                     );
 
-                    // Get plan credits from database
-                    const { data: plan, error: planError } = await supabase
-                        .from('subscription_plans')
-                        .select('credits, name')
-                        .eq('id', planId)
-                        .single();
-
-                    if (planError) {
-                        console.error('[Webhook] Error fetching plan:', planError);
-                        break;
-                    }
-
-                    const creditsToAdd = plan?.credits || 0;
-
-                    console.log('[Webhook] Plan details:', {
-                        planName: plan?.name,
-                        creditsToAdd
-                    });
-
                     // 1. Upsert subscription record
                     const subscriptionId = session.subscription as string;
                     
-                    await supabase
+                    console.log('[Webhook] Step 1: Creating/updating subscription record...');
+                    const { error: subError } = await supabase
                         .from('organization_subscriptions')
                         .upsert({
                             organization_id: organizationId,
@@ -171,26 +163,114 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             updated_at: new Date().toISOString()
                         });
 
-                    // 2. ✨ ADD CREDITS to organization
-                    if (creditsToAdd > 0) {
-                        await addCreditsToOrganization(organizationId, creditsToAdd, 'subscription');
-                        console.log('[Webhook] ✅ Subscription credits added:', creditsToAdd);
+                    if (subError) {
+                        console.error('[Webhook] ❌ Error creating subscription:', subError);
+                    } else {
+                        console.log('[Webhook] ✅ Subscription record created/updated successfully');
                     }
+                    
+                    // ✅ AFTER SUBSCRIPTION IS CREATED, ADD THIS SECTION:
+                    
+                    console.log('[Webhook] ' + '='.repeat(50));
+                    console.log('[Webhook] 💰 STARTING CREDITS CREATION PROCESS');
+                    console.log('[Webhook] ' + '='.repeat(50));
+                    
+                    console.log('[Webhook] 💰 Step 1: Fetching plan data from database...');
+                    console.log('[Webhook] Querying subscription_plans table for plan_id:', planId);
+                    
+                    const { data: planData, error: planError } = await supabase
+                        .from('subscription_plans')
+                        .select('id, name, credits, price')
+                        .eq('id', planId)
+                        .single();
+                    
+                    if (planError) {
+                        console.error('[Webhook] ❌ Error fetching plan from database:', planError);
+                        console.error('[Webhook] Error code:', planError.code);
+                        console.error('[Webhook] Error message:', planError.message);
+                        console.error('[Webhook] Error details:', JSON.stringify(planError, null, 2));
+                    } else {
+                        console.log('[Webhook] ✅ Plan fetched successfully:', planData);
+                        console.log('[Webhook] Plan details:');
+                        console.log('[Webhook]   - ID:', planData?.id);
+                        console.log('[Webhook]   - Name:', planData?.name);
+                        console.log('[Webhook]   - Credits:', planData?.credits);
+                        console.log('[Webhook]   - Price:', planData?.price);
+                    }
+                    
+                    const creditsToAdd = planData?.credits || 0;
+                    
+                    console.log('[Webhook] 💰 Step 2: Determining credits amount');
+                    console.log('[Webhook] Credits to add:', creditsToAdd, '(type:', typeof creditsToAdd, ')');
+                    
+                    if (creditsToAdd === 0 || !creditsToAdd) {
+                        console.error('[Webhook] ⚠️⚠️⚠️ WARNING: No credits to add!');
+                        console.error('[Webhook] Reason: Plan has 0 credits or plan not found');
+                        console.error('[Webhook] Plan data was:', planData);
+                        console.error('[Webhook] SKIPPING credits creation');
+                    } else {
+                        console.log('[Webhook] ✅ Valid credits amount, proceeding...');
+                        console.log('[Webhook] 💰 Step 3: Calling addCreditsToOrganization function');
+                        console.log('[Webhook] Function parameters:');
+                        console.log('[Webhook]   - organizationId:', organizationId);
+                        console.log('[Webhook]   - creditsToAdd:', creditsToAdd);
+                        console.log('[Webhook]   - source: "subscription"');
+                        
+                        try {
+                            console.log('[Webhook] 🚀 Invoking addCreditsToOrganization...');
+                            
+                            const creditsResult = await addCreditsToOrganization(
+                                organizationId, 
+                                creditsToAdd, 
+                                'subscription'
+                            );
+                            
+                            console.log('[Webhook] ✅✅✅ SUCCESS: Credits created/updated successfully!');
+                            console.log('[Webhook] Credits result:', JSON.stringify(creditsResult, null, 2));
+                            console.log('[Webhook] New balance:', creditsResult?.balance);
+                            
+                        } catch (creditsError: any) {
+                            console.error('[Webhook] ❌❌❌ CRITICAL ERROR: Failed to create/update credits');
+                            console.error('[Webhook] Error type:', creditsError?.constructor?.name);
+                            console.error('[Webhook] Error name:', creditsError?.name);
+                            console.error('[Webhook] Error message:', creditsError?.message);
+                            console.error('[Webhook] Error code:', creditsError?.code);
+                            console.error('[Webhook] Error details:', creditsError?.details);
+                            console.error('[Webhook] Error hint:', creditsError?.hint);
+                            console.error('[Webhook] Full error object:', JSON.stringify(creditsError, null, 2));
+                            console.error('[Webhook] Stack trace:', creditsError?.stack);
+                            
+                            // Don't throw - let the webhook complete even if credits fail
+                            console.error('[Webhook] Continuing despite credits error (subscription was created)');
+                        }
+                    }
+                    
+                    console.log('[Webhook] 🏁 Subscription processing complete');
+                    console.log('[Webhook] ' + '='.repeat(50));
                 }
 
                 // ========================================
                 // CASE B: CREDIT PURCHASE (one-time payment)
                 // ========================================
-                else if (session.mode === 'payment' && purchaseType === 'credit_purchase' && organizationId && credits) {
-                    console.log('[Webhook] 💰 Processing credit purchase:', {
-                        organizationId,
-                        creditsToAdd: credits
-                    });
-
-                    // ✨ ADD CREDITS to organization
-                    await addCreditsToOrganization(organizationId, credits, 'purchase');
+                else if (session.mode === 'payment' && purchaseType === 'credit_purchase') {
+                    console.log('[Webhook] 💳 MODE: PAYMENT - Credit purchase detected');
                     
-                    console.log('[Webhook] ✅ Credits purchased and added:', credits);
+                    console.log('[Webhook] Organization ID:', organizationId);
+                    console.log('[Webhook] Credits:', credits);
+
+                    if (!organizationId || !credits) {
+                        console.error('[Webhook] ❌ Missing credit purchase metadata');
+                        break;
+                    }
+
+                    console.log('[Webhook] 🚀 Adding purchased credits...');
+                    
+                    try {
+                        const result = await addCreditsToOrganization(organizationId, credits, 'purchase');
+                        console.log('[Webhook] ✅ Credits purchased successfully:', result);
+                    } catch (error) {
+                        console.error('[Webhook] ❌ Error adding purchased credits:', error);
+                    }
                 }
 
                 // TODO: Send confirmation email to user/organization
@@ -325,10 +405,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
  * MIGRATION NOTE: Now updates organization_subscriptions instead of user_subscriptions
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-    console.log('[Webhook] Processing payment succeeded for invoice:', invoice.id);
-
+    console.log('[Webhook] 📄 INVOICE PAYMENT SUCCEEDED');
+    console.log('[Webhook] Invoice ID:', invoice.id);
+    
     const customerId = invoice.customer as string;
     const subscriptionId = invoice.subscription as string;
+
+    console.log('[Webhook] Customer ID:', customerId);
+    console.log('[Webhook] Subscription ID:', subscriptionId);
+
+    if (!subscriptionId) {
+        console.log('[Webhook] No subscription ID, skipping');
+        return;
+    }
+
+    console.log('[Webhook] 🔄 Processing monthly renewal...');
 
     // Initialize Supabase client with service role key for RLS bypass
     const supabase = createClient(
@@ -337,18 +428,26 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     );
 
     // 1. Get organization subscription details
+    console.log('[Webhook] Step 1: Fetching subscription from database...');
     const { data: orgSub, error: fetchError } = await supabase
         .from('organization_subscriptions')
         .select('organization_id, plan_id')
-        .eq('stripe_customer_id', customerId)
+        .eq('stripe_subscription_id', subscriptionId)
         .single();
 
-    if (fetchError) {
-        console.error('[Webhook] Error fetching subscription:', fetchError);
-        throw fetchError;
+    if (fetchError || !orgSub) {
+        console.error('[Webhook] ❌ Subscription not found for renewal');
+        console.error('[Webhook] Error:', fetchError);
+        console.error('[Webhook] Subscription ID searched:', subscriptionId);
+        return;
     }
 
+    console.log('[Webhook] Subscription found:', orgSub);
+    console.log('[Webhook] Organization ID:', orgSub.organization_id);
+    console.log('[Webhook] Plan ID:', orgSub.plan_id);
+
     // 2. Update subscription: reactivate account, reset failure counter
+    console.log('[Webhook] Step 2: Updating subscription status...');
     const { error } = await supabase
         .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update({
@@ -367,24 +466,40 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     console.log('[Webhook] ✅ Organization subscription reactivated for customer:', customerId);
 
     // 3. ✨ ADD CREDITS for monthly renewal
-    if (orgSub?.organization_id && orgSub?.plan_id) {
-        // Get plan credits
-        const { data: plan } = await supabase
-            .from('subscription_plans')
-            .select('credits, name')
-            .eq('id', orgSub.plan_id)
-            .single();
+    console.log('[Webhook] Step 3: Processing renewal credits...');
+    console.log('[Webhook] Fetching plan data for plan_id:', orgSub.plan_id);
+    
+    const { data: plan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('credits, name')
+        .eq('id', orgSub.plan_id)
+        .single();
 
-        const creditsToAdd = plan?.credits || 0;
+    if (planError) {
+        console.error('[Webhook] ❌ Error fetching plan:', planError);
+    } else {
+        console.log('[Webhook] Plan fetched:', plan);
+    }
 
-        if (creditsToAdd > 0) {
+    const creditsToAdd = plan?.credits || 0;
+
+    console.log('[Webhook] Adding renewal credits:', creditsToAdd);
+    console.log('[Webhook] Plan name:', plan?.name);
+
+    if (creditsToAdd > 0) {
+        try {
             await addCreditsToOrganization(orgSub.organization_id, creditsToAdd, 'renewal');
-            console.log('[Webhook] ✅ Monthly renewal - credits added:', {
+            console.log('[Webhook] ✅ Renewal credits added');
+            console.log('[Webhook] Credits added:', {
                 organizationId: orgSub.organization_id,
                 creditsAdded: creditsToAdd,
                 planName: plan?.name
             });
+        } catch (error) {
+            console.error('[Webhook] ❌ Error adding renewal credits:', error);
         }
+    } else {
+        console.warn('[Webhook] ⚠️ No credits to add (plan has 0 credits)');
     }
 
     // TODO: Send email notification to all organization members (payment successful, subscription renewed)
