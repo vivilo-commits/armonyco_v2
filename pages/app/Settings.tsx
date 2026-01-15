@@ -79,7 +79,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // -- Security State --
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    
+    // DEBUG - Remove after fixing
+    useEffect(() => {
+        console.log('[Settings] showPasswordModal state:', showPasswordModal);
+    }, [showPasswordModal]);
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [changingPassword, setChangingPassword] = useState(false);
+
+    // -- Avatar Upload State --
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
     // -- Preferences State --
     const [timeFormat, setTimeFormat] = useState('24h');
@@ -484,9 +499,166 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }, 2000);
     };
 
-    const handleSaveBillingDetails = () => {
+    const handleSaveBillingDetails = async () => {
+        setIsSavingBilling(true);
+        try {
+            await onUpdateBillingDetails(localBillingDetails);
+            setSaveSuccess('Billing details saved!');
+            setTimeout(() => setSaveSuccess(null), 2000);
+        } catch (error) {
+            console.error('Failed to save billing details:', error);
+        } finally {
+            setIsSavingBilling(false);
+        }
+    };
+    
+    const handleSaveBillingModal = () => {
         onUpdateBillingDetails(localBillingDetails);
         setShowBillingModal(false);
+    };
+
+    // Avatar Upload Handlers
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            setValidationError('Please upload a JPG or PNG image');
+            return;
+        }
+
+        // Validate file size (max 2MB)
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            setValidationError('Image size must be less than 2MB');
+            return;
+        }
+
+        try {
+            setUploadingAvatar(true);
+            setValidationError(null);
+
+            // 1. Upload to Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userProfile.id}_${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            const { data: storageData, error: storageError } = await supabase.storage
+                .from('profiles')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (storageError) throw storageError;
+
+            // 2. Get public URL
+            const { data: urlData } = supabase.storage
+                .from('profiles')
+                .getPublicUrl(filePath);
+
+            const avatarUrl = urlData.publicUrl;
+
+            // 3. Update profile in database
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ photo: avatarUrl, updated_at: new Date().toISOString() })
+                .eq('id', userProfile.id);
+
+            if (updateError) throw updateError;
+
+            // 4. Update local state
+            setLocalProfile({ ...localProfile, photo: avatarUrl });
+            setSaveSuccess('Avatar updated successfully!');
+            setTimeout(() => setSaveSuccess(null), 3000);
+
+        } catch (error: any) {
+            console.error('Avatar upload error:', error);
+            setValidationError(`Failed to upload avatar: ${error.message}`);
+        } finally {
+            setUploadingAvatar(false);
+            // Reset input
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveAvatar = async () => {
+        if (!confirm('Are you sure you want to remove your avatar?')) return;
+
+        try {
+            setUploadingAvatar(true);
+
+            // Update profile to remove photo
+            const { error } = await supabase
+                .from('profiles')
+                .update({ photo: null, updated_at: new Date().toISOString() })
+                .eq('id', userProfile.id);
+
+            if (error) throw error;
+
+            setLocalProfile({ ...localProfile, photo: null });
+            setSaveSuccess('Avatar removed');
+            setTimeout(() => setSaveSuccess(null), 3000);
+
+        } catch (error: any) {
+            console.error('Error removing avatar:', error);
+            setValidationError(`Failed to remove avatar: ${error.message}`);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    // Password Change Handler
+    const handleChangePassword = async () => {
+        try {
+            setChangingPassword(true);
+            setValidationError(null);
+
+            // Validation
+            if (passwordForm.newPassword.length < 8) {
+                setValidationError('Password must be at least 8 characters long');
+                setChangingPassword(false);
+                return;
+            }
+
+            if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                setValidationError('New passwords do not match');
+                setChangingPassword(false);
+                return;
+            }
+
+            // Verify current password by attempting to sign in
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: userProfile.email,
+                password: passwordForm.currentPassword
+            });
+
+            if (signInError) {
+                setValidationError('Current password is incorrect');
+                setChangingPassword(false);
+                return;
+            }
+
+            // Update password
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: passwordForm.newPassword
+            });
+
+            if (updateError) throw updateError;
+
+            // Success
+            setSaveSuccess('Password changed successfully!');
+            setShowPasswordModal(false);
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setTimeout(() => setSaveSuccess(null), 3000);
+
+        } catch (error: any) {
+            console.error('Password change error:', error);
+            setValidationError(`Failed to change password: ${error.message}`);
+        } finally {
+            setChangingPassword(false);
+        }
     };
 
     // Fetch knowledge base files from database
@@ -1098,6 +1270,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     };
 
     const renderProfile = () => {
+        console.log('[renderProfile] showPasswordModal:', showPasswordModal);
         return (
             <div className="space-y-6 animate-fade-in w-full pb-20">
                 {/* Identity Header */}
@@ -1112,12 +1285,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FloatingInput label="First Name" value={localProfile.firstName} onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} />
-                                <FloatingInput label="Last Name" value={localProfile.lastName} onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} />
-                                <FloatingInput label="Email Address" value={localProfile.email} onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })} />
-                                <FloatingInput label="Phone Number" value={localProfile.phone} onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} />
+                                <FloatingInput 
+                                    label="First Name" 
+                                    value={localProfile.firstName || ''} 
+                                    onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} 
+                                />
+                                <FloatingInput 
+                                    label="Last Name" 
+                                    value={localProfile.lastName || ''} 
+                                    onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} 
+                                />
+                                <FloatingInput 
+                                    label="Email Address" 
+                                    value={localProfile.email} 
+                                    disabled
+                                    className="opacity-60 cursor-not-allowed"
+                                />
+                                <FloatingInput 
+                                    label="Phone Number" 
+                                    placeholder="+39 123 456 7890"
+                                    value={localProfile.phone || ''} 
+                                    onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} 
+                                />
                                 <div className="md:col-span-2">
-                                    <FloatingInput label="Job Role / Title" value="Regional Operations Director" />
+                                    <FloatingInput 
+                                        label="Job Role / Title" 
+                                        placeholder="Operations Manager"
+                                        value={localProfile.jobRole || ''} 
+                                        onChange={(e) => setLocalProfile({ ...localProfile, jobRole: e.target.value })} 
+                                    />
                                 </div>
                             </div>
                         </Card>
@@ -1154,40 +1350,84 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     {/* Sidebar / Profile Avatar */}
                     <div className="lg:col-span-4 space-y-6">
                         <Card variant="dark" padding="lg" className="text-center flex flex-col items-center">
-                            <div className="relative group cursor-pointer mb-6">
+                            {/* Hidden file input */}
+                            <input
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg"
+                                onChange={handleAvatarUpload}
+                                className="hidden"
+                            />
+
+                            <div 
+                                className="relative group cursor-pointer mb-6"
+                                onClick={() => avatarInputRef.current?.click()}
+                            >
                                 <div className="w-32 h-32 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center bg-white/5 group-hover:bg-white/10 transition-all overflow-hidden">
-                                    <Camera size={32} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                    {uploadingAvatar ? (
+                                        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    ) : localProfile.photo ? (
+                                        <img 
+                                            src={localProfile.photo} 
+                                            alt="Avatar" 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <Camera size={32} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                    )}
                                 </div>
+                                
                                 <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--color-brand-accent)] flex items-center justify-center text-black shadow-lg">
                                     <Plus size={16} />
                                 </div>
                             </div>
+
                             <h4 className="text-white font-bold tracking-tight">Profile Avatar</h4>
                             <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mt-1">Institutional Identity</p>
-                            <p className="text-[10px] text-zinc-600 mt-4 px-4 italic leading-relaxed">Recommended size: 500x500px. JPG or PNG allowed.</p>
+                            <p className="text-[10px] text-zinc-600 mt-4 px-4 italic leading-relaxed">
+                                Recommended size: 500x500px. JPG or PNG allowed.
+                            </p>
+                            
+                            {localProfile.photo && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveAvatar();
+                                    }}
+                                    className="mt-4 text-xs text-red-400 hover:text-red-300 underline"
+                                >
+                                    Remove Avatar
+                                </button>
+                            )}
                         </Card>
 
+                        {/* Security Card */}
                         <Card variant="dark" padding="lg">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Security Baseline</h4>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-white/40">2FA Status</span>
-                                    <span className="text-emerald-500">Active</span>
-                                </div>
-                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-white/40">Last Login</span>
-                                    <span className="text-white/60">2 hours ago</span>
-                                </div>
-                                <button className="w-full py-3 mt-4 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 rounded-xl hover:bg-white/5 transition-all">
-                                    Change Password
-                                </button>
-                            </div>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">
+                                Security
+                            </h4>
+                            
+                            <p className="text-[10px] text-zinc-500 mb-6 leading-relaxed">
+                                Manage your account security and authentication settings.
+                            </p>
+                            
+                            <button
+                                onClick={() => {
+                                    console.log('[Settings] Button clicked, opening modal');
+                                    console.log('[Settings] Current state:', showPasswordModal);
+                                    setShowPasswordModal(true);
+                                    console.log('[Settings] State should now be true');
+                                }}
+                                className="w-full py-3 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 rounded-xl hover:bg-white/5 transition-all"
+                            >
+                                Change Password
+                            </button>
                         </Card>
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-4 border-t border-white/5 mt-10">
-                    <Button size="lg" leftIcon={<Save size={18} />} onClick={handleSaveProfile} isLoading={isSavingProfile}>{isSavingProfile ? 'Saving...' : 'Save Identity Changes'}</Button>
+                    <Button size="lg" leftIcon={<Save size={18} />} onClick={handleSaveProfile} isLoading={isSavingProfile}>{isSavingProfile ? 'Saving...' : 'Save Changes'}</Button>
                 </div>
             </div>
         );
@@ -1195,128 +1435,181 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     const renderOrg = () => {
         return (
-            <div className="w-full animate-fade-in space-y-8 pb-20">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Main Org Data */}
-                    <div className="lg:col-span-8 space-y-8">
-                        <Card padding="lg">
-                            <h3 className="text-lg font-medium mb-6">Organization Profile</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FloatingInput label="Organization Name" value={localOrg.name} onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} />
-                                <FloatingInput label="Corporate Email" value={localOrg.billingEmail} onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} />
-                                <FloatingInput label="Company Website" value="https://armonyco.io" />
-                                <div className="relative">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Legal Structure</label>
-                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                        <option>LLC / Ltd.</option>
-                                        <option>S.A. / Corporation</option>
-                                        <option>Inc.</option>
-                                        <option>Private Individual / Host</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </Card>
+            <div className="w-full animate-fade-in space-y-8 pb-20 max-w-4xl mx-auto">
+                
+                {/* SECTION 1: Organization Profile */}
+                <Card padding="lg">
+                    <h3 className="text-lg font-medium mb-6">Organization Profile</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FloatingInput 
+                            label="Organization Name" 
+                            value={localOrg.name} 
+                            onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} 
+                        />
+                        
+                        <FloatingInput 
+                            label="Corporate Email" 
+                            value={localOrg.billingEmail} 
+                            onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} 
+                        />
+                        
+                        <FloatingInput 
+                            label="Company Website" 
+                            value="https://armonyco.io" 
+                        />
+                        
+                        <div className="relative">
+                            <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
+                                Legal Structure
+                            </label>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                <option>LLC / Ltd.</option>
+                                <option>S.A. / Corporation</option>
+                                <option>Inc.</option>
+                                <option>Private Individual Host</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {/* Save Organization Button */}
+                    <div className="flex justify-end pt-6 mt-6 border-t border-white/5">
+                        <Button
+                            size="lg"
+                            leftIcon={<Save size={18} />}
+                            onClick={handleSaveOrg}
+                            isLoading={isSavingOrg}
+                            disabled={isSavingOrg}
+                        >
+                            {isSavingOrg ? 'Saving...' : 'Save Organization'}
+                        </Button>
+                    </div>
+                </Card>
 
-                        <Card padding="lg">
-                            <h3 className="text-lg font-medium mb-6">Fiscal Address (Global Universal)</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="md:col-span-2">
-                                    <FloatingInput label="Street Address" value={localBillingDetails.address || ''} />
-                                </div>
-                                <FloatingInput label="Suite / Apt" value="" />
-                                <FloatingInput label="City" value="" />
-                                <FloatingInput label="State / Province / Region" value="" />
-                                <FloatingInput label="Zip / Postal Code" value="" />
-                                <div className="relative md:col-span-3">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Country / Territory</label>
-                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                        <option>United States</option>
-                                        <option>Brazil</option>
-                                        <option>Italy</option>
-                                        <option>Mexico</option>
-                                        <option>Colombia</option>
-                                        <option>European Union (Select Member State)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </Card>
+                {/* SECTION 2: Billing Details */}
+                <Card padding="lg">
+                    <h3 className="text-lg font-medium mb-6">Billing Details</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Legal Name */}
+                        <div className="md:col-span-2">
+                            <FloatingInput
+                                label="Legal Entity Name *"
+                                placeholder="Company S.r.l."
+                                value={localBillingDetails.legalName || ''}
+                                onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })}
+                            />
+                        </div>
+
+                        {/* VAT Number */}
+                        <FloatingInput
+                            label="VAT / Tax ID Number *"
+                            placeholder="IT12345678901"
+                            value={localBillingDetails.vatNumber || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })}
+                        />
+
+                        {/* Fiscal Code */}
+                        <FloatingInput
+                            label="Fiscal Code (Optional)"
+                            placeholder="RSSMRA80A01H501U"
+                            value={localBillingDetails.fiscalCode || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, fiscalCode: e.target.value })}
+                        />
+
+                        {/* Address */}
+                        <div className="md:col-span-2">
+                            <FloatingInput
+                                label="Address *"
+                                placeholder="Via Roma 123"
+                                value={localBillingDetails.address || ''}
+                                onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })}
+                            />
+                        </div>
+
+                        {/* City */}
+                        <FloatingInput
+                            label="City *"
+                            placeholder="Roma"
+                            value={localBillingDetails.city || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, city: e.target.value })}
+                        />
+
+                        {/* ZIP */}
+                        <FloatingInput
+                            label="ZIP / Postal Code *"
+                            placeholder="00100"
+                            value={localBillingDetails.zip || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, zip: e.target.value })}
+                        />
+
+                        {/* Country */}
+                        <div className="relative md:col-span-2">
+                            <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
+                                Country *
+                            </label>
+                            <select
+                                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
+                                value={localBillingDetails.country || ''}
+                                onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, country: e.target.value })}
+                            >
+                                <option value="">Select Country</option>
+                                <option value="IT">Italy</option>
+                                <option value="US">United States</option>
+                                <option value="GB">United Kingdom</option>
+                                <option value="FR">France</option>
+                                <option value="DE">Germany</option>
+                                <option value="ES">Spain</option>
+                                <option value="BR">Brazil</option>
+                            </select>
+                        </div>
+
+                        {/* SDI Code */}
+                        <FloatingInput
+                            label="SDI Code (Italy - Optional)"
+                            placeholder="ABCDEFG"
+                            value={localBillingDetails.sdiCode || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, sdiCode: e.target.value })}
+                        />
+
+                        {/* PEC Email */}
+                        <FloatingInput
+                            label="PEC Email (Italy - Optional)"
+                            placeholder="company@pec.it"
+                            type="email"
+                            value={localBillingDetails.pecEmail || ''}
+                            onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, pecEmail: e.target.value })}
+                        />
+
+                        {/* Settlement Currency */}
+                        <div className="relative md:col-span-2">
+                            <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
+                                Settlement Currency
+                            </label>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
+                                <option>USD - United States Dollar</option>
+                                <option>EUR - Euro</option>
+                                <option>GBP - British Pound</option>
+                                <option>BRL - Brazilian Real</option>
+                                <option>MXN - Mexican Peso</option>
+                            </select>
+                        </div>
                     </div>
 
-                    {/* Org Sidebar */}
-                    <div className="lg:col-span-4 space-y-8">
-                        <Card variant="dark" padding="lg">
-                            <div className="flex justify-between items-center mb-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 italic">Compliance Status</h4>
-                                <span className="text-[8px] px-2 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded uppercase font-black">Authorized</span>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="p-4 bg-white/5 border border-white/5 rounded-xl space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[9px] text-zinc-500 font-bold uppercase italic">Master Services Agreement</span>
-                                        <CheckCircle size={12} className="text-emerald-500" />
-                                    </div>
-                                    <button className="w-full py-2 bg-[var(--color-brand-accent)] text-black text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 hover:bg-white transition-all">
-                                        <Link size={12} /> DocuSign Infrastructure
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="aspect-square bg-white/[0.02] border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 group cursor-pointer hover:bg-white/5 transition-all">
-                                        <Camera size={16} className="text-white/20 group-hover:text-[var(--color-brand-accent)]" />
-                                        <span className="text-[8px] text-white/40 font-black uppercase text-center px-2">Legal Rep. Photo</span>
-                                    </div>
-                                    <div className="aspect-square bg-white/[0.02] border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 group cursor-pointer hover:bg-white/5 transition-all">
-                                        <FileText size={16} className="text-white/20 group-hover:text-[var(--color-brand-accent)]" />
-                                        <span className="text-[8px] text-white/40 font-black uppercase text-center px-2">Gov. ID / Passport</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card variant="dark" padding="lg">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Institutional Compliance</h4>
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Universal Tax ID / VAT / EIN / CNPJ</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter Legal ID"
-                                        className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40"
-                                        value={localBillingDetails.vatNumber || ''}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Settlement Currency</label>
-                                    <div className="relative">
-                                        <select className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer">
-                                            <option>USD - United States Dollar</option>
-                                            <option>EUR - Euro</option>
-                                            <option>GBP - British Pound</option>
-                                            <option>BRL - Brazilian Real</option>
-                                            <option>MXN - Mexican Peso</option>
-                                        </select>
-                                        <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/20 pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card variant="dark" padding="lg" className="border-[var(--color-brand-accent)]/20 shadow-[0_0_30px_rgba(212,175,55,0.05)]">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Shield size={18} className="text-[var(--color-brand-accent)]" />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Trust Substrate</h4>
-                            </div>
-                            <p className="text-[10px] text-zinc-500 leading-relaxed italic">
-                                ArmonycoOS™ requires verified organizational data to establish node sovereignty and cross-border settlement protocols.
-                            </p>
-                        </Card>
+                    {/* Save Billing Button */}
+                    <div className="flex justify-end pt-6 mt-6 border-t border-white/5">
+                        <Button
+                            size="lg"
+                            leftIcon={<Save size={18} />}
+                            onClick={handleSaveBillingDetails}
+                            isLoading={isSavingBilling}
+                            disabled={isSavingBilling}
+                        >
+                            {isSavingBilling ? 'Saving...' : 'Save Billing Details'}
+                        </Button>
                     </div>
-                </div>
+                </Card>
 
-                <div className="mt-6 flex justify-end pt-8 border-t border-white/5">
-                    <Button leftIcon={<Save size={18} />} onClick={handleSaveOrg} isLoading={isSavingOrg}>{isSavingOrg ? 'Saving...' : 'Update Organization Infrastructure'}</Button>
-                </div>
             </div>
         )
     }
@@ -2044,7 +2337,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <FloatingInput label="Address" value={localBillingDetails.address} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })} />
                         </div>
                         <div className="flex justify-end pt-4">
-                            <Button onClick={handleSaveBillingDetails}>Save Details</Button>
+                            <Button onClick={handleSaveBillingModal}>Save Details</Button>
                         </div>
                     </div>
                 </Modal>
@@ -2211,6 +2504,72 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </Button>
                         <Button onClick={handleSaveHotel}>
                             {editingHotel?.id ? 'Update Hotel' : 'Add Hotel'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Change Password Modal - Root Level */}
+            <Modal
+                isOpen={showPasswordModal}
+                onClose={() => {
+                    console.log('[Settings] Closing password modal');
+                    setShowPasswordModal(false);
+                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    setValidationError(null);
+                }}
+                title="Change Password"
+            >
+                <div className="p-6 space-y-5">
+                    <p className="text-sm text-zinc-400">
+                        Enter your current password and choose a new one.
+                    </p>
+
+                    <FloatingInput
+                        label="Current Password"
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    />
+
+                    <FloatingInput
+                        label="New Password"
+                        type="password"
+                        placeholder="At least 8 characters"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    />
+
+                    <FloatingInput
+                        label="Confirm New Password"
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    />
+
+                    {validationError && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+                            {validationError}
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setShowPasswordModal(false);
+                                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                setValidationError(null);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleChangePassword}
+                            isLoading={changingPassword}
+                            disabled={!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                        >
+                            {changingPassword ? 'Changing...' : 'Change Password'}
                         </Button>
                     </div>
                 </div>

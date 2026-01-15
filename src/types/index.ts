@@ -9,6 +9,7 @@ export interface UserProfile {
     lastName: string;
     phone?: string;
     photo?: string | null;
+    jobRole?: string;
     role: string; // Relaxed for plumbing compatibility
     credits: number;
 }

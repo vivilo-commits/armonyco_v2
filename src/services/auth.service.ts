@@ -33,6 +33,7 @@ export async function getProfileFromDB(userId: string): Promise<UserProfile | nu
         lastName: data.last_name,
         phone: data.phone || '',
         photo: data.photo,
+        jobRole: data.job_role || '',
         role: data.role || 'AppUser',
         credits: data.credits || 0,
     };
@@ -48,19 +49,26 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
     const { data: userData } = await supabase.auth.getUser();
     const email = userData?.user?.email || '';
 
+    const updateData: any = {
+        id: userId,
+        email: email,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        phone: profile.phone,
+        photo: profile.photo,
+        role: profile.role || 'AppUser',
+        credits: profile.credits ?? 0,
+        updated_at: new Date().toISOString(),
+    };
+
+    // Add job_role if provided (column may not exist in older schemas)
+    if (profile.jobRole !== undefined) {
+        updateData.job_role = profile.jobRole;
+    }
+
     const { data, error } = await supabase
         .from('profiles')
-        .upsert({
-            id: userId,
-            email: email,
-            first_name: profile.firstName,
-            last_name: profile.lastName,
-            phone: profile.phone,
-            photo: profile.photo,
-            role: profile.role || 'AppUser',
-            credits: profile.credits ?? 0,
-            updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' })
+        .upsert(updateData, { onConflict: 'id' })
         .select()
         .single();
 
@@ -76,6 +84,7 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
         lastName: data.last_name,
         phone: data.phone || '',
         photo: data.photo,
+        jobRole: data.job_role || '',
         role: data.role || 'AppUser',
         credits: data.credits || 0,
     };

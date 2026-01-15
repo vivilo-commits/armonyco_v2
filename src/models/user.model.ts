@@ -11,6 +11,7 @@ export interface UserProfile {
     email: string;
     phone: string;
     photo?: string | null;
+    jobRole?: string;
     role: UserRole;
     credits: number; // ArmoCredits balance
 }
