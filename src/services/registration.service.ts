@@ -9,6 +9,7 @@ import {
     updateOrganizationInDB, 
     updateBillingInDB 
 } from './auth.service';
+import { initializeOrganizationCredits } from '../lib/credits';
 
 // ============================================================================
 // TYPES
@@ -362,6 +363,19 @@ export async function completeRegistration(data: CompleteRegistrationData): Prom
             } catch (error: any) {
                 console.error('[Registration] ❌ Unexpected error adding user to organization:', error);
                 throw error; // ⚠️ Block registration if this fails
+            }
+        }
+
+        // Initialize credits for the organization
+        if (organization?.id && data.planCredits > 0) {
+            console.log('[Registration] Initializing organization credits...');
+            try {
+                await initializeOrganizationCredits(organization.id, data.planCredits);
+                console.log('[Registration] ✅ Credits initialized successfully:', data.planCredits);
+            } catch (error: any) {
+                console.error('[Registration] ❌ Error initializing credits:', error);
+                // Don't fail registration, but log the error
+                console.warn('[Registration] Credits initialization failed but user account was created');
             }
         }
 
