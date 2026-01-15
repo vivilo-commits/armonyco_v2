@@ -5,13 +5,15 @@ import { Card } from '../../components/ui/Card';
 import { FloatingInput } from '../../components/ui/FloatingInput';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useAuth } from '../../src/context/AuthContext';
+import { PermissionLoader } from '../../components/common/PermissionLoader';
+import { AccessDenied } from '../../components/common/AccessDenied';
 
 interface InviteMemberProps {
   onBack?: () => void;
 }
 
 export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
-  const { canManageMembers, currentOrgId } = usePermissions();
+  const { canManageMembers, currentOrgId, loading: permissionsLoading } = usePermissions();
   const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -24,17 +26,19 @@ export const InviteMember: React.FC<InviteMemberProps> = ({ onBack }) => {
   const [invitedEmail, setInvitedEmail] = useState('');
   const [existingUser, setExistingUser] = useState(false);
 
+  // Show loading while permissions are being checked
+  if (permissionsLoading) {
+    return <PermissionLoader />;
+  }
+
+  // Check permissions only after loading is complete
   if (!canManageMembers) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
-        <Card padding="lg" className="max-w-md text-center">
-          <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
-          <p className="text-zinc-400">
-            Only organization Admins can invite members.
-          </p>
-        </Card>
-      </div>
+      <AccessDenied
+        message="Only organization Admins can invite members."
+        title="Access Denied"
+        onBack={onBack}
+      />
     );
   }
 

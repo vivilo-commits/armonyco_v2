@@ -22,6 +22,7 @@ import { AdminUsersView } from './app/AdminUsers';
 import { InviteMember } from './app/InviteMember';
 import SuperAdminDashboard from '../src/pages/app/SuperAdminDashboard';
 import { usePermissions } from '../src/hooks/usePermissions';
+import { PermissionLoader } from '../components/common/PermissionLoader';
 
 interface WebAppProps {
   onLogout: () => void;
@@ -254,7 +255,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
   };
 
   const renderView = () => {
-    console.log('[WebApp] 🎨 renderView called - activeView:', activeView, 'isLoadingData:', isLoadingData, 'isAppAdmin:', isAppAdmin);
+    console.log('[WebApp] 🎨 renderView called - activeView:', activeView, 'isLoadingData:', isLoadingData, 'isAppAdmin:', isAppAdmin, 'permissionsLoading:', permissionsLoading);
     
     // Show loading while fetching data
     if (isLoadingData) {
@@ -266,6 +267,14 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
           </div>
         </div>
       );
+    }
+
+    // Show loading while permissions are being checked (for protected views)
+    // This prevents flash of "Access Denied" before permissions load
+    const protectedViews = ['invite-member', 'admin-users', 'settings-profile', 'settings-company', 'settings-activation', 'settings-billing', 'roles'];
+    if (permissionsLoading && protectedViews.includes(activeView)) {
+      console.log('[WebApp] ⏳ Showing permission loader for protected view:', activeView);
+      return <PermissionLoader />;
     }
 
     // ===== SUPER ADMIN: ALWAYS show SuperAdminDashboard, ignore activeView =====

@@ -13,6 +13,7 @@ import { CurrentPlanCard } from '../../components/app/CurrentPlanCard';
 import { AvailablePlansGrid } from '../../components/app/AvailablePlansGrid';
 import { UsageTable } from '../../components/app/UsageTable';
 import { BuyCreditsModal } from '../../components/app/BuyCreditsModal';
+import { PermissionLoader } from '../../components/common/PermissionLoader';
 import { supabase } from '../../src/lib/supabase';
 
 interface SettingsViewProps {
@@ -199,66 +200,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [loadingBalance, setLoadingBalance] = useState(false);
     const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
 
-    // Effect to sync prop activeView with internal state
-    useEffect(() => {
-        if (activeView) {
-            if (activeView === 'settings-profile') setActiveTab('PROFILE');
-            if (activeView === 'settings-company') setActiveTab('ORG');
-            if (activeView === 'settings-billing') setActiveTab('SUBSCRIPTION');
-            if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
-        }
-    }, [activeView]);
-
-    useEffect(() => setLocalProfile(userProfile), [userProfile]);
-    useEffect(() => setLocalOrg(organization), [organization]);
-    useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
-
-    // Handle credit purchase redirect (success/cancel)
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const creditsStatus = params.get('credits');
-        const amount = params.get('amount');
-
-        if (creditsStatus === 'success' && amount) {
-            console.log('✅ Credits purchase successful!');
-            console.log('Credits added:', amount);
-            
-            // Refresh balance to show updated amount
-            if (organization?.id) {
-                fetchOrganizationBalance();
-            }
-            
-            // Clean up URL
-            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
-            
-            // Optional: Show success notification
-            setSaveSuccess(`Successfully purchased ${parseInt(amount).toLocaleString()} credits!`);
-            setTimeout(() => setSaveSuccess(null), 5000);
-        }
-
-        if (creditsStatus === 'canceled') {
-            console.log('❌ Credits purchase was canceled');
-            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
-        }
-    }, [organization?.id]);
-
-    // Fetch subscription data when subscription tab is active
-    useEffect(() => {
-        if (activeTab === 'SUBSCRIPTION' && organization?.id) {
-            fetchSubscriptionData();
-            fetchOrganizationBalance();
-        }
-    }, [activeTab, organization?.id]);
-
-    // Fetch knowledge base files when activation tab is active
-    useEffect(() => {
-        if (activeTab === 'ACTIVATION' && organization?.id) {
-            fetchKnowledgeBaseFiles();
-            fetchWhatsAppConfig();
-            fetchPMSConfig();
-            fetchHotels();
-        }
-    }, [activeTab, organization?.id]);
+    // ========================================
+    // ALL FUNCTION DECLARATIONS
+    // ========================================
 
     // Fetch organization credits balance
     const fetchOrganizationBalance = async () => {
@@ -353,20 +297,214 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
     };
 
+    // Fetch knowledge base files from database
+    const fetchKnowledgeBaseFiles = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_knowledge_base')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('[Settings] Error fetching KB files:', error);
+                return;
+            }
+
+            if (data) {
+                setKbFilesData(data);
+                setKbFiles(data.map(f => f.file_name));
+                console.log('[Settings] KB files loaded:', data.length);
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching KB files:', error);
+        }
+    };
+
+    // Fetch WhatsApp configuration
+    const fetchWhatsAppConfig = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_whatsapp_config')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .maybeSingle();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('[Settings] Error fetching WhatsApp config:', error);
+                return;
+            }
+            
+            if (data) {
+                console.log('[Settings] WhatsApp config loaded:', { id: data.id, configured: data.configured_in_n8n });
+                setWaForm({
+                    accessToken: data.access_token || '',
+                    businessId: data.business_account_id || '',
+                    phoneId: data.phone_number_id || '',
+                    verifyToken: data.verify_token || '',
+                    appSecret: data.app_secret || ''
+                });
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching WhatsApp config:', error);
+        }
+    };
+
+    // Fetch PMS Configuration
+    const fetchPMSConfig = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_pms_config')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .maybeSingle();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('[Settings] Error fetching PMS config:', error);
+                return;
+            }
+            
+            if (data) {
+                console.log('[Settings] PMS config loaded:', { id: data.id, provider: data.pms_provider });
+                setPmsConfig({
+                    pmsProvider: data.pms_provider || 'mews',
+                    apiBaseUrl: data.api_base_url || '',
+                    authType: data.auth_type || 'api_key',
+                    apiUsername: data.api_username || '',
+                    apiPassword: data.api_password_encrypted || '',
+                    apiKey: data.api_key || '',
+                    clientId: data.client_id || '',
+                    clientSecret: data.client_secret_encrypted || '',
+                    bearerToken: data.bearer_token || ''
+                });
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching PMS config:', error);
+        }
+    };
+
+    // Fetch Hotels
+    const fetchHotels = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_hotels')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            setHotels(data.map(h => ({
+                id: h.id,
+                hotelName: h.hotel_name,
+                hotelIdInPms: h.hotel_id_in_pms,
+                propertyCode: h.property_code,
+                isActive: h.is_active
+            })));
+
+            console.log('[Settings] Hotels loaded:', data.length);
+        } catch (error: any) {
+            console.error('[Settings] Error fetching hotels:', error);
+            // Don't show error to user if table doesn't exist yet
+            if (error.code !== '42P01' && error.code !== 'PGRST116') {
+                setValidationError('Failed to load hotels');
+            }
+        }
+    };
+
+    // ========================================
+    // ALL useEffect HOOKS
+    // ========================================
+
+    // Effect to sync prop activeView with internal state
+    useEffect(() => {
+        if (activeView) {
+            if (activeView === 'settings-profile') setActiveTab('PROFILE');
+            if (activeView === 'settings-company') setActiveTab('ORG');
+            if (activeView === 'settings-billing') setActiveTab('SUBSCRIPTION');
+            if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
+        }
+    }, [activeView]);
+
+    useEffect(() => setLocalProfile(userProfile), [userProfile]);
+    useEffect(() => setLocalOrg(organization), [organization]);
+    useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
+
+    // Handle credit purchase redirect (success/cancel)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const creditsStatus = params.get('credits');
+        const amount = params.get('amount');
+
+        if (creditsStatus === 'success' && amount) {
+            console.log('✅ Credits purchase successful!');
+            console.log('Credits added:', amount);
+            
+            // Refresh balance to show updated amount
+            if (organization?.id) {
+                fetchOrganizationBalance();
+            }
+            
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
+            
+            // Optional: Show success notification
+            setSaveSuccess(`Successfully purchased ${parseInt(amount).toLocaleString()} credits!`);
+            setTimeout(() => setSaveSuccess(null), 5000);
+        }
+
+        if (creditsStatus === 'canceled') {
+            console.log('❌ Credits purchase was canceled');
+            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
+        }
+    }, [organization?.id]);
+
+    // Fetch subscription data when subscription tab is active
+    useEffect(() => {
+        if (activeTab === 'SUBSCRIPTION' && organization?.id) {
+            fetchSubscriptionData();
+            fetchOrganizationBalance();
+        }
+    }, [activeTab, organization?.id]);
+
+    // Fetch knowledge base files when activation tab is active
+    useEffect(() => {
+        if (activeTab === 'ACTIVATION' && organization?.id) {
+            fetchKnowledgeBaseFiles();
+            fetchWhatsAppConfig();
+            fetchPMSConfig();
+            fetchHotels();
+        }
+    }, [activeTab, organization?.id]);
+
     // ========================================
     // AFTER ALL HOOKS: CONDITIONAL LOGIC
     // ========================================
 
     // Show loading state while permissions are being checked
     if (permissionsLoading) {
-        return (
-            <div className="w-full h-screen bg-black flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-[var(--color-brand-accent)]/30 border-t-[var(--color-brand-accent)] rounded-full animate-spin" />
-                    <span className="text-zinc-400 text-sm">Checking permissions...</span>
-                </div>
-            </div>
-        );
+        return <PermissionLoader />;
     }
 
     // Redirect Collaborators - Settings are restricted to SuperAdmin and Org Admin only
@@ -661,36 +799,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
     };
 
-    // Fetch knowledge base files from database
-    const fetchKnowledgeBaseFiles = async () => {
-        if (!supabase || !organization?.id) {
-            console.warn('[Settings] Supabase or organization not available');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('organization_knowledge_base')
-                .select('*')
-                .eq('organization_id', organization.id)
-                .eq('is_active', true)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('[Settings] Error fetching KB files:', error);
-                return;
-            }
-
-            if (data) {
-                setKbFilesData(data);
-                setKbFiles(data.map(f => f.file_name));
-                console.log('[Settings] KB files loaded:', data.length);
-            }
-        } catch (error) {
-            console.error('[Settings] Unexpected error fetching KB files:', error);
-        }
-    };
-
     // Handle knowledge base file upload
     const handleKBFileUpload = async (file: File, fileType: 'policy_pdf' | 'property_csv') => {
         if (!supabase || !organization?.id) {
@@ -854,40 +962,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
     };
 
-    // Fetch WhatsApp configuration
-    const fetchWhatsAppConfig = async () => {
-        if (!supabase || !organization?.id) {
-            console.warn('[Settings] Supabase or organization not available');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('organization_whatsapp_config')
-                .select('*')
-                .eq('organization_id', organization.id)
-                .maybeSingle();
-            
-            if (error && error.code !== 'PGRST116') {
-                console.error('[Settings] Error fetching WhatsApp config:', error);
-                return;
-            }
-            
-            if (data) {
-                console.log('[Settings] WhatsApp config loaded:', { id: data.id, configured: data.configured_in_n8n });
-                setWaForm({
-                    accessToken: data.access_token || '',
-                    businessId: data.business_account_id || '',
-                    phoneId: data.phone_number_id || '',
-                    verifyToken: data.verify_token || '',
-                    appSecret: data.app_secret || ''
-                });
-            }
-        } catch (error) {
-            console.error('[Settings] Unexpected error fetching WhatsApp config:', error);
-        }
-    };
-
     // Save WhatsApp configuration
     const handleSaveWhatsAppConfig = async () => {
         try {
@@ -937,78 +1011,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             setValidationError(`Failed to save configuration: ${error.message}`);
         } finally {
             setIsValidating(false);
-        }
-    };
-
-    // Fetch PMS Configuration
-    const fetchPMSConfig = async () => {
-        if (!supabase || !organization?.id) {
-            console.warn('[Settings] Supabase or organization not available');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('organization_pms_config')
-                .select('*')
-                .eq('organization_id', organization.id)
-                .maybeSingle();
-            
-            if (error && error.code !== 'PGRST116') {
-                console.error('[Settings] Error fetching PMS config:', error);
-                return;
-            }
-            
-            if (data) {
-                console.log('[Settings] PMS config loaded:', { id: data.id, provider: data.pms_provider });
-                setPmsConfig({
-                    pmsProvider: data.pms_provider || 'mews',
-                    apiBaseUrl: data.api_base_url || '',
-                    authType: data.auth_type || 'api_key',
-                    apiUsername: data.api_username || '',
-                    apiPassword: data.api_password_encrypted || '',
-                    apiKey: data.api_key || '',
-                    clientId: data.client_id || '',
-                    clientSecret: data.client_secret_encrypted || '',
-                    bearerToken: data.bearer_token || ''
-                });
-            }
-        } catch (error) {
-            console.error('[Settings] Unexpected error fetching PMS config:', error);
-        }
-    };
-
-    // Fetch Hotels
-    const fetchHotels = async () => {
-        if (!supabase || !organization?.id) {
-            console.warn('[Settings] Supabase or organization not available');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('organization_hotels')
-                .select('*')
-                .eq('organization_id', organization.id)
-                .order('created_at', { ascending: false });
-            
-            if (error) throw error;
-            
-            setHotels(data.map(h => ({
-                id: h.id,
-                hotelName: h.hotel_name,
-                hotelIdInPms: h.hotel_id_in_pms,
-                propertyCode: h.property_code,
-                isActive: h.is_active
-            })));
-
-            console.log('[Settings] Hotels loaded:', data.length);
-        } catch (error: any) {
-            console.error('[Settings] Error fetching hotels:', error);
-            // Don't show error to user if table doesn't exist yet
-            if (error.code !== '42P01' && error.code !== 'PGRST116') {
-                setValidationError('Failed to load hotels');
-            }
         }
     };
 
