@@ -72,12 +72,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedMenu, setExpandedMenu] = useState<string | null>('governance');
   
   // Get permissions for dynamic menu
-  const { canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, loading: permissionsLoading } = usePermissions();
+  const { canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, isOrgAdmin, loading: permissionsLoading } = usePermissions();
 
   // Debug logging for Administration visibility
-  console.log('[Sidebar] 🔍 SuperAdmin Check:', {
+  console.log('[Sidebar] 🔍 Permissions Check:', {
     permissionsLoading,
-    isAppAdminResult: isAppAdmin,
+    isAppAdmin,
+    isOrgAdmin,
+    canAccessSettings,
     timestamp: new Date().toISOString()
   });
 
@@ -134,17 +136,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ]
       },
       // Settings - Only show for SuperAdmin or Org Admin (NOT Collaborators)
-      ...(canAccessSettings ? [{
-        id: 'settings',
-        label: 'Settings',
-        icon: Settings,
-        children: [
-          { id: 'settings-profile', label: 'Profile' },
-          { id: 'settings-company', label: 'Organization' },
-          { id: 'settings-billing', label: 'Subscription' },
-          ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
-        ],
-      }] : []),
+      ...(canAccessSettings ? (() => {
+        console.log('[Sidebar] ✅ Settings menu VISIBLE - canAccessSettings:', canAccessSettings);
+        return [{
+          id: 'settings',
+          label: 'Settings',
+          icon: Settings,
+          children: [
+            { id: 'settings-profile', label: 'Profile' },
+            { id: 'settings-company', label: 'Organization' },
+            { id: 'settings-activation', label: 'System Activation' },
+            { id: 'settings-billing', label: 'Subscription' },
+            ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
+          ],
+          action: () => setView('settings-profile') // Go to Settings Profile when clicking main item
+        }];
+      })() : (() => {
+        console.log('[Sidebar] ❌ Settings menu HIDDEN - canAccessSettings:', canAccessSettings);
+        return [];
+      })()),
     ];
 
     // Add Services menu only for Organization Admin
@@ -163,10 +173,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleItemClick = (item: MenuItem) => {
     // Logic: 
-    // If it has children: toggle expansion (if expanded, close; if closed, open). 
-    // If collapsed sidebar: Open sidebar maybe? Or just expand submenu in popover? 
-    // User requested "Pricing & Billing" (no children) to work when paused.
+    // If it has an action: call it (navigate to view)
+    // If it has children: toggle expansion
+    // Both can happen simultaneously for items like Settings
 
+    // Call action if present (navigate to view)
+    if (item.action) {
+      item.action();
+      setIsMobileOpen(false);
+    }
+
+    // Handle children expansion
     if (item.children.length > 0) {
       if (isCollapsed) {
         // If collapsed, clicking a parent with children usually does nothing or opens a tooltip/popover. 
@@ -176,12 +193,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         // However, user mentioned "collapsible menu should scroll together". 
       } else {
         setExpandedMenu(expandedMenu === item.id ? null : item.id);
-      }
-    } else {
-      // No children (Overview, Subscription)
-      if (item.action) {
-        item.action();
-        setIsMobileOpen(false);
       }
     }
   };

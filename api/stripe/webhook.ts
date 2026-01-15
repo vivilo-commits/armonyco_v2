@@ -253,24 +253,133 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // CASE B: CREDIT PURCHASE (one-time payment)
                 // ========================================
                 else if (session.mode === 'payment' && purchaseType === 'credit_purchase') {
-                    console.log('[Webhook] 💳 MODE: PAYMENT - Credit purchase detected');
+                    console.log('[Webhook] ════════════════════════════════════════════');
+                    console.log('[Webhook] 💳 CREDIT PURCHASE DETECTED (One-time payment)');
+                    console.log('[Webhook] ════════════════════════════════════════════');
                     
-                    console.log('[Webhook] Organization ID:', organizationId);
-                    console.log('[Webhook] Credits:', credits);
+                    const creditPackId = metadata.creditPackId;
+                    const packName = metadata.packName;
+
+                    console.log('[Webhook] Credit Purchase Details:');
+                    console.log('[Webhook]   - Organization ID:', organizationId);
+                    console.log('[Webhook]   - Credits to add:', credits);
+                    console.log('[Webhook]   - Pack ID:', creditPackId);
+                    console.log('[Webhook]   - Pack Name:', packName);
+                    console.log('[Webhook]   - Payment intent:', session.payment_intent);
+                    console.log('[Webhook]   - Payment status:', session.payment_status);
 
                     if (!organizationId || !credits) {
-                        console.error('[Webhook] ❌ Missing credit purchase metadata');
+                        console.error('[Webhook] ❌ Missing required metadata for credit purchase');
+                        console.error('[Webhook] organizationId:', organizationId);
+                        console.error('[Webhook] credits:', credits);
                         break;
                     }
 
-                    console.log('[Webhook] 🚀 Adding purchased credits...');
-                    
-                    try {
-                        const result = await addCreditsToOrganization(organizationId, credits, 'purchase');
-                        console.log('[Webhook] ✅ Credits purchased successfully:', result);
-                    } catch (error) {
-                        console.error('[Webhook] ❌ Error adding purchased credits:', error);
+                    if (credits <= 0) {
+                        console.error('[Webhook] ❌ Invalid credits amount:', credits);
+                        break;
                     }
+
+                    console.log('[Webhook] 💰 Step 1: Fetching current balance...');
+
+                    try {
+                        // Initialize Supabase admin client
+                        const supabaseAdmin = createClient(
+                            process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!,
+                            process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!
+                        );
+
+                        // Get current credits record
+                        const { data: currentCredits, error: fetchError } = await supabaseAdmin
+                            .from('organization_credits')
+                            .select('id, balance, total_purchased, total_consumed')
+                            .eq('organization_id', organizationId)
+                            .maybeSingle();
+
+                        if (fetchError) {
+                            console.error('[Webhook] ❌ Error fetching current credits:', fetchError);
+                            throw fetchError;
+                        }
+
+                        console.log('[Webhook] Current credits record:', currentCredits);
+
+                        // CASE A: No existing record (shouldn't happen, but handle it)
+                        if (!currentCredits) {
+                            console.log('[Webhook] ⚠️ No existing credits record, creating new one...');
+                            
+                            const { data: newRecord, error: insertError } = await supabaseAdmin
+                                .from('organization_credits')
+                                .insert({
+                                    organization_id: organizationId,
+                                    balance: credits,
+                                    total_purchased: credits,
+                                    total_consumed: 0,
+                                    last_recharged_at: new Date().toISOString()
+                                })
+                                .select()
+                                .single();
+
+                            if (insertError) {
+                                console.error('[Webhook] ❌ Error creating credits record:', insertError);
+                                throw insertError;
+                            }
+
+                            console.log('[Webhook] ✅ New credits record created');
+                            console.log('[Webhook] Balance:', newRecord.balance);
+                            
+                        } 
+                        // CASE B: Existing record - ADD credits to current balance
+                        else {
+                            console.log('[Webhook] 💰 Step 2: Adding credits to existing balance...');
+                            
+                            const oldBalance = currentCredits.balance || 0;
+                            const oldTotalPurchased = currentCredits.total_purchased || 0;
+                            
+                            const newBalance = oldBalance + credits;
+                            const newTotalPurchased = oldTotalPurchased + credits;
+
+                            console.log('[Webhook] Balance calculation:');
+                            console.log('[Webhook]   - Old balance:', oldBalance);
+                            console.log('[Webhook]   - Credits to add:', credits);
+                            console.log('[Webhook]   - New balance:', newBalance);
+                            console.log('[Webhook]   - Old total purchased:', oldTotalPurchased);
+                            console.log('[Webhook]   - New total purchased:', newTotalPurchased);
+
+                            const { data: updatedRecord, error: updateError } = await supabaseAdmin
+                                .from('organization_credits')
+                                .update({
+                                    balance: newBalance,
+                                    total_purchased: newTotalPurchased,
+                                    last_recharged_at: new Date().toISOString(),
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('organization_id', organizationId)
+                                .select()
+                                .single();
+
+                            if (updateError) {
+                                console.error('[Webhook] ❌ Error updating credits:', updateError);
+                                console.error('[Webhook] Update error details:', JSON.stringify(updateError, null, 2));
+                                throw updateError;
+                            }
+
+                            console.log('[Webhook] ✅✅✅ CREDITS PURCHASE SUCCESSFUL!');
+                            console.log('[Webhook] Updated record:', updatedRecord);
+                            console.log('[Webhook] New balance:', updatedRecord.balance);
+                            console.log('[Webhook] Credits added:', credits);
+                        }
+
+                        console.log('[Webhook] 💰 Step 3: Credit purchase completed successfully');
+
+                    } catch (error: any) {
+                        console.error('[Webhook] ❌❌❌ FATAL ERROR processing credit purchase');
+                        console.error('[Webhook] Error type:', error?.constructor?.name);
+                        console.error('[Webhook] Error message:', error?.message);
+                        console.error('[Webhook] Error details:', error);
+                        console.error('[Webhook] Stack:', error?.stack);
+                    }
+
+                    console.log('[Webhook] ════════════════════════════════════════════');
                 }
 
                 // TODO: Send confirmation email to user/organization

@@ -243,6 +243,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
       case 'conversations': return 'Conversations';
       case 'settings-profile':
       case 'settings-company':
+      case 'settings-activation':
       case 'settings-billing':
         return 'System Settings';
       case 'documentation': return 'Documentation';
@@ -296,6 +297,7 @@ export const WebApp: React.FC<WebAppProps> = ({ onLogout, initialData }) => {
 
       case 'settings-profile':
       case 'settings-company':
+      case 'settings-activation':
       case 'settings-billing':
         return <SettingsView
           activeView={activeView}

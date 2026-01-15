@@ -56,7 +56,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [isContactOpen, setIsContactOpen] = useState(false);
     
     // Check permissions for organization settings and Settings access
-    const { canEditOrganization, canAccessSettings, loading: permissionsLoading } = usePermissions();
+    const { canEditOrganization, canAccessSettings, isOrgAdmin, isAppAdmin, loading: permissionsLoading } = usePermissions();
+    
+    // Debug logging for permissions
+    console.log('[Settings] 🔍 Permissions:', {
+        permissionsLoading,
+        canAccessSettings,
+        isOrgAdmin,
+        isAppAdmin
+    });
 
     // -- Profile Local State (Synced with Props) --
     const [localProfile, setLocalProfile] = useState(userProfile);
@@ -115,6 +123,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         url: '', username: '', password: '', hotelId: ''
     });
     const [kbFiles, setKbFiles] = useState<string[]>([]);
+    const [kbFilesData, setKbFilesData] = useState<any[]>([]);
+    const [uploadingFile, setUploadingFile] = useState<string | null>(null);
+
+    // PMS Configuration state (single record)
+    const [pmsConfig, setPmsConfig] = useState({
+        pmsProvider: 'mews', // 'mews', 'opera', 'cloudbeds', 'custom'
+        apiBaseUrl: '',
+        authType: 'api_key', // 'basic', 'api_key', 'oauth2', 'bearer'
+        // Credentials (based on authType)
+        apiUsername: '',
+        apiPassword: '',
+        apiKey: '',
+        clientId: '',
+        clientSecret: '',
+        bearerToken: ''
+    });
+
+    // Hotels list state (multiple records)
+    const [hotels, setHotels] = useState<Array<{
+        id?: string;
+        hotelName: string;
+        hotelIdInPms: string;
+        propertyCode?: string;
+        isActive: boolean;
+    }>>([]);
+
+    // UI state for hotels
+    const [showAddHotelModal, setShowAddHotelModal] = useState(false);
+    const [editingHotel, setEditingHotel] = useState<any>(null);
+    const [isSavingPMS, setIsSavingPMS] = useState(false);
+
+    // File input refs
+    const policyFileInputRef = React.useRef<HTMLInputElement>(null);
+    const propertyFileInputRef = React.useRef<HTMLInputElement>(null);
 
     // -- Notification State --
     const [notifConfig, setNotifConfig] = useState({
@@ -156,11 +198,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     useEffect(() => setLocalOrg(organization), [organization]);
     useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
 
+    // Handle credit purchase redirect (success/cancel)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const creditsStatus = params.get('credits');
+        const amount = params.get('amount');
+
+        if (creditsStatus === 'success' && amount) {
+            console.log('✅ Credits purchase successful!');
+            console.log('Credits added:', amount);
+            
+            // Refresh balance to show updated amount
+            if (organization?.id) {
+                fetchOrganizationBalance();
+            }
+            
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
+            
+            // Optional: Show success notification
+            setSaveSuccess(`Successfully purchased ${parseInt(amount).toLocaleString()} credits!`);
+            setTimeout(() => setSaveSuccess(null), 5000);
+        }
+
+        if (creditsStatus === 'canceled') {
+            console.log('❌ Credits purchase was canceled');
+            window.history.replaceState({}, '', window.location.pathname + '?tab=subscription');
+        }
+    }, [organization?.id]);
+
     // Fetch subscription data when subscription tab is active
     useEffect(() => {
         if (activeTab === 'SUBSCRIPTION' && organization?.id) {
             fetchSubscriptionData();
             fetchOrganizationBalance();
+        }
+    }, [activeTab, organization?.id]);
+
+    // Fetch knowledge base files when activation tab is active
+    useEffect(() => {
+        if (activeTab === 'ACTIVATION' && organization?.id) {
+            fetchKnowledgeBaseFiles();
+            fetchWhatsAppConfig();
+            fetchPMSConfig();
+            fetchHotels();
         }
     }, [activeTab, organization?.id]);
 
@@ -275,6 +356,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // Redirect Collaborators - Settings are restricted to SuperAdmin and Org Admin only
     if (!canAccessSettings) {
+        console.log('[Settings] ❌ Access DENIED:', {
+            canAccessSettings,
+            isOrgAdmin,
+            isAppAdmin,
+            userRole: userProfile?.role
+        });
+        
         return (
             <div className="w-full h-screen bg-black flex items-center justify-center p-6">
                 <div className="max-w-md text-center space-y-6 animate-fade-in">
@@ -290,6 +378,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             As a Collaborator, you have read-only access to the main platform features. 
                             Contact your organization administrator if you need to change settings.
                         </p>
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-left">
+                                <p className="text-xs text-red-400 font-mono">
+                                    DEBUG: canAccessSettings={String(canAccessSettings)}, 
+                                    isOrgAdmin={String(isOrgAdmin)}, 
+                                    isAppAdmin={String(isAppAdmin)}
+                                </p>
+                            </div>
+                        )}
                     </div>
                     <div className="pt-4">
                         <button 
@@ -303,6 +400,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
         );
     }
+    
+    console.log('[Settings] ✅ Access GRANTED:', {
+        canAccessSettings,
+        isOrgAdmin,
+        isAppAdmin
+    });
 
     const isBillingDetailsComplete = localBillingDetails.legalName && localBillingDetails.vatNumber && localBillingDetails.address;
 
@@ -384,6 +487,506 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const handleSaveBillingDetails = () => {
         onUpdateBillingDetails(localBillingDetails);
         setShowBillingModal(false);
+    };
+
+    // Fetch knowledge base files from database
+    const fetchKnowledgeBaseFiles = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_knowledge_base')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('[Settings] Error fetching KB files:', error);
+                return;
+            }
+
+            if (data) {
+                setKbFilesData(data);
+                setKbFiles(data.map(f => f.file_name));
+                console.log('[Settings] KB files loaded:', data.length);
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching KB files:', error);
+        }
+    };
+
+    // Handle knowledge base file upload
+    const handleKBFileUpload = async (file: File, fileType: 'policy_pdf' | 'property_csv') => {
+        if (!supabase || !organization?.id) {
+            setValidationError('System not initialized');
+            return;
+        }
+
+        // Validate file size (10MB max)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            setValidationError('File size exceeds 10MB limit');
+            return;
+        }
+
+        // Validate file type
+        if (fileType === 'policy_pdf' && file.type !== 'application/pdf') {
+            setValidationError('Please upload a PDF file for Institutional Policies');
+            return;
+        }
+        if (fileType === 'property_csv' && file.type !== 'text/csv') {
+            setValidationError('Please upload a CSV file for Property Data');
+            return;
+        }
+
+        try {
+            setUploadingFile(fileType);
+            setValidationError(null);
+
+            // 1. Upload to Supabase Storage
+            const fileName = `${organization.id}/${Date.now()}_${file.name}`;
+            console.log('[Settings] Uploading file:', fileName);
+
+            const { data: storageData, error: storageError } = await supabase.storage
+                .from('knowledge-base')
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (storageError) {
+                console.error('[Settings] Storage error:', storageError);
+                throw new Error(`Upload failed: ${storageError.message}`);
+            }
+
+            console.log('[Settings] File uploaded to storage:', storageData);
+
+            // 2. Save metadata to database
+            const { data: user } = await supabase.auth.getUser();
+            const { data: dbData, error: dbError } = await supabase
+                .from('organization_knowledge_base')
+                .insert({
+                    organization_id: organization.id,
+                    file_type: fileType,
+                    file_name: file.name,
+                    storage_path: fileName,
+                    file_size_bytes: file.size,
+                    mime_type: file.type,
+                    uploaded_by: user?.user?.id,
+                    processing_status: 'uploaded'
+                })
+                .select()
+                .single();
+
+            if (dbError) {
+                console.error('[Settings] Database error:', dbError);
+                // Try to clean up storage
+                await supabase.storage.from('knowledge-base').remove([fileName]);
+                throw new Error(`Failed to save metadata: ${dbError.message}`);
+            }
+
+            console.log('[Settings] Metadata saved:', dbData);
+
+            // 3. Update local state
+            setKbFilesData(prev => [dbData, ...prev]);
+            setKbFiles(prev => [file.name, ...prev]);
+            setSaveSuccess(`${file.name} uploaded successfully!`);
+            setTimeout(() => setSaveSuccess(null), 3000);
+
+        } catch (error: any) {
+            console.error('[Settings] Upload error:', error);
+            setValidationError(error.message || 'Failed to upload file');
+        } finally {
+            setUploadingFile(null);
+        }
+    };
+
+    // Trigger file input clicks
+    const handlePolicyCardClick = () => {
+        policyFileInputRef.current?.click();
+    };
+
+    const handlePropertyCardClick = () => {
+        propertyFileInputRef.current?.click();
+    };
+
+    // Handle file input changes
+    const handlePolicyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleKBFileUpload(file, 'policy_pdf');
+        }
+        // Reset input
+        e.target.value = '';
+    };
+
+    const handlePropertyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleKBFileUpload(file, 'property_csv');
+        }
+        // Reset input
+        e.target.value = '';
+    };
+
+    // Format file size for display
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    // Delete knowledge base file
+    const handleDeleteKBFile = async (fileId: string, storagePath: string) => {
+        if (!supabase || !organization?.id) return;
+
+        const confirmed = window.confirm('Are you sure you want to delete this file?');
+        if (!confirmed) return;
+
+        try {
+            setIsValidating(true);
+
+            // 1. Mark as inactive in database (soft delete)
+            const { error: dbError } = await supabase
+                .from('organization_knowledge_base')
+                .update({ is_active: false })
+                .eq('id', fileId);
+
+            if (dbError) throw dbError;
+
+            // 2. Delete from storage
+            const { error: storageError } = await supabase.storage
+                .from('knowledge-base')
+                .remove([storagePath]);
+
+            if (storageError) {
+                console.warn('[Settings] Storage deletion warning:', storageError);
+            }
+
+            // 3. Update local state
+            setKbFilesData(prev => prev.filter(f => f.id !== fileId));
+            setKbFiles(prev => prev.filter((_, idx) => kbFilesData[idx]?.id !== fileId));
+
+            setSaveSuccess('File deleted successfully');
+            setTimeout(() => setSaveSuccess(null), 2000);
+
+        } catch (error: any) {
+            console.error('[Settings] Delete error:', error);
+            setValidationError('Failed to delete file');
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
+    // Fetch WhatsApp configuration
+    const fetchWhatsAppConfig = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_whatsapp_config')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .maybeSingle();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('[Settings] Error fetching WhatsApp config:', error);
+                return;
+            }
+            
+            if (data) {
+                console.log('[Settings] WhatsApp config loaded:', { id: data.id, configured: data.configured_in_n8n });
+                setWaForm({
+                    accessToken: data.access_token || '',
+                    businessId: data.business_account_id || '',
+                    phoneId: data.phone_number_id || '',
+                    verifyToken: data.verify_token || '',
+                    appSecret: data.app_secret || ''
+                });
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching WhatsApp config:', error);
+        }
+    };
+
+    // Save WhatsApp configuration
+    const handleSaveWhatsAppConfig = async () => {
+        try {
+            setIsValidating(true);
+            setValidationError(null);
+            
+            // Validation
+            if (!waForm.accessToken || !waForm.businessId || !waForm.phoneId) {
+                setValidationError('Access Token, Business Account ID, and Phone Number ID are required');
+                setIsValidating(false);
+                return;
+            }
+            
+            // Additional validation: Access token should start with EAA
+            if (!waForm.accessToken.trim().startsWith('EAA')) {
+                setValidationError('Access Token should start with "EAA" (Meta format)');
+                setIsValidating(false);
+                return;
+            }
+            
+            // Upsert to database
+            const { data, error } = await supabase
+                .from('organization_whatsapp_config')
+                .upsert({
+                    organization_id: organization.id,
+                    access_token: waForm.accessToken.trim(),
+                    business_account_id: waForm.businessId.trim(),
+                    phone_number_id: waForm.phoneId.trim(),
+                    verify_token: waForm.verifyToken?.trim() || null,
+                    app_secret: waForm.appSecret?.trim() || null,
+                    configured_in_n8n: false, // Initially not configured
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'organization_id'
+                })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            console.log('[Settings] WhatsApp config saved:', data);
+            setSaveSuccess('WhatsApp configuration saved successfully! ✓');
+            setTimeout(() => setSaveSuccess(null), 4000);
+            
+        } catch (error: any) {
+            console.error('[Settings] Error saving WhatsApp config:', error);
+            setValidationError(`Failed to save configuration: ${error.message}`);
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
+    // Fetch PMS Configuration
+    const fetchPMSConfig = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_pms_config')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .maybeSingle();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('[Settings] Error fetching PMS config:', error);
+                return;
+            }
+            
+            if (data) {
+                console.log('[Settings] PMS config loaded:', { id: data.id, provider: data.pms_provider });
+                setPmsConfig({
+                    pmsProvider: data.pms_provider || 'mews',
+                    apiBaseUrl: data.api_base_url || '',
+                    authType: data.auth_type || 'api_key',
+                    apiUsername: data.api_username || '',
+                    apiPassword: data.api_password_encrypted || '',
+                    apiKey: data.api_key || '',
+                    clientId: data.client_id || '',
+                    clientSecret: data.client_secret_encrypted || '',
+                    bearerToken: data.bearer_token || ''
+                });
+            }
+        } catch (error) {
+            console.error('[Settings] Unexpected error fetching PMS config:', error);
+        }
+    };
+
+    // Fetch Hotels
+    const fetchHotels = async () => {
+        if (!supabase || !organization?.id) {
+            console.warn('[Settings] Supabase or organization not available');
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase
+                .from('organization_hotels')
+                .select('*')
+                .eq('organization_id', organization.id)
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            setHotels(data.map(h => ({
+                id: h.id,
+                hotelName: h.hotel_name,
+                hotelIdInPms: h.hotel_id_in_pms,
+                propertyCode: h.property_code,
+                isActive: h.is_active
+            })));
+
+            console.log('[Settings] Hotels loaded:', data.length);
+        } catch (error: any) {
+            console.error('[Settings] Error fetching hotels:', error);
+            // Don't show error to user if table doesn't exist yet
+            if (error.code !== '42P01' && error.code !== 'PGRST116') {
+                setValidationError('Failed to load hotels');
+            }
+        }
+    };
+
+    // Save PMS Configuration
+    const handleSavePMSConfig = async () => {
+        try {
+            setIsSavingPMS(true);
+            setValidationError(null);
+            
+            // Validation
+            if (!pmsConfig.apiBaseUrl) {
+                setValidationError('API Base URL is required');
+                return;
+            }
+            
+            // Validate credentials based on auth type
+            if (pmsConfig.authType === 'basic' && (!pmsConfig.apiUsername || !pmsConfig.apiPassword)) {
+                setValidationError('Username and Password are required for Basic Auth');
+                return;
+            }
+            if (pmsConfig.authType === 'api_key' && !pmsConfig.apiKey) {
+                setValidationError('API Key is required');
+                return;
+            }
+            if (pmsConfig.authType === 'oauth2' && (!pmsConfig.clientId || !pmsConfig.clientSecret)) {
+                setValidationError('Client ID and Secret are required for OAuth2');
+                return;
+            }
+            if (pmsConfig.authType === 'bearer' && !pmsConfig.bearerToken) {
+                setValidationError('Bearer Token is required');
+                return;
+            }
+            
+            // Upsert to database
+            const { error } = await supabase
+                .from('organization_pms_config')
+                .upsert({
+                    organization_id: organization.id,
+                    pms_provider: pmsConfig.pmsProvider,
+                    api_base_url: pmsConfig.apiBaseUrl.trim(),
+                    auth_type: pmsConfig.authType,
+                    api_username: pmsConfig.apiUsername?.trim() || null,
+                    api_password_encrypted: pmsConfig.apiPassword?.trim() || null, // TODO: encrypt in production
+                    api_key: pmsConfig.apiKey?.trim() || null,
+                    client_id: pmsConfig.clientId?.trim() || null,
+                    client_secret_encrypted: pmsConfig.clientSecret?.trim() || null, // TODO: encrypt in production
+                    bearer_token: pmsConfig.bearerToken?.trim() || null,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'organization_id'
+                });
+            
+            if (error) throw error;
+            
+            console.log('[Settings] PMS configuration saved');
+            setSaveSuccess('PMS configuration saved successfully! ✓');
+            setTimeout(() => setSaveSuccess(null), 3000);
+            
+        } catch (error: any) {
+            console.error('[Settings] Error saving PMS config:', error);
+            setValidationError(`Failed to save: ${error.message}`);
+        } finally {
+            setIsSavingPMS(false);
+        }
+    };
+
+    // Save Hotel
+    const handleSaveHotel = async () => {
+        try {
+            if (!editingHotel?.hotelName || !editingHotel?.hotelIdInPms) {
+                setValidationError('Hotel Name and Hotel ID are required');
+                return;
+            }
+            
+            // Get PMS config ID first
+            const { data: pmsConfigData } = await supabase
+                .from('organization_pms_config')
+                .select('id')
+                .eq('organization_id', organization.id)
+                .maybeSingle();
+            
+            if (!pmsConfigData) {
+                setValidationError('Please save PMS configuration first');
+                return;
+            }
+            
+            if (editingHotel.id) {
+                // Update existing hotel
+                const { error } = await supabase
+                    .from('organization_hotels')
+                    .update({
+                        hotel_name: editingHotel.hotelName,
+                        hotel_id_in_pms: editingHotel.hotelIdInPms,
+                        property_code: editingHotel.propertyCode || null,
+                        is_active: editingHotel.isActive,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', editingHotel.id);
+                
+                if (error) throw error;
+            } else {
+                // Insert new hotel
+                const { error } = await supabase
+                    .from('organization_hotels')
+                    .insert({
+                        organization_id: organization.id,
+                        pms_config_id: pmsConfigData.id,
+                        hotel_name: editingHotel.hotelName,
+                        hotel_id_in_pms: editingHotel.hotelIdInPms,
+                        property_code: editingHotel.propertyCode || null,
+                        is_active: editingHotel.isActive ?? true
+                    });
+                
+                if (error) throw error;
+            }
+            
+            // Refresh hotels list
+            await fetchHotels();
+            setShowAddHotelModal(false);
+            setEditingHotel(null);
+            setSaveSuccess('Hotel saved successfully! ✓');
+            setTimeout(() => setSaveSuccess(null), 3000);
+            
+        } catch (error: any) {
+            console.error('[Settings] Error saving hotel:', error);
+            setValidationError(`Failed to save hotel: ${error.message}`);
+        }
+    };
+
+    // Delete Hotel
+    const handleDeleteHotel = async (hotelId: string | undefined) => {
+        if (!hotelId) return;
+        
+        if (!confirm('Are you sure you want to delete this hotel?')) return;
+        
+        try {
+            const { error } = await supabase
+                .from('organization_hotels')
+                .delete()
+                .eq('id', hotelId);
+            
+            if (error) throw error;
+            
+            await fetchHotels();
+            setSaveSuccess('Hotel deleted successfully');
+            setTimeout(() => setSaveSuccess(null), 3000);
+        } catch (error: any) {
+            console.error('[Settings] Error deleting hotel:', error);
+            setValidationError(`Failed to delete: ${error.message}`);
+        }
     };
 
 
@@ -748,33 +1351,134 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Knowledge Base Upload</h3>
                         </div>
 
+                        {/* Hidden file inputs */}
+                        <input
+                            ref={policyFileInputRef}
+                            type="file"
+                            accept=".pdf"
+                            onChange={handlePolicyFileChange}
+                            className="hidden"
+                        />
+                        <input
+                            ref={propertyFileInputRef}
+                            type="file"
+                            accept=".csv"
+                            onChange={handlePropertyFileChange}
+                            className="hidden"
+                        />
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="group cursor-pointer">
-                                <Card className="border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                            {/* Policy PDF Upload Card */}
+                            <div 
+                                className="group cursor-pointer"
+                                onClick={handlePolicyCardClick}
+                            >
+                                <Card className={`border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden ${uploadingFile === 'policy_pdf' ? 'pointer-events-none opacity-60' : ''}`}>
                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[var(--color-brand-accent)]/20 to-transparent group-hover:via-[var(--color-brand-accent)]/40 transition-all"></div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <FileText className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
-                                    </div>
-                                    <div className="text-center px-4">
-                                        <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Institutional Policies</div>
-                                        <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Grounding Material (PDF)</div>
-                                    </div>
+                                    {uploadingFile === 'policy_pdf' ? (
+                                        <>
+                                            <RefreshCw size={24} className="text-[var(--color-brand-accent)] animate-spin" />
+                                            <div className="text-center px-4">
+                                                <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Uploading...</div>
+                                                <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Please wait</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <FileText className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
+                                            </div>
+                                            <div className="text-center px-4">
+                                                <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Institutional Policies</div>
+                                                <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Grounding Material (PDF)</div>
+                                            </div>
+                                        </>
+                                    )}
                                 </Card>
                             </div>
 
-                            <div className="group cursor-pointer">
-                                <Card className="border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+                            {/* Property CSV Upload Card */}
+                            <div 
+                                className="group cursor-pointer"
+                                onClick={handlePropertyCardClick}
+                            >
+                                <Card className={`border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--color-brand-accent)]/40 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-4 relative overflow-hidden ${uploadingFile === 'property_csv' ? 'pointer-events-none opacity-60' : ''}`}>
                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-[var(--color-brand-accent)]/20 to-transparent group-hover:via-[var(--color-brand-accent)]/40 transition-all"></div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <Database className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
-                                    </div>
-                                    <div className="text-center px-4">
-                                        <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Property Data</div>
-                                        <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Wi-Fi, Codes & Assets (CSV)</div>
-                                    </div>
+                                    {uploadingFile === 'property_csv' ? (
+                                        <>
+                                            <RefreshCw size={24} className="text-[var(--color-brand-accent)] animate-spin" />
+                                            <div className="text-center px-4">
+                                                <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Uploading...</div>
+                                                <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Please wait</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Database className="text-white/40 group-hover:text-[var(--color-brand-accent)] transition-colors" size={24} />
+                                            </div>
+                                            <div className="text-center px-4">
+                                                <div className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Property Data</div>
+                                                <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest italic">Wi-Fi, Codes & Assets (CSV)</div>
+                                            </div>
+                                        </>
+                                    )}
                                 </Card>
                             </div>
                         </div>
+
+                        {/* Error/Success Messages */}
+                        {validationError && (
+                            <div className="flex items-center gap-2 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                <AlertCircle size={16} className="text-red-500" />
+                                <p className="text-[10px] text-red-500 font-medium">{validationError}</p>
+                                <button onClick={() => setValidationError(null)} className="ml-auto">
+                                    <X size={14} className="text-red-500/60 hover:text-red-500" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Uploaded Files List */}
+                        {kbFilesData.length > 0 && (
+                            <div className="space-y-3 pt-4">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 italic">Uploaded Files</h4>
+                                <div className="space-y-2">
+                                    {kbFilesData.map((file) => (
+                                        <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl group hover:border-[var(--color-brand-accent)]/20 transition-all">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                                                    {file.file_type === 'policy_pdf' ? (
+                                                        <FileText size={14} className="text-[var(--color-brand-accent)]" />
+                                                    ) : (
+                                                        <Database size={14} className="text-[var(--color-brand-accent)]" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-[10px] font-black text-white/80 uppercase tracking-tight truncate">{file.file_name}</div>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{formatFileSize(file.file_size_bytes)}</span>
+                                                        <span className="text-white/10">•</span>
+                                                        <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest">
+                                                            {new Date(file.created_at).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteKBFile(file.id, file.storage_path);
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center bg-white/5 border border-white/10 rounded-lg hover:bg-red-500/10 hover:border-red-500/30 transition-all group/btn shrink-0 ml-2"
+                                                disabled={isValidating}
+                                            >
+                                                <X size={12} className="text-white/40 group-hover/btn:text-red-500 transition-colors" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex items-center gap-2 px-1">
                             <CheckCircle size={14} className="text-emerald-500" />
@@ -789,105 +1493,348 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">Connect Channels</h3>
                         </div>
 
+                        {/* Configuration Status Indicator */}
+                        {waForm.accessToken && (
+                            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle size={20} className="text-emerald-500" />
+                                    <div>
+                                        <p className="text-sm font-bold text-white">Configuration Saved</p>
+                                        <p className="text-xs text-zinc-400">
+                                            Your WhatsApp credentials are stored securely. Update anytime.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Permanent Access Token</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Permanent Access Token *</label>
                                 <input
                                     type="password"
-                                    value="••••••••••••••••••••••••••••••••••••"
+                                    placeholder="EAAxxxxx... (from Meta Business Settings)"
+                                    value={waForm.accessToken}
+                                    onChange={(e) => setWaForm({ ...waForm, accessToken: e.target.value })}
                                     className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
-                                    readOnly
                                 />
+                                <p className="text-[8px] text-zinc-500 italic">Permanent token from Meta Business Settings</p>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">WhatsApp Business ID</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">WhatsApp Business Account ID *</label>
                                 <input
                                     type="text"
-                                    value="294857204918234"
-                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
-                                    readOnly
+                                    placeholder="123456789012345"
+                                    value={waForm.businessId}
+                                    onChange={(e) => setWaForm({ ...waForm, businessId: e.target.value })}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
                                 />
+                                <p className="text-[8px] text-zinc-500 italic">Business Account ID from WhatsApp Business</p>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Phone Number ID</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Phone Number ID *</label>
                                 <input
                                     type="text"
-                                    value="102938475612345"
-                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
-                                    readOnly
+                                    placeholder="987654321098765"
+                                    value={waForm.phoneId}
+                                    onChange={(e) => setWaForm({ ...waForm, phoneId: e.target.value })}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
                                 />
+                                <p className="text-[8px] text-zinc-500 italic">Phone Number ID from WhatsApp Business</p>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Webhook Verify Token</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Webhook Verify Token (Optional)</label>
                                 <input
                                     type="text"
-                                    value="armonyco_secure_v1"
-                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 outline-none"
-                                    readOnly
+                                    placeholder="your_custom_webhook_token"
+                                    value={waForm.verifyToken}
+                                    onChange={(e) => setWaForm({ ...waForm, verifyToken: e.target.value })}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
                                 />
+                                <p className="text-[8px] text-zinc-500 italic">Custom token for webhook verification</p>
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">App Secret (Optional)</label>
+                                <input
+                                    type="password"
+                                    placeholder="abcdef1234567890..."
+                                    value={waForm.appSecret}
+                                    onChange={(e) => setWaForm({ ...waForm, appSecret: e.target.value })}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                />
+                                <p className="text-[8px] text-zinc-500 italic">App Secret for additional security (optional)</p>
                             </div>
                         </div>
+
+                        {/* Save Button */}
+                        <div className="flex justify-end gap-4 pt-6 border-t border-white/5">
+                            <Button
+                                onClick={handleSaveWhatsAppConfig}
+                                isLoading={isValidating}
+                                disabled={!waForm.accessToken || !waForm.businessId || !waForm.phoneId}
+                                leftIcon={<Save size={18} />}
+                            >
+                                {isValidating ? 'Saving...' : 'Save WhatsApp Configuration'}
+                            </Button>
+                        </div>
+
+                        {/* Success Message */}
+                        {saveSuccess && (
+                            <div className="flex items-center gap-2 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                                <CheckCircle size={16} className="text-emerald-500" />
+                                <p className="text-[10px] text-emerald-500 font-medium">{saveSuccess}</p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* STEP 3: INFRASTRUCTURE */}
+                    {/* STEP 3: PMS CONNECTION */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-4">
                             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-xs italic">3</div>
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">PMS Connection</h3>
                         </div>
 
+                        {/* Configuration Status Indicator */}
+                        {pmsConfig.apiBaseUrl && (
+                            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <CheckCircle size={20} className="text-emerald-500" />
+                                    <div>
+                                        <p className="text-sm font-bold text-white">PMS Configuration Saved</p>
+                                        <p className="text-xs text-zinc-400">
+                                            Provider: {pmsConfig.pmsProvider.toUpperCase()} • Update anytime
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <Card variant="dark" padding="none" className="overflow-hidden border-white/5 bg-gradient-to-br from-zinc-900 via-black to-black">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <Zap className="text-[var(--color-brand-accent)]" size={16} />
-                                    <span className="text-xs font-black uppercase tracking-widest text-white">PMS Connection</span>
+                                    <span className="text-xs font-black uppercase tracking-widest text-white">PMS Configuration</span>
                                 </div>
                                 <span className="text-[9px] px-3 py-1 bg-white/5 border border-white/10 rounded text-white/40 font-black uppercase tracking-widest">Encrypted</span>
                             </div>
-                            <div className="p-8 space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">API Endpoint / URL *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="https://pms.example.com/api"
-                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Hotel ID / Property ID</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Optional"
-                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Auth Username *</label>
-                                        <input
-                                            type="text"
-                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 italic">Auth Password *</label>
-                                        <input
-                                            type="password"
-                                            className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/60 outline-none focus:border-[var(--color-brand-accent)]/40 transition-all"
-                                        />
+                            <div className="p-8 space-y-6">
+                                {/* PMS Provider Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">
+                                        PMS Provider *
+                                    </label>
+                                    <select
+                                        value={pmsConfig.pmsProvider}
+                                        onChange={(e) => setPmsConfig({ ...pmsConfig, pmsProvider: e.target.value })}
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer"
+                                    >
+                                        <option value="mews">Mews</option>
+                                        <option value="opera">Oracle Opera</option>
+                                        <option value="cloudbeds">Cloudbeds</option>
+                                        <option value="little_hotelier">Little Hotelier</option>
+                                        <option value="protel">Protel</option>
+                                        <option value="rms">RMS / Booking Automation</option>
+                                        <option value="custom">Custom / Other</option>
+                                    </select>
+                                </div>
+
+                                {/* API Base URL */}
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">API Base URL *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://api.mews.com/v1"
+                                        value={pmsConfig.apiBaseUrl}
+                                        onChange={(e) => setPmsConfig({ ...pmsConfig, apiBaseUrl: e.target.value })}
+                                        className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                    />
+                                </div>
+
+                                {/* Authentication Type */}
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">
+                                        Authentication Type *
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            { value: 'api_key', label: 'API Key' },
+                                            { value: 'basic', label: 'Username + Password' },
+                                            { value: 'oauth2', label: 'OAuth2 (Client ID + Secret)' },
+                                            { value: 'bearer', label: 'Bearer Token' }
+                                        ].map((type) => (
+                                            <button
+                                                key={type.value}
+                                                type="button"
+                                                onClick={() => setPmsConfig({ ...pmsConfig, authType: type.value })}
+                                                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+                                                    pmsConfig.authType === type.value
+                                                        ? 'bg-[var(--color-brand-accent)] text-black'
+                                                        : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                {type.label}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="pt-4 flex items-center gap-4">
-                                    <div className="flex-1 h-[1px] bg-white/5"></div>
-                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900 border border-white/5 rounded-full">
-                                        <Clock size={12} className="text-[var(--color-brand-accent)]" />
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest italic">Activation within 48 hours</span>
+                                {/* Dynamic Credential Fields Based on authType */}
+                                {pmsConfig.authType === 'basic' && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">API Username *</label>
+                                            <input
+                                                type="text"
+                                                value={pmsConfig.apiUsername}
+                                                onChange={(e) => setPmsConfig({ ...pmsConfig, apiUsername: e.target.value })}
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">API Password *</label>
+                                            <input
+                                                type="password"
+                                                value={pmsConfig.apiPassword}
+                                                onChange={(e) => setPmsConfig({ ...pmsConfig, apiPassword: e.target.value })}
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {pmsConfig.authType === 'api_key' && (
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">API Key *</label>
+                                        <input
+                                            type="password"
+                                            placeholder="sk_live_abc123xyz789"
+                                            value={pmsConfig.apiKey}
+                                            onChange={(e) => setPmsConfig({ ...pmsConfig, apiKey: e.target.value })}
+                                            className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                        />
                                     </div>
-                                    <div className="flex-1 h-[1px] bg-white/5"></div>
+                                )}
+
+                                {pmsConfig.authType === 'oauth2' && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Client ID *</label>
+                                            <input
+                                                type="text"
+                                                value={pmsConfig.clientId}
+                                                onChange={(e) => setPmsConfig({ ...pmsConfig, clientId: e.target.value })}
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Client Secret *</label>
+                                            <input
+                                                type="password"
+                                                value={pmsConfig.clientSecret}
+                                                onChange={(e) => setPmsConfig({ ...pmsConfig, clientSecret: e.target.value })}
+                                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {pmsConfig.authType === 'bearer' && (
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Bearer Token *</label>
+                                        <input
+                                            type="password"
+                                            value={pmsConfig.bearerToken}
+                                            onChange={(e) => setPmsConfig({ ...pmsConfig, bearerToken: e.target.value })}
+                                            className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-sm font-mono text-white/80 focus:border-[var(--color-brand-accent)] outline-none"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Save PMS Config Button */}
+                                <div className="flex justify-end pt-4">
+                                    <Button
+                                        onClick={handleSavePMSConfig}
+                                        isLoading={isSavingPMS}
+                                        leftIcon={<Save size={18} />}
+                                    >
+                                        {isSavingPMS ? 'Saving...' : 'Save PMS Configuration'}
+                                    </Button>
                                 </div>
                             </div>
                         </Card>
+
+                        {/* Hotels List Section */}
+                        <div className="mt-12 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white/60">
+                                        Hotels / Properties
+                                    </h4>
+                                    <p className="text-[10px] text-white/30 mt-1">
+                                        Add all hotels that use this PMS configuration
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        setEditingHotel({ hotelName: '', hotelIdInPms: '', propertyCode: '', isActive: true });
+                                        setShowAddHotelModal(true);
+                                    }}
+                                    variant="secondary"
+                                    size="sm"
+                                    leftIcon={<Plus size={14} />}
+                                >
+                                    Add Hotel
+                                </Button>
+                            </div>
+
+                            {/* Hotels List */}
+                            {hotels.length === 0 ? (
+                                <div className="p-8 bg-white/[0.02] border border-dashed border-white/10 rounded-xl text-center">
+                                    <Database size={32} className="mx-auto text-white/20 mb-3" />
+                                    <p className="text-sm text-white/40">No hotels added yet</p>
+                                    <p className="text-xs text-white/30 mt-1">Add your first hotel to start syncing data</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {hotels.map((hotel, idx) => (
+                                        <div
+                                            key={hotel.id || idx}
+                                            className="p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/8 transition-all"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-2 h-2 rounded-full ${hotel.isActive ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                                                    <div>
+                                                        <p className="text-sm font-bold text-white">{hotel.hotelName}</p>
+                                                        <p className="text-xs text-white/40">ID: {hotel.hotelIdInPms}</p>
+                                                        {hotel.propertyCode && (
+                                                            <p className="text-xs text-white/30">Code: {hotel.propertyCode}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingHotel(hotel);
+                                                            setShowAddHotelModal(true);
+                                                        }}
+                                                        className="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg transition-all"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteHotel(hotel.id)}
+                                                        className="px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -901,8 +1848,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="space-y-3">
                             {[
                                 { name: 'Institutional Policies', type: 'PDF Template', icon: FileText },
-                                { name: 'Property Assets Matrix', type: 'CSV Reference', icon: Database },
-                                { name: 'Service Workflow Protocol', type: 'PDF Model', icon: Zap }
+                                { name: 'Property Assets Matrix', type: 'CSV Reference', icon: Database }
                             ].map((model, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/5 transition-all group cursor-pointer border-dashed">
                                     <div className="flex items-center gap-3">
@@ -925,54 +1871,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </p>
                     </Card>
 
-                    <Card variant="dark" padding="lg" className="border-white/5 bg-black/60 backdrop-blur-xl h-fit flex flex-col justify-between">
-                        <div className="space-y-8">
-                            <div>
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-6 flex items-center gap-2">
-                                    <Shield size={14} /> Neural Integrity
-                                </h3>
-                                <div className="space-y-6">
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span className="text-white/40 italic">Parsing Accuracy</span>
-                                        <span className="text-emerald-500">99.2%</span>
-                                    </div>
-                                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="w-[99.2%] h-full bg-emerald-500"></div>
-                                    </div>
-
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span className="text-white/40 italic">Calibration Status</span>
-                                        <span className="text-white font-mono uppercase">Optimized</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span className="text-white/40 italic">Data Sovereignty</span>
-                                        <span className="text-white font-mono uppercase">Secured</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-8 border-t border-white/5">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-6 italic">Active Agent Nodes</h3>
-                                <div className="space-y-3">
-                                    {['Amelia', 'Lara', 'Elon', 'James'].map(agent => (
-                                        <div key={agent} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl group hover:border-[var(--color-brand-accent)]/20 transition-all">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/60 group-hover:text-white transition-colors">{agent}</span>
-                                            </div>
-                                            <span className="text-[8px] text-white/20 font-black uppercase tracking-tighter italic">Live</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-8 text-center text-balance">
-                            <p className="text-[9px] text-white/20 leading-relaxed italic">
-                                ArmonycoOS™ Knowledge Engine ensures absolute fidelity across all cognitive tasks.
-                            </p>
-                        </div>
-                    </Card>
                 </div>
             </div>
         </div>
@@ -1256,6 +2154,67 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 isOpen={isContactOpen}
                 onClose={() => setIsContactOpen(false)}
             />
+
+            {/* Add/Edit Hotel Modal */}
+            <Modal
+                isOpen={showAddHotelModal}
+                onClose={() => {
+                    setShowAddHotelModal(false);
+                    setEditingHotel(null);
+                }}
+                title={editingHotel?.id ? 'Edit Hotel' : 'Add New Hotel'}
+            >
+                <div className="p-6 space-y-5">
+                    <FloatingInput
+                        label="Hotel Name *"
+                        placeholder="Hotel Roma Centro"
+                        value={editingHotel?.hotelName || ''}
+                        onChange={(e) => setEditingHotel({ ...editingHotel, hotelName: e.target.value })}
+                        className="text-black"
+                    />
+                    
+                    <FloatingInput
+                        label="Hotel ID in PMS *"
+                        placeholder="HTL_001"
+                        value={editingHotel?.hotelIdInPms || ''}
+                        onChange={(e) => setEditingHotel({ ...editingHotel, hotelIdInPms: e.target.value })}
+                        className="text-black"
+                    />
+                    
+                    <FloatingInput
+                        label="Property Code (Optional)"
+                        placeholder="ROMA001"
+                        value={editingHotel?.propertyCode || ''}
+                        onChange={(e) => setEditingHotel({ ...editingHotel, propertyCode: e.target.value })}
+                        className="text-black"
+                    />
+
+                    <div className="flex items-center gap-3 pt-2">
+                        <input
+                            type="checkbox"
+                            checked={editingHotel?.isActive ?? true}
+                            onChange={(e) => setEditingHotel({ ...editingHotel, isActive: e.target.checked })}
+                            className="w-4 h-4 bg-white/5 border border-white/10 rounded cursor-pointer"
+                        />
+                        <label className="text-sm text-black/80">Active (enable sync)</label>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setShowAddHotelModal(false);
+                                setEditingHotel(null);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveHotel}>
+                            {editingHotel?.id ? 'Update Hotel' : 'Add Hotel'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
