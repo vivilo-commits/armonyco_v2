@@ -2,6 +2,43 @@ import { supabase, getCurrentUser } from '../lib/supabase';
 import { DecisionRecord, Agent, Notification } from '../types';
 
 /**
+ * Get current user's organization ID
+ */
+async function getCurrentUserOrganization(): Promise<string | null> {
+    if (!supabase) return null;
+
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    // Check if user is AppAdmin (SuperAdmin) - they might not have an org
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role === 'AppAdmin') {
+        console.warn('[Logs] AppAdmin user has no organization - returning null');
+        return null;
+    }
+
+    // Get organization ID from organization_members
+    const { data, error } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+    if (error) {
+        console.error('[Logs] Error getting organization:', error);
+        return null;
+    }
+
+    return data?.organization_id || null;
+}
+
+/**
  * Get decision logs for current user
  */
 export async function getDecisionLogs(): Promise<DecisionRecord[]> {
@@ -191,13 +228,16 @@ export const logsService = {
 export async function getN8nExecutions(limit: number = 100): Promise<any[]> {
     if (!supabase) return [];
 
-    const user = await getCurrentUser();
-    if (!user) return [];
+    const organizationId = await getCurrentUserOrganization();
+    if (!organizationId) {
+        console.error('[Logs] No organization ID available');
+        return [];
+    }
 
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('*')
-        .eq('company_uid', user.id)
+        .eq('company_uid', organizationId)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -215,13 +255,16 @@ export async function getN8nExecutions(limit: number = 100): Promise<any[]> {
 export async function getAgentStats(): Promise<any[]> {
     if (!supabase) return [];
 
-    const user = await getCurrentUser();
-    if (!user) return [];
+    const organizationId = await getCurrentUserOrganization();
+    if (!organizationId) {
+        console.error('[Logs] No organization ID available');
+        return [];
+    }
 
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('agent_name, status, duration_ms, governance_verdict')
-        .eq('company_uid', user.id)
+        .eq('company_uid', organizationId)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -255,8 +298,11 @@ export async function getAgentStats(): Promise<any[]> {
 export async function getExecutionVelocity(): Promise<{ time: string; value: number }[]> {
     if (!supabase) return [];
 
-    const user = await getCurrentUser();
-    if (!user) return [];
+    const organizationId = await getCurrentUserOrganization();
+    if (!organizationId) {
+        console.error('[Logs] No organization ID available');
+        return [];
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -264,7 +310,7 @@ export async function getExecutionVelocity(): Promise<{ time: string; value: num
     const { data, error } = await supabase
         .from('n8n_executions')
         .select('created_at')
-        .eq('company_uid', user.id)
+        .eq('company_uid', organizationId)
         .gte('created_at', today.toISOString())
         .order('created_at', { ascending: true });
 

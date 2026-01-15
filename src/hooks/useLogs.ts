@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAsync } from './useAsync';
 import { logService } from '../services/log.service';
-import { supabase, getCurrentUser } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { usePermissions } from './usePermissions';
 
 /**
  * Hook to get decision logs with realtime updates
@@ -143,6 +144,7 @@ export interface N8nExecution {
  */
 export const useN8nExecutions = () => {
     const [trigger, setTrigger] = useState(0);
+    const { currentOrgId } = usePermissions();
 
     useEffect(() => {
         if (!supabase) return;
@@ -168,18 +170,16 @@ export const useN8nExecutions = () => {
             return [];
         }
 
-        console.log('[useN8nExecutions] Getting current user...');
-        const user = await getCurrentUser();
-        if (!user) {
-            console.log('[useN8nExecutions] No user found, returning empty array');
+        if (!currentOrgId) {
+            console.log('[useN8nExecutions] No organization ID available, returning empty array');
             return [];
         }
 
-        console.log('[useN8nExecutions] Querying n8n_executions for user:', user.id);
+        console.log('[useN8nExecutions] Querying n8n_executions for organization:', currentOrgId);
         const { data, error } = await supabase
             .from('n8n_executions')
             .select('*')
-            .eq('company_uid', user.id)
+            .eq('company_uid', currentOrgId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -189,7 +189,7 @@ export const useN8nExecutions = () => {
 
         console.log('[N8n Executions] ✅ Fetched:', data?.length, 'records');
         return data || [];
-    }, [trigger]);
+    }, [trigger, currentOrgId]);
 
     return useAsync(fetchExecutions);
 };

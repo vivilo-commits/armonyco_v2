@@ -1,5 +1,42 @@
 import { Conversation, Message } from '../models/chat.model';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
+
+/**
+ * Get current user's organization ID
+ */
+async function getCurrentUserOrganization(): Promise<string | null> {
+    if (!supabase) return null;
+
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    // Check if user is AppAdmin (SuperAdmin) - they might not have an org
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role === 'AppAdmin') {
+        console.warn('[Chat] AppAdmin user has no organization - returning null');
+        return null;
+    }
+
+    // Get organization ID from organization_members
+    const { data, error } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single();
+
+    if (error) {
+        console.error('[Chat] Error getting organization:', error);
+        return null;
+    }
+
+    return data?.organization_id || null;
+}
 
 interface MessageContent {
     type?: string;
@@ -69,9 +106,16 @@ function parseMessage(raw: MessageContent | string): { type: 'ai' | 'human'; tex
 async function getConversations(): Promise<Conversation[]> {
     if (!supabase) return [];
 
+    const organizationId = await getCurrentUserOrganization();
+    if (!organizationId) {
+        console.error('[Chat] No organization ID available');
+        return [];
+    }
+
     const { data, error } = await supabase
         .from('amelia_whatsapp_history')
         .select('*')
+        .eq('company_id', organizationId)
         .order('id', { ascending: true })
         .limit(1000);
 
