@@ -9,6 +9,10 @@ import { UserProfile, Organization, BillingDetails } from '../../src/types';
 import { ContactModal } from '../../components/landing/ContactModal';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { ProtectedContent } from '../../src/components/app/ProtectedContent';
+import { CurrentPlanCard } from '../../components/app/CurrentPlanCard';
+import { AvailablePlansGrid } from '../../components/app/AvailablePlansGrid';
+import { UsageTable } from '../../components/app/UsageTable';
+import { supabase } from '../../src/lib/supabase';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -25,7 +29,7 @@ interface SettingsViewProps {
     onNavigate?: (view: string) => void;
 }
 
-type SettingsTab = 'PROFILE' | 'ORG' | 'BILLING' | 'ACTIVATION';
+type SettingsTab = 'PROFILE' | 'ORG' | 'SUBSCRIPTION' | 'ACTIVATION';
 
 // --- Helper for Cost ---
 const COST_PER_CREDIT = 0.01; // €1 per 100 credits institutional rate
@@ -136,12 +140,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [budgetLimit, setBudgetLimit] = useState<string>('500');
     const [budgetEnabled, setBudgetEnabled] = useState(false);
 
+    // -- New Billing State (Subscription Management) --
+    const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+    const [subscriptionPlans, setSubscriptionPlans] = useState<any[]>([]);
+    const [loadingSubscription, setLoadingSubscription] = useState(false);
+    const [upgradingPlan, setUpgradingPlan] = useState(false);
+
     // Effect to sync prop activeView with internal state
     useEffect(() => {
         if (activeView) {
             if (activeView === 'settings-profile') setActiveTab('PROFILE');
             if (activeView === 'settings-company') setActiveTab('ORG');
-            if (activeView === 'settings-billing') setActiveTab('BILLING');
+            if (activeView === 'settings-billing') setActiveTab('SUBSCRIPTION');
             if (activeView === 'settings-activation') setActiveTab('ACTIVATION');
         }
     }, [activeView]);
@@ -149,6 +159,75 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     useEffect(() => setLocalProfile(userProfile), [userProfile]);
     useEffect(() => setLocalOrg(organization), [organization]);
     useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
+
+    // Fetch subscription data when subscription tab is active
+    useEffect(() => {
+        if (activeTab === 'SUBSCRIPTION' && organization?.id) {
+            fetchSubscriptionData();
+        }
+    }, [activeTab, organization?.id]);
+
+    // Fetch current subscription and available plans
+    const fetchSubscriptionData = async () => {
+        if (!supabase) {
+            console.warn('[Settings] Supabase not configured');
+            return;
+        }
+
+        setLoadingSubscription(true);
+        try {
+            // Fetch current active subscription with plan details
+            const { data: subscription, error: subError } = await supabase
+                .from('organization_subscriptions')
+                .select(`
+                    id,
+                    organization_id,
+                    plan_id,
+                    status,
+                    started_at,
+                    expires_at,
+                    stripe_customer_id,
+                    stripe_subscription_id,
+                    subscription_plans (
+                        id,
+                        name,
+                        price,
+                        credits,
+                        tier,
+                        features
+                    )
+                `)
+                .eq('organization_id', organization.id)
+                .eq('status', 'active')
+                .single();
+
+            if (subError && subError.code !== 'PGRST116') {
+                console.error('[Settings] Error fetching subscription:', subError);
+            } else {
+                setCurrentSubscription(subscription);
+                console.log('[Settings] Current subscription:', subscription);
+            }
+
+            // Fetch all available subscription plans
+            const { data: plans, error: plansError } = await supabase
+                .from('subscription_plans')
+                .select('id, name, price, credits, tier, is_active, features')
+                .eq('is_active', true)
+                .order('price', { ascending: true });
+
+            if (plansError) {
+                console.error('[Settings] Error fetching plans:', plansError);
+            } else {
+                setSubscriptionPlans(plans || []);
+                console.log('[Settings] Available plans:', plans);
+            }
+
+        } catch (error) {
+            console.error('[Settings] Unexpected error:', error);
+        } finally {
+            setLoadingSubscription(false);
+        }
+    };
 
     // ========================================
     // AFTER ALL HOOKS: CONDITIONAL LOGIC
@@ -307,6 +386,113 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         } else {
             setAutoTopUpEnabled(false);
         }
+    };
+
+    // Handle subscription upgrade
+    const handleUpgrade = async (newPlanId: number) => {
+        setUpgradingPlan(true);
+        try {
+            console.log('[Settings] Initiating upgrade to plan:', newPlanId);
+
+            // Call API to create Stripe checkout session
+            const response = await fetch('/api/stripe/upgrade-subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    organizationId: organization.id,
+                    newPlanId: newPlanId,
+                    currentSubscriptionId: currentSubscription?.stripe_subscription_id
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                console.error('[Settings] Upgrade error:', data.error || data.details);
+                alert(`Error: ${data.error || 'Failed to initiate upgrade'}`);
+                return;
+            }
+
+            console.log('[Settings] Checkout URL:', data.checkoutUrl);
+
+            // Redirect to Stripe Checkout
+            if (data.checkoutUrl) {
+                window.location.href = data.checkoutUrl;
+            }
+
+        } catch (error: any) {
+            console.error('[Settings] Upgrade error:', error);
+            alert('Failed to initiate upgrade. Please try again.');
+        } finally {
+            setUpgradingPlan(false);
+        }
+    };
+
+    // Handle subscription downgrade
+    const handleDowngrade = async (newPlanId: number) => {
+        // Show confirmation dialog
+        const confirmed = window.confirm(
+            'Are you sure you want to downgrade your plan? This change will take effect at the end of your current billing period.'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setUpgradingPlan(true);
+        try {
+            console.log('[Settings] Initiating downgrade to plan:', newPlanId);
+
+            // Call API to create Stripe checkout session
+            const response = await fetch('/api/stripe/upgrade-subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    organizationId: organization.id,
+                    newPlanId: newPlanId,
+                    currentSubscriptionId: currentSubscription?.stripe_subscription_id
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                console.error('[Settings] Downgrade error:', data.error || data.details);
+                alert(`Error: ${data.error || 'Failed to initiate downgrade'}`);
+                return;
+            }
+
+            console.log('[Settings] Checkout URL:', data.checkoutUrl);
+
+            // Redirect to Stripe Checkout
+            if (data.checkoutUrl) {
+                window.location.href = data.checkoutUrl;
+            }
+
+        } catch (error: any) {
+            console.error('[Settings] Downgrade error:', error);
+            alert('Failed to initiate downgrade. Please try again.');
+        } finally {
+            setUpgradingPlan(false);
+        }
+    };
+
+    // Handle subscription cancellation
+    const handleCancelSubscription = async () => {
+        const confirmed = window.confirm(
+            'Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        alert('Subscription cancellation will be implemented in the next phase.');
+        // TODO: Implement cancellation via Stripe API
     };
 
     const renderProfile = () => {
@@ -806,18 +992,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     );
 
     const renderBilling = () => {
+        // Show loading state
+        if (loadingSubscription) {
+            return (
+                <div className="w-full animate-fade-in flex items-center justify-center py-20">
+                    <div className="flex flex-col items-center gap-4">
+                        <RefreshCw size={32} className="text-[var(--color-brand-accent)] animate-spin" />
+                        <span className="text-sm text-zinc-400">Loading subscription data...</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // Mock consumption stats for the old 4-card grid
         const consumptionStats = [
             { label: 'Credits Used (30d)', value: '3,420' },
             { label: 'Network Sessions', value: '128' },
             { label: 'Avg Consumption', value: '26.7' }
-        ];
-
-        const history = [
-            { id: 1, date: '02 May 2024, 14:20', module: 'Neural Chat (AEM - Armonyco Event Model™)', credits: 450, status: 'Settled' },
-            { id: 2, date: '01 May 2024, 09:15', module: 'Control Tower Sync', credits: 120, status: 'Settled' },
-            { id: 3, date: '30 Apr 2024, 18:45', module: 'ARS - Armonyco Reliability System™ Check', credits: 850, status: 'Settled' },
-            { id: 4, date: '29 Apr 2024, 11:30', module: 'AOS - Armonyco Operating System™ Migration', credits: 5000, status: 'Settled' },
-            { id: 5, date: '28 Apr 2024, 23:10', module: 'Agent "Amelia" Task', credits: 240, status: 'Settled' },
         ];
 
         return (
@@ -897,154 +1088,71 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </Card>
 
                 </div>
-                <div className="pt-16 pb-10">
-                    <div className="flex items-center justify-between mb-10">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-[var(--color-brand-accent)]/10 border border-[var(--color-brand-accent)]/20 flex items-center justify-center">
-                                <Layers size={24} className="text-[var(--color-brand-accent)]" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-light text-white">Institutional Subscription Plans</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-[0.3em] mt-1">Upgrade or scale your autonomous fleet</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { id: 1, name: 'Starter', amt: 25000, price: 249, units: 'Up to 50' },
-                            { id: 2, name: 'Pro', amt: 100000, price: 999, units: 'Up to 200' },
-                            { id: 3, name: 'Elite', amt: 250000, price: 2499, units: 'Up to 500' },
-                            { id: 4, name: 'VIP', amt: 0, price: 0, units: '500+', isCustom: true }
-                        ].map(plan => (
-                            <button
-                                onClick={() => {
-                                    if (plan.isCustom) {
-                                        setIsContactOpen(true);
-                                    } else {
-                                        onUpdatePlanId(plan.id);
-                                    }
-                                }}
-                                key={plan.id}
-                                className={`py-10 px-6 rounded-[2.5rem] border transition-all flex flex-col items-center justify-center gap-2 relative group overflow-hidden ${plan.id === activePlanId ? 'bg-white/5 border-[var(--color-brand-accent)] shadow-[0_0_40px_rgba(212,175,55,0.1)]' : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/[0.02]'}`}
+                {/* =================================================================== */}
+                {/* SECTION 1: CURRENT SUBSCRIPTION CARD                                */}
+                {/* =================================================================== */}
+                {currentSubscription && currentSubscription.subscription_plans ? (
+                    <CurrentPlanCard
+                        plan={{
+                            id: currentSubscription.subscription_plans.id,
+                            name: currentSubscription.subscription_plans.name,
+                            price: currentSubscription.subscription_plans.price,
+                            features: currentSubscription.subscription_plans.features || []
+                        }}
+                        nextBillingDate={currentSubscription.expires_at}
+                        status={currentSubscription.status}
+                        onCancel={handleCancelSubscription}
+                        loading={upgradingPlan}
+                    />
+                ) : (
+                    <Card variant="dark" padding="lg" className="border-amber-500/30 mb-8">
+                        <div className="text-center py-8">
+                            <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-white mb-2">No Active Subscription</h3>
+                            <p className="text-sm text-white/60 mb-6">
+                                You currently don't have an active subscription. Choose a plan below to get started.
+                            </p>
+                            <Button
+                                variant="primary"
+                                onClick={() => setIsContactOpen(true)}
+                                className="!bg-[var(--color-brand-accent)] !text-black"
                             >
-                                {plan.id === activePlanId && (
-                                    <div className="absolute top-0 right-0 bg-[var(--color-brand-accent)] text-black text-[8px] font-black uppercase px-4 py-1 rounded-bl-xl shadow-lg">Active Plan</div>
-                                )}
-                                <span className={`text-[14px] uppercase tracking-[0.2em] font-black ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-[var(--color-brand-accent)] opacity-80'}`}>{plan.name}</span>
-
-                                {plan.isCustom ? (
-                                    <div className="flex flex-col items-center my-3">
-                                        <span className={`text-[24px] font-bold leading-tight text-center ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>Contact Us</span>
-                                        <span className="text-[10px] uppercase font-black opacity-50 tracking-widest mt-1">Bespoke Quote</span>
-                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mt-2">{plan.units} units</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <span className={`text-[42px] font-bold leading-none mb-0 ${plan.id === activePlanId ? 'text-[var(--color-brand-accent)]' : 'text-white'}`}>
-                                            €{plan.price.toLocaleString('de-DE')}<span className="text-[18px] opacity-60 font-medium">/mo</span>
-                                        </span>
-                                        <span className="text-[10px] uppercase font-black opacity-40 tracking-widest mb-1.5 leading-none">VAT Included</span>
-                                        <span className="text-[11px] font-bold text-[var(--color-brand-accent)] uppercase tracking-widest opacity-80 italic mb-4">€5/unit • {plan.units} units</span>
-                                    </>
-                                )}
-
-                                <div className="flex flex-col items-center gap-1.5 border-t border-white/5 pt-8 mt-2 w-full">
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--color-brand-accent)] mb-1">
-                                            {plan.isCustom ? 'Scope' : 'Includes'}
-                                        </span>
-                                        {!plan.isCustom ? (
-                                            <>
-                                                <span className="text-[22px] font-bold tracking-tight text-white/90">{plan.amt.toLocaleString('de-DE')}</span>
-                                                <span className="text-[10px] opacity-60 font-black uppercase tracking-widest">ArmoCredits©</span>
-                                            </>
-                                        ) : (
-                                            <span className="text-[12px] font-bold tracking-tight text-white/90 text-center px-4">Institutional Project</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div
-                                    onClick={plan.id !== activePlanId ? () => handlePlanChange(plan) : undefined}
-                                    className={`mt-6 px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${plan.id === activePlanId
-                                        ? 'bg-transparent border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] cursor-default'
-                                        : 'bg-[var(--color-brand-accent)] text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer'
-                                        }`}
-                                >
-                                    {plan.id === activePlanId ? 'ACTIVE' : 'Select Plan'}
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-                    <p className="mt-8 text-center text-[10px] text-zinc-500 uppercase font-bold tracking-widest italic opacity-60">All payments are processed securely. VAT included in all institutional tiers.</p>
-                </div>
-
-                {/* CONSUMPTION TABLE */}
-                <div className="pt-4">
-                    <Card variant="default" padding="none" className="overflow-hidden border-white/5">
-                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                            <h3 className="text-lg font-light text-white">Execution Ledger (Real-Time)</h3>
-                            <Button variant="ghost" size="sm" className="text-zinc-500"><Download size={16} /> Export</Button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-white/5 bg-white/[0.01]">
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date & Time</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Module / Task</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Consumption</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-right">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {history.map((item) => (
-                                        <tr key={item.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
-                                            <td className="px-6 py-5 text-[10px] font-mono text-white/40 group-hover:text-white/60 transition-colors uppercase tracking-widest">{item.date}</td>
-                                            <td className="px-6 py-5 text-sm text-white font-bold tracking-tight opacity-80 group-hover:opacity-100">{item.module}</td>
-                                            <td className="px-6 py-5 text-xs font-numbers text-[var(--color-brand-accent)] font-black">
-                                                {item.credits.toLocaleString('de-DE')}
-                                                <span className="text-[9px] opacity-40 ml-1.5 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
-                                            </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <span className="text-[9px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-black tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                                                    Settled
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                Contact Sales
+                            </Button>
                         </div>
                     </Card>
-                </div>
+                )}
 
-                {/* CHART PLACEHOLDER */}
-                <div className="pt-2">
-                    <Card variant="default" padding="lg" className="border-white/5">
-                        <div className="mb-6">
-                            <h3 className="text-lg font-light text-white">Consumption Over Time</h3>
-                            <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-1">Resource allocation trend (7d)</p>
-                        </div>
-                        <div className="h-[240px] w-full flex items-center justify-center border border-white/5 bg-black/40 rounded-3xl relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-brand-accent)]/5 to-transparent opacity-50"></div>
-                            <div className="absolute inset-0 flex items-end justify-between px-10 pb-6 opacity-40 pointer-events-none gap-2">
-                                {[40, 70, 45, 90, 65, 80, 50, 60, 45, 75, 55, 95].map((h, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex-1 bg-white/10 rounded-t-lg transition-all duration-700 group-hover:bg-[var(--color-brand-accent)]/20 group-hover:scale-y-110 origin-bottom"
-                                        style={{ height: `${h}%`, transitionDelay: `${i * 30}ms` }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex flex-col items-center gap-4 relative z-10">
-                                <Activity className="text-[var(--color-brand-accent)] opacity-40 animate-pulse" size={32} />
-                                <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.4em] px-6 py-2 border border-white/5 rounded-full backdrop-blur-md">
-                                    Ledger Topology Active
-                                </span>
-                            </div>
-                        </div>
-                    </Card>
-                </div>
+                {/* =================================================================== */}
+                {/* SECTION 2: AVAILABLE PLANS GRID (UPGRADE/DOWNGRADE)                 */}
+                {/* =================================================================== */}
+                {subscriptionPlans.length > 0 && currentSubscription && (
+                    <AvailablePlansGrid
+                        plans={subscriptionPlans.map(plan => ({
+                            id: plan.id,
+                            name: plan.name,
+                            price: plan.price,
+                            features: plan.features || [],
+                            credits: plan.credits
+                        }))}
+                        currentPlanId={currentSubscription.plan_id}
+                        onUpgrade={handleUpgrade}
+                        onDowngrade={handleDowngrade}
+                        onContactUs={() => setIsContactOpen(true)}
+                        loading={upgradingPlan}
+                    />
+                )}
+
+                {/* =================================================================== */}
+                {/* SECTION 3: WORKFLOW USAGE TABLE                                      */}
+                {/* =================================================================== */}
+                {organization?.id && (
+                    <UsageTable 
+                        organizationId={organization.id}
+                        limit={10}
+                    />
+                )}
 
 
                 {/* Modals */}
@@ -1212,7 +1320,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         { id: 'PROFILE', label: 'IDENTITY', icon: User },
                         { id: 'ORG', label: 'ORGANIZATION', icon: Building },
                         { id: 'ACTIVATION', label: 'SYSTEM ACTIVATION', icon: Zap },
-                        { id: 'BILLING', label: 'BILLING & ARMOCREDITS©', icon: CreditCard }
+                        { id: 'SUBSCRIPTION', label: 'SUBSCRIPTION', icon: CreditCard }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -1249,7 +1357,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {renderOrg()}
                     </ProtectedContent>
                 )}
-                {activeTab === 'BILLING' && renderBilling()}
+                {activeTab === 'SUBSCRIPTION' && renderBilling()}
                 {activeTab === 'ACTIVATION' && renderActivation()}
             </div>
             <ContactModal

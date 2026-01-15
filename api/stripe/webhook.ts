@@ -101,9 +101,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 const metadata = session.metadata || {};
                 const userId = metadata.user_id;
-                const planId = metadata.plan_id ? parseInt(metadata.plan_id) : null;
+                const organizationId = metadata.organizationId;
+                const planId = metadata.plan_id || metadata.planId ? parseInt(metadata.plan_id || metadata.planId) : null;
                 const planName = metadata.plan_name || 'Payment';
                 const credits = metadata.credits ? parseInt(metadata.credits) : null;
+                const action = metadata.action; // 'upgrade', 'downgrade', or undefined for new subscriptions
 
                 // Log checkout completion
                 console.log('[Webhook] Checkout details:', {
@@ -111,10 +113,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     mode: session.mode,
                     customerId: session.customer,
                     userId,
+                    organizationId,
                     planId,
                     planName,
                     credits,
+                    action,
                 });
+
+                // Handle subscription upgrades/downgrades
+                if (session.mode === 'subscription' && action && organizationId) {
+                    console.log(`[Webhook] 🔄 Processing subscription ${action} for organization:`, organizationId);
+                    
+                    // If there's a previous subscription to cancel/replace
+                    const previousSubscriptionId = metadata.previousSubscriptionId || metadata.replace_subscription;
+                    if (previousSubscriptionId) {
+                        console.log('[Webhook] Marking previous subscription as replaced:', previousSubscriptionId);
+                        
+                        // The new subscription will be handled by subscription.created or subscription.updated events
+                        // Here we just log the transition
+                    }
+                }
 
                 // For one-time payments, you might want to add tokens here
                 // For subscriptions, tokens are typically added in subscription.created event
@@ -124,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     // This is typically handled in payment_intent.succeeded for one-time payments
                 }
 
-                // TODO: Send confirmation email to user
+                // TODO: Send confirmation email to user/organization
                 // TODO: Update order/payment status in database if needed
 
                 break;
@@ -353,19 +371,44 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.log('[Webhook] Processing subscription update:', subscription.id);
 
     const customerId = subscription.customer as string;
+    const metadata = subscription.metadata || {};
 
     const supabase = createClient(
         process.env.SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_KEY!
     );
 
+    // Check if this is a plan change (upgrade/downgrade)
+    const newPlanId = metadata.planId ? parseInt(metadata.planId) : null;
+    const action = metadata.action; // 'upgrade' or 'downgrade'
+
+    console.log('[Webhook] Subscription metadata:', {
+        action,
+        newPlanId,
+        organizationId: metadata.organizationId
+    });
+
+    // Build update object
+    const updateData: any = {
+        status: subscription.status,
+        stripe_subscription_id: subscription.id,
+        expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+    };
+
+    // If this is a plan change, update the plan_id
+    if (newPlanId) {
+        updateData.plan_id = newPlanId;
+        console.log('[Webhook] 🔄 Plan change detected:', {
+            action,
+            newPlanId,
+            status: subscription.status
+        });
+    }
+
     const { error } = await supabase
         .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
-        .update({
-            status: subscription.status,
-            stripe_subscription_id: subscription.id,
-            expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-        })
+        .update(updateData)
         .eq('stripe_customer_id', customerId);
 
     if (error) {
@@ -375,6 +418,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
     console.log('[Webhook] ✅ Organization subscription updated for customer:', customerId);
     console.log('[Webhook] New status:', subscription.status);
+    if (newPlanId) {
+        console.log('[Webhook] Plan changed to ID:', newPlanId);
+    }
+
+    // TODO: Send email notification to organization members about plan change
+    // - Include old plan name, new plan name, effective date
+    // - Include pricing changes and new features unlocked
 }
 
 /**

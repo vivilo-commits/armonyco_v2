@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         children: [
           { id: 'settings-profile', label: 'Profile' },
           { id: 'settings-company', label: 'Organization' },
-          { id: 'settings-billing', label: 'Billing' },
+          { id: 'settings-billing', label: 'Subscription' },
           ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
         ],
       }] : []),
@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setExpandedMenu(expandedMenu === item.id ? null : item.id);
       }
     } else {
-      // No children (Overview, Pricing & Billing)
+      // No children (Overview, Subscription)
       if (item.action) {
         item.action();
         setIsMobileOpen(false);
