@@ -463,14 +463,32 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         process.env.SUPABASE_SERVICE_KEY!
     );
 
-    // Check if this is a plan change (upgrade/downgrade)
-    const newPlanId = metadata.planId ? parseInt(metadata.planId) : null;
-    const action = metadata.action; // 'upgrade' or 'downgrade'
+    // Get current subscription details BEFORE updating
+    const { data: currentSub, error: fetchError } = await supabase
+        .from('organization_subscriptions')
+        .select('plan_id, organization_id')
+        .eq('stripe_customer_id', customerId)
+        .single();
 
+    if (fetchError) {
+        console.error('[Webhook] Error fetching current subscription:', fetchError);
+        throw fetchError;
+    }
+
+    const currentPlanId = currentSub?.plan_id;
+    const newPlanId = metadata.planId ? parseInt(metadata.planId) : null;
+    const action = metadata.action; // 'upgrade' or 'downgrade' if from Checkout
+    const organizationId = currentSub?.organization_id || metadata.organizationId;
+
+    // Detect plan change
+    const isPlanChange = newPlanId && currentPlanId && newPlanId !== currentPlanId;
+    
     console.log('[Webhook] Subscription metadata:', {
         action,
+        currentPlanId,
         newPlanId,
-        organizationId: metadata.organizationId
+        isPlanChange,
+        organizationId
     });
 
     // Build update object
@@ -486,11 +504,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         updateData.plan_id = newPlanId;
         console.log('[Webhook] 🔄 Plan change detected:', {
             action,
+            currentPlanId,
             newPlanId,
             status: subscription.status
         });
     }
 
+    // Update subscription in database
     const { error } = await supabase
         .from('organization_subscriptions') // MIGRATED: organization-based subscriptions
         .update(updateData)
@@ -505,6 +525,36 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.log('[Webhook] New status:', subscription.status);
     if (newPlanId) {
         console.log('[Webhook] Plan changed to ID:', newPlanId);
+    }
+
+    // Add credits for manual plan changes (not from Checkout)
+    if (isPlanChange && organizationId && !action) {
+        // This is a manual plan change from Stripe Dashboard (no 'action' metadata)
+        // We need to add credits for the new plan
+        
+        console.log('[Webhook] 💎 Manual plan change detected - adding credits');
+
+        // Get new plan credits
+        const { data: newPlan } = await supabase
+            .from('subscription_plans')
+            .select('credits, name')
+            .eq('id', newPlanId)
+            .single();
+
+        const creditsToAdd = newPlan?.credits || 0;
+
+        if (creditsToAdd > 0) {
+            await addCreditsToOrganization(organizationId, creditsToAdd, 'subscription');
+            console.log('[Webhook] ✅ Manual plan change - credits added:', {
+                organizationId,
+                creditsAdded: creditsToAdd,
+                planName: newPlan?.name,
+                previousPlanId: currentPlanId,
+                newPlanId
+            });
+        }
+    } else if (isPlanChange && action) {
+        console.log('[Webhook] ℹ️ Plan change from Checkout - credits already added by checkout.session.completed');
     }
 
     // TODO: Send email notification to organization members about plan change

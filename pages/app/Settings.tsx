@@ -90,15 +90,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [isSavingBilling, setIsSavingBilling] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-    // -- Top Up State (OLD - Kept for Auto Top-Up only) --
-    const [showTopUpModal, setShowTopUpModal] = useState(false);
-
-    // -- Auto Top Up State --
-    const [autoTopUpEnabled, setAutoTopUpEnabled] = useState(false);
-    const [showAutoTopUpModal, setShowAutoTopUpModal] = useState(false);
-    const [isAcceptingTerms, setIsAcceptingTerms] = useState(false);
-    const AUTO_TOPUP_THRESHOLD = 1000;
-    const AUTO_TOPUP_AMOUNT = 1000;
+    // -- Top Up State removed - Manual payments only --
 
     // -- Subscription Plan State --
     const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
@@ -397,26 +389,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setShowBillingModal(false);
     };
 
-    const handleEnableAutoTopUp = () => {
-        setIsAcceptingTerms(true);
-        setTimeout(() => {
-            setAutoTopUpEnabled(true);
-            setIsAcceptingTerms(false);
-            setShowAutoTopUpModal(false);
-            // Check instantly if recharge needed (mock logic)
-            if (currentCredits < AUTO_TOPUP_THRESHOLD) {
-                onUpdateCredits(currentCredits + AUTO_TOPUP_AMOUNT);
-            }
-        }, 1500);
-    };
-
-    const handleToggleAutoTopUp = () => {
-        if (!autoTopUpEnabled) {
-            setShowAutoTopUpModal(true);
-        } else {
-            setAutoTopUpEnabled(false);
-        }
-    };
 
     // Handle subscription upgrade
     const handleUpgrade = async (newPlanId: number) => {
@@ -1034,13 +1006,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             );
         }
 
-        // Mock consumption stats for the old 4-card grid
-        const consumptionStats = [
-            { label: 'Credits Used (30d)', value: '3,420' },
-            { label: 'Network Sessions', value: '128' },
-            { label: 'Avg Consumption', value: '26.7' }
-        ];
-
         return (
             <div className="w-full animate-fade-in space-y-10 pb-20">
                 {/* Header Section */}
@@ -1049,8 +1014,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <p className="text-zinc-500 text-sm">Governance engine resource allocation and ledger.</p>
                 </div>
 
-                {/* 4 CARDS GRID */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* 2 CARDS GRID - Manual Payments Only */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
 
                     {/* 1. BALANCE */}
                     <Card variant="dark" className="shadow-2xl relative overflow-hidden h-full flex flex-col justify-between" padding="lg">
@@ -1071,31 +1036,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="absolute top-0 right-0 p-4 opacity-10"><Zap size={40} /></div>
                     </Card>
 
-                    {/* 2. AUTO TOP-UP */}
-                    <Card variant="dark" className="border-zinc-800/50 flex flex-col justify-between" padding="lg">
-                        <div>
-                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Auto Top-Up</div>
-                            <div className="flex items-center justify-between">
-                                <span className={`text-sm font-medium ${autoTopUpEnabled ? 'text-[var(--color-success)]' : 'text-zinc-500'}`}>
-                                    {autoTopUpEnabled ? 'ACTIVE' : 'DISABLED'}
-                                </span>
-                                <button
-                                    onClick={handleToggleAutoTopUp}
-                                    className={`w-12 h-6 rounded-full relative transition-all duration-300 ${autoTopUpEnabled ? 'bg-[var(--color-success)]' : 'bg-zinc-700'}`}
-                                >
-                                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${autoTopUpEnabled ? 'left-7 shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'left-1'}`} />
-                                </button>
-                            </div>
-                        </div>
-                        <p className="text-[10px] text-zinc-500 mt-4 leading-relaxed">
-                            {autoTopUpEnabled
-                                ? "If balance < 1.000 ArmoCredits©, trigger +1.000 ArmoCredits© top-up."
-                                : "No automatic reloads configured. Services may pause on zero balance."
-                            }
-                        </p>
-                    </Card>
-
-                    {/* 3. BUY CREDITS */}
+                    {/* 2. BUY CREDITS - Manual Purchase */}
                     <Card variant="dark" className="border-white/5 flex flex-col justify-between" padding="lg">
                         <div>
                             <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-4">Buy Credits</div>
@@ -1109,18 +1050,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <div className="flex gap-1 mt-4">
                             {[1, 2, 3].map(i => <div key={i} className="flex-1 h-1 bg-white/10 rounded-full" />)}
-                        </div>
-                    </Card>
-
-                    {/* 4. USAGE SUMMARY */}
-                    <Card variant="dark" className="border-zinc-800/80 flex flex-col justify-between" padding="lg">
-                        <div className="space-y-4">
-                            {consumptionStats.map((stat, i) => (
-                                <div key={i} className="flex justify-between items-center border-b border-white/5 pb-2 last:border-0">
-                                    <span className="text-[10px] text-zinc-500 uppercase">{stat.label}</span>
-                                    <span className="text-xs font-mono text-white">{stat.value}</span>
-                                </div>
-                            ))}
                         </div>
                     </Card>
 
@@ -1206,50 +1135,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         organizationId={organization.id}
                     />
                 )}
-
-                <Modal isOpen={showAutoTopUpModal} onClose={() => setShowAutoTopUpModal(false)} title="Enable Auto Top-up">
-                    <div className="p-6 max-w-md mx-auto">
-                        <div className="flex justify-center mb-6">
-                            <div className="w-16 h-16 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary)]">
-                                <RefreshCw size={32} />
-                            </div>
-                        </div>
-
-                        <h3 className="text-center font-medium text-lg mb-2">Never Run Out of Credits</h3>
-                        <p className="text-center text-sm text-[var(--color-text-muted)] mb-6">
-                            When your balance falls below <strong className="text-[var(--color-text-main)]">1.000 ArmoCredits©</strong>,
-                            we will automatically recharge your account with <strong className="text-[var(--color-text-main)]">1.000 ArmoCredits©</strong>.
-                        </p>
-
-                        <div className="bg-[var(--color-surface-hover)] p-4 rounded-lg border border-[var(--color-border)] mb-6">
-                            <div className="flex gap-3 items-start">
-                                <InfoIcon />
-                                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-                                    By enabling this, you authorize Armonyco to recharge your credits whenever the threshold is reached. Charges will appear on your statement as "Armonyco Refill".
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mb-6 flex justify-center">
-                            <div className="text-center">
-                                <span className="text-xs text-[var(--color-text-muted)] uppercase font-bold">Top-up Amount</span>
-                                <div className="text-lg font-bold">1.000 ArmoCredits©</div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <Button variant="ghost" className="flex-1 justify-center" onClick={() => setShowAutoTopUpModal(false)}>Cancel</Button>
-                            <Button
-                                variant="primary"
-                                className="flex-1 justify-center"
-                                onClick={handleEnableAutoTopUp}
-                                disabled={isAcceptingTerms}
-                            >
-                                {isAcceptingTerms ? 'Enabling...' : 'I Agree, Enable Auto-Topup'}
-                            </Button>
-                        </div>
-                    </div>
-                </Modal>
 
                 {/* Edit Billing Details Modal */}
                 <Modal
@@ -1377,12 +1262,3 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
     );
 };
-
-// Helper Icon Component for Auto Top Up Modal
-const InfoIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-text-subtle)] shrink-0">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-    </svg>
-);

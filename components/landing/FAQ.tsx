@@ -11,7 +11,7 @@ interface FAQItem {
 const faqData: FAQItem[] = [
     {
         question: "How does pricing work?",
-        answer: "Your plan includes a monthly ArmoCredits budget to run Armonyco operations. Included budget: each plan comes with a fixed amount of ArmoCredits every month. Pay-per-use: if you exceed the included ArmoCredits, you keep running with top-ups. Rate: €1 = 100 ArmoCredits (i.e., €0.01 per ArmoCredit). Auto top-up: when your balance drops below 1,000 ArmoCredits, we automatically add +1,000 ArmoCredits so operations never stop. ArmoCredits are an operational usage unit. You only pay more when you use more."
+        answer: "Your plan includes a monthly ArmoCredits budget to run Armonyco operations. Included budget: each plan comes with a fixed amount of ArmoCredits every month. Pay-per-use: if you exceed the included ArmoCredits, you can purchase additional credits manually. Rate: €1 = 100 ArmoCredits (i.e., €0.01 per ArmoCredit). Manual top-ups: you can buy credit packs anytime through the billing dashboard. ArmoCredits are an operational usage unit. You only pay more when you use more."
     },
     {
         question: "Why don’t you charge a fixed price per unit?",
