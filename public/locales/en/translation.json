@@ -199,7 +199,54 @@
     },
     "saveChanges": "Save Changes",
     "saveProfile": "Profile saved!",
-    "saveOrganization": "Save Organization"
+    "saveOrganization": "Save Organization",
+    "systemSettings": "System Settings",
+    "systemSettingsDescription": "Configure your personal identity and organization protocols.",
+    "tabs": {
+      "identity": "IDENTITY",
+      "organization": "ORGANIZATION",
+      "systemActivation": "SYSTEM ACTIVATION",
+      "subscription": "SUBSCRIPTION"
+    },
+    "placeholders": {
+      "phone": "+39 123 456 7890",
+      "jobRole": "Operations Manager",
+      "city": "Roma",
+      "sdiCode": "ABCDEFG",
+      "passwordMin": "At least 8 characters"
+    },
+    "passwordModal": {
+      "title": "Change Password",
+      "changing": "Changing...",
+      "changePassword": "Change Password"
+    },
+    "billingModal": {
+      "title": "Edit Billing Details",
+      "saveDetails": "Save Details"
+    },
+    "planChangeModal": {
+      "title": "Confirm Protocol Change",
+      "newProtocol": "New Execution Tier Protocol",
+      "deploymentMessage": "The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.",
+      "authorizeDeployment": "AUTHORIZE DEPLOYMENT",
+      "abortMission": "ABORT MISSION"
+    },
+    "subscriptionCancel": {
+      "confirm": "Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.",
+      "notImplemented": "Subscription cancellation will be implemented in the next phase.",
+      "failedDowngrade": "Failed to initiate downgrade. Please try again."
+    }
+  },
+  "subscription": {
+    "title": "Pricing & Billing",
+    "subtitle": "Governance engine resource allocation and ledger.",
+    "currentBalance": "Current Balance",
+    "buyCredits": "Buy Credits",
+    "noActiveSubscription": "No Active Subscription",
+    "noActiveSubscriptionMessage": "You currently don't have an active subscription. Choose a plan below to get started.",
+    "contactSales": "Contact Sales",
+    "loadingSubscription": "Loading subscription data...",
+    "armoCredits": "ArmoCredits©"
   },
   "dashboard": {
     "title": "Control Tower™",
@@ -251,13 +298,14 @@
     "ars": "ARS - Armonyco Reliability System™",
     "ags": "AGS - Armonyco Governance Scorecard™",
     "superAdmin": "Super Admin",
-    "superAdminAccess": "Accesso completo al sistema",
-    "adminMode": "🛡️ Modalità Amministrazione Globale",
+    "superAdminAccess": "Full system access",
+    "adminMode": "🛡️ Global Administration Mode",
     "starterTier": "Starter Tier",
     "proTier": "Pro Tier",
     "eliteTier": "Elite Tier",
     "vipTier": "VIP Tier",
-    "institutionalTier": "Institutional Tier"
+    "institutionalTier": "Institutional Tier",
+    "coreConstructs": "Core Constructs"
   },
   "modals": {
     "buyCredits": {
@@ -374,5 +422,147 @@
     "sa": "S.A. / Corporation",
     "inc": "Inc.",
     "private": "Private Individual Host"
+  },
+  "products": {
+    "title": "Operational Services",
+    "description": "The definitive registry of governed operational routines over your institutional assets.",
+    "operationalBalance": "Operational Balance",
+    "selectHotel": "Select Hotel",
+    "selectHotelDescription": "Manage services for a specific property",
+    "loadingHotels": "Loading hotels...",
+    "noHotels": "No hotels configured. Please add hotels in Settings.",
+    "accessDenied": "Limited Access",
+    "accessDeniedMessage": "Only Organization Admins can manage operational products and services"
+  },
+  "signup": {
+    "fiscalCode": "Fiscal Code",
+    "fiscalCodePlaceholder": "Optional if different from VAT",
+    "businessPhone": "Business Phone",
+    "legalAddress": "Sede Legale",
+    "streetSquare": "Street/Square *",
+    "streetNumber": "Street Number",
+    "postalCode": "Postal Code",
+    "city": "City *",
+    "province": "Province",
+    "selectProvince": "Select...",
+    "country": "Country *",
+    "electronicInvoicing": "Electronic Invoicing (Optional)",
+    "electronicInvoicingDescription": "SDI code or PEC for electronic invoices - completely optional",
+    "sdiCodeOptional": "SDI Code (optional)",
+    "sdiCodePlaceholder": "XXXXXXX"
+  },
+  "ui": {
+    "actionToggle": {
+      "download": "Download",
+      "done": "Done",
+      "pause": "Pause",
+      "enable": "Enable",
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "exitIntent": {
+      "title": "You are leaving the registration"
+    },
+    "terms": {
+      "title": "Terms and Conditions"
+    },
+    "moduleList": {
+      "title": "Modules available inside the app"
+    }
+  },
+  "invite": {
+    "accessDenied": "Access Denied",
+    "copyPassword": "Copy password",
+    "firstNamePlaceholder": "John",
+    "modifyRoles": "You can modify member roles from the \"Manage Members\" page"
+  },
+  "members": {
+    "accessDenied": "Limited Access",
+    "roles": {
+      "admin": "Admin",
+      "user": "User",
+      "collaborator": "Collaborator"
+    }
+  },
+  "admin": {
+    "accessDenied": "Access Denied",
+    "accessDeniedMessage": "Only AppAdmins can manage users",
+    "roles": {
+      "executive": "Executive",
+      "auditor": "Auditor",
+      "operator": "Operator"
+    }
+  },
+  "resetPassword": {
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password"
+  },
+  "governedValue": {
+    "minimalThreshold": "Minimal Threshold"
+  },
+  "notifications": {
+    "activeAlerts": "Active Alerts",
+    "critical": "Critical",
+    "warnings": "Warnings",
+    "systemHealth": "System Health"
+  },
+  "conversations": {
+    "call": "Call",
+    "more": "More"
+  },
+  "decisionLog": {
+    "hashIntegrity": "Hash Integrity Verified",
+    "totalDecisions": "Total Decisions",
+    "realtime": "realtime",
+    "autonomyRate": "Autonomy Rate",
+    "autonomousExecution": "Autonomous execution",
+    "activeAlerts": "Active Alerts",
+    "signalsRequiringReview": "Signals requiring review",
+    "ledgerState": "Ledger State",
+    "synced": "Synced",
+    "verdicts": {
+      "allow": "Allow (Secure)",
+      "deny": "Deny (Risk)",
+      "modify": "Modify (Review)"
+    },
+    "temporalFilter": "Temporal Filter"
+  },
+  "ars": {
+    "complianceStandard": "Compliance standard met",
+    "chain": "Chain",
+    "hashes": "Hashes"
+  },
+  "ags": {
+    "liveAudit": "Live audit protocol",
+    "velocity": "Velocity",
+    "policy": "Policy",
+    "governanceScore": "Governance Score"
+  },
+  "aem": {
+    "schemaValidation": "Schema validation active",
+    "totalEvents": "Total Events",
+    "realtime": "realtime",
+    "avgDuration": "Avg Duration",
+    "sync": "Sync",
+    "closed": "closed"
+  },
+  "aim": {
+    "activeNodes": "Active Nodes",
+    "stable": "Stable",
+    "nodes": "nodes",
+    "cognitiveLoad": "Cognitive Load",
+    "high": "High",
+    "normal": "Normal",
+    "demand": "demand",
+    "totalDecisions": "Total Decisions",
+    "optimal": "Optimal",
+    "review": "Review",
+    "compliance": "compliance",
+    "executiveStop": "Humans retain \"Executive Stop\" privileges for all autonomous protocols."
+  },
+  "riskCompliance": {
+    "compliance": "Compliance",
+    "humanRisk": "Human Risk",
+    "residualRisk": "Residual Risk"
   }
 }

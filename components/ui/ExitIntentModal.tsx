@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { AlertCircle } from './Icons';
@@ -16,6 +17,7 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
     onContinue,
     onExitWithoutSaving,
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [hasShown, setHasShown] = useState(false);
 
@@ -56,7 +58,7 @@ export const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
         <Modal
             isOpen={isOpen}
             onClose={handleContinue}
-            title="You are leaving the registration"
+            title={t('ui.exitIntent.title')}
             width="md"
             showCloseButton={false}
         >

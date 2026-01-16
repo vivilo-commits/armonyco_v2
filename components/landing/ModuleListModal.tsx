@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../ui/Modal';
 
 export type ModuleSuite = 'GUEST' | 'REVENUE' | 'OPS' | 'RESPONSE';
@@ -10,13 +11,14 @@ interface ModuleListModalProps {
 }
 
 export const ModuleListModal: React.FC<ModuleListModalProps> = ({ isOpen, onClose, suite }) => {
+  const { t } = useTranslation();
   if (!suite) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Modules available inside the app"
+      title={t('ui.moduleList.title')}
       width="xl"
     >
       <div className="flex flex-col h-[70vh] md:h-auto">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, Power } from 'lucide-react';
 
 interface ActionToggleProps {
@@ -22,6 +23,7 @@ export const ActionToggle: React.FC<ActionToggleProps> = ({
   onChange,
   className = ''
 }) => {
+  const { t } = useTranslation();
   const finalActive = checked !== undefined ? checked : isActive;
   const [internalState, setInternalState] = useState(finalActive);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -71,15 +73,15 @@ export const ActionToggle: React.FC<ActionToggleProps> = ({
 
   // Labels logic
   const getHoverLabel = () => {
-    if (isDownload) return labelIdle || "Download";
-    if (internalState) return "Pause";
-    return "Enable";
+    if (isDownload) return labelIdle || t('ui.actionToggle.download');
+    if (internalState) return t('ui.actionToggle.pause');
+    return t('ui.actionToggle.enable');
   };
 
   const getActiveLabel = () => {
-    if (isDownload) return labelActive || "Done";
-    if (internalState) return "Active";
-    return "Paused";
+    if (isDownload) return labelActive || t('ui.actionToggle.done');
+    if (internalState) return t('ui.actionToggle.active');
+    return t('ui.actionToggle.paused');
   };
 
   return (

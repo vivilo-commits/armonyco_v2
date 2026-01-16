@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity, Loader } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +12,7 @@ import { ProductModule } from '../../src/types';
 import { supabase } from '../../src/lib/supabase';
 
 export const ProductManagement: React.FC = () => {
+    const { t } = useTranslation();
     const { data: userProfile } = useUserProfile();
     
     // Check permissions - only Admin can manage products
@@ -383,8 +385,8 @@ export const ProductManagement: React.FC = () => {
     if (!canEditOrganization) {
         return (
             <UnauthorizedView 
-                message="Solo gli Admin dell'organizzazione possono gestire i prodotti e servizi operativi" 
-                title="Accesso Limitato"
+                message={t('products.accessDeniedMessage')} 
+                title={t('products.accessDenied')}
             />
         );
     }
@@ -395,15 +397,15 @@ export const ProductManagement: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Package className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Operational Services</h1>
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">{t('products.title')}</h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Il registro definitivo delle routine operative governate sopra i tuoi asset istituzionali.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">{t('products.description')}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mb-1">Operational Balance</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.2em] font-black mb-1">{t('products.operationalBalance')}</p>
                     <p className="text-2xl font-numbers text-[var(--color-brand-primary)]">
                         {Math.floor(userProfile?.credits || 0).toLocaleString('de-DE')}
-                        <span className="text-[10px] opacity-40 ml-2 font-numbers uppercase tracking-widest italic">ArmoCredits©</span>
+                        <span className="text-[10px] opacity-40 ml-2 font-numbers uppercase tracking-widest italic">{t('settings.subscription.armoCredits')}</span>
                     </p>
                 </div>
             </header>
@@ -412,9 +414,9 @@ export const ProductManagement: React.FC = () => {
             <Card variant="dark" padding="lg" className="mb-8 border-white/5">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-bold text-white mb-1">Select Hotel</h3>
+                        <h3 className="text-sm font-bold text-white mb-1">{t('products.selectHotel')}</h3>
                         <p className="text-xs text-zinc-500">
-                            Manage services for a specific property
+                            {t('products.selectHotelDescription')}
                         </p>
                     </div>
                     
@@ -422,11 +424,11 @@ export const ProductManagement: React.FC = () => {
                         {loadingHotels ? (
                             <div className="flex items-center gap-2 text-zinc-500">
                                 <Loader size={16} className="animate-spin" />
-                                <span className="text-sm">Loading hotels...</span>
+                                <span className="text-sm">{t('products.loadingHotels')}</span>
                             </div>
                         ) : hotels.length === 0 ? (
                             <div className="text-sm text-amber-500">
-                                No hotels configured. Please add hotels in Settings.
+                                {t('products.noHotels')}
                             </div>
                         ) : (
                             <select

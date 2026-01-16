@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, CheckCircle, Loader, AlertTriangle } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
@@ -531,16 +532,16 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
                                     </div>
 
                                     <FloatingInput
-                                        label="Fiscal Code"
+                                        label={t('signup.fiscalCode')}
                                         value={formData.fiscalCode}
                                         onChange={e => updateField('fiscalCode', e.target.value)}
                                         error={errors.fiscalCode}
-                                        placeholder="Optional if different from VAT"
+                                        placeholder={t('signup.fiscalCodePlaceholder')}
                                     />
                                 </div>
 
                                 <FloatingInput
-                                    label="Business Phone"
+                                    label={t('signup.businessPhone')}
                                     type="tel"
                                     value={formData.phone}
                                     onChange={e => updateField('phone', e.target.value)}
@@ -550,20 +551,20 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-4">
-                                        Sede Legale
+                                        {t('signup.legalAddress')}
                                     </h3>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="md:col-span-2">
                                             <FloatingInput
-                                                label="Street/Square *"
+                                                label={t('signup.streetSquare')}
                                                 value={formData.address}
                                                 onChange={e => updateField('address', e.target.value)}
                                                 error={errors.address}
                                             />
                                         </div>
                                         <FloatingInput
-                                            label="Street Number"
+                                            label={t('signup.streetNumber')}
                                             value={formData.civicNumber}
                                             onChange={e => updateField('civicNumber', e.target.value)}
                                         />
@@ -571,28 +572,28 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                                         <FloatingInput
-                                            label="Postal Code"
+                                            label={t('signup.postalCode')}
                                             value={formData.cap}
                                             onChange={e => updateField('cap', e.target.value)}
                                             error={errors.cap}
                                             placeholder="00100"
                                         />
                                         <FloatingInput
-                                            label="City *"
+                                            label={t('signup.city')}
                                             value={formData.city}
                                             onChange={e => updateField('city', e.target.value)}
                                             error={errors.city}
                                         />
                                         <div>
                                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] block mb-2">
-                                                Province
+                                                {t('signup.province')}
                                             </label>
                                             <select
                                                 value={formData.province}
                                                 onChange={e => updateField('province', e.target.value)}
                                                 className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 py-3 text-sm focus:border-[var(--color-brand-accent)] outline-none"
                                             >
-                                                <option value="">Select...</option>
+                                                <option value="">{t('signup.selectProvince')}</option>
                                                 {ITALIAN_PROVINCES.map(prov => (
                                                     <option key={prov.code} value={prov.code}>
                                                         {prov.name} ({prov.code})
@@ -604,7 +605,7 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                     <div className="mt-6">
                                         <FloatingInput
-                                            label="Country *"
+                                            label={t('signup.country')}
                                             value={formData.country}
                                             onChange={e => updateField('country', e.target.value)}
                                             error={errors.country}
@@ -614,18 +615,18 @@ export const SignUpWizard: React.FC<SignUpWizardProps> = ({
 
                                 <div className="pt-4 border-t border-[var(--color-border)]">
                                     <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-2">
-                                        Electronic Invoicing (Optional)
+                                        {t('signup.electronicInvoicing')}
                                     </h3>
                                     <p className="text-xs text-[var(--color-text-muted)] mb-4">
-                                        SDI code or PEC for electronic invoices - completely optional
+                                        {t('signup.electronicInvoicingDescription')}
                                     </p>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FloatingInput
-                                            label="SDI Code (optional)"
+                                            label={t('signup.sdiCodeOptional')}
                                             value={formData.sdiCode}
                                             onChange={e => updateField('sdiCode', e.target.value)}
-                                            placeholder="XXXXXXX"
+                                            placeholder={t('signup.sdiCodePlaceholder')}
                                         />
                                         <FloatingInput
                                             label="PEC (opzionale)"

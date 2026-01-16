@@ -199,7 +199,43 @@
     },
     "saveChanges": "Salva Modifiche",
     "saveProfile": "Profilo salvato!",
-    "saveOrganization": "Salva Organizzazione"
+    "saveOrganization": "Salva Organizzazione",
+    "systemSettings": "Impostazioni Sistema",
+    "systemSettingsDescription": "Configura la tua identità personale e i protocolli dell'organizzazione.",
+    "tabs": {
+      "identity": "IDENTITÀ",
+      "organization": "ORGANIZZAZIONE",
+      "systemActivation": "ATTIVAZIONE SISTEMA",
+      "subscription": "ABBONAMENTO"
+    },
+    "placeholders": {
+      "phone": "+39 123 456 7890",
+      "jobRole": "Operations Manager",
+      "city": "Roma",
+      "sdiCode": "ABCDEFG",
+      "passwordMin": "Almeno 8 caratteri"
+    },
+    "passwordModal": {
+      "title": "Cambia Password",
+      "changing": "Modifica in corso...",
+      "changePassword": "Cambia Password"
+    },
+    "billingModal": {
+      "title": "Modifica Dettagli Fatturazione",
+      "saveDetails": "Salva Dettagli"
+    },
+    "planChangeModal": {
+      "title": "Conferma Cambio Protocollo",
+      "newProtocol": "Nuovo Protocollo Tier di Esecuzione",
+      "deploymentMessage": "La nuova matrice di allocazione risorse verrà distribuita all'inizio del prossimo ciclo. La continuità operativa rimane invariata.",
+      "authorizeDeployment": "AUTORIZZA DISTRIBUZIONE",
+      "abortMission": "ANNULLA OPERAZIONE"
+    },
+    "subscriptionCancel": {
+      "confirm": "Sei sicuro di voler cancellare il tuo abbonamento? Conserverai l'accesso fino alla fine del periodo di fatturazione corrente.",
+      "notImplemented": "La cancellazione dell'abbonamento verrà implementata nella prossima fase.",
+      "failedDowngrade": "Impossibile avviare il downgrade. Riprova."
+    }
   },
   "dashboard": {
     "title": "Control Tower™",
@@ -257,7 +293,8 @@
     "proTier": "Pro Tier",
     "eliteTier": "Elite Tier",
     "vipTier": "VIP Tier",
-    "institutionalTier": "Tier Istituzionale"
+    "institutionalTier": "Tier Istituzionale",
+    "coreConstructs": "Costrutti Core"
   },
   "modals": {
     "buyCredits": {
@@ -374,5 +411,147 @@
     "sa": "S.A. / Società",
     "inc": "Inc.",
     "private": "Host Privato Individuale"
+  },
+  "products": {
+    "title": "Servizi Operativi",
+    "description": "Il registro definitivo delle routine operative governate sopra i tuoi asset istituzionali.",
+    "operationalBalance": "Saldo Operativo",
+    "selectHotel": "Seleziona Hotel",
+    "selectHotelDescription": "Gestisci i servizi per una proprietà specifica",
+    "loadingHotels": "Caricamento hotel...",
+    "noHotels": "Nessun hotel configurato. Aggiungi hotel nelle Impostazioni.",
+    "accessDenied": "Accesso Limitato",
+    "accessDeniedMessage": "Solo gli Admin dell'organizzazione possono gestire i prodotti e servizi operativi"
+  },
+  "signup": {
+    "fiscalCode": "Codice Fiscale",
+    "fiscalCodePlaceholder": "Opzionale se diverso dalla P.IVA",
+    "businessPhone": "Telefono Aziendale",
+    "legalAddress": "Sede Legale",
+    "streetSquare": "Via/Piazza *",
+    "streetNumber": "Numero Civico",
+    "postalCode": "CAP",
+    "city": "Città *",
+    "province": "Provincia",
+    "selectProvince": "Seleziona...",
+    "country": "Paese *",
+    "electronicInvoicing": "Fatturazione Elettronica (Opzionale)",
+    "electronicInvoicingDescription": "Codice SDI o PEC per fatture elettroniche - completamente opzionale",
+    "sdiCodeOptional": "Codice SDI (opzionale)",
+    "sdiCodePlaceholder": "XXXXXXX"
+  },
+  "ui": {
+    "actionToggle": {
+      "download": "Scarica",
+      "done": "Fatto",
+      "pause": "Pausa",
+      "enable": "Abilita",
+      "active": "Attivo",
+      "paused": "In Pausa"
+    },
+    "exitIntent": {
+      "title": "Stai lasciando la registrazione"
+    },
+    "terms": {
+      "title": "Termini e Condizioni"
+    },
+    "moduleList": {
+      "title": "Moduli disponibili nell'app"
+    }
+  },
+  "invite": {
+    "accessDenied": "Accesso Negato",
+    "copyPassword": "Copia password",
+    "firstNamePlaceholder": "Mario",
+    "modifyRoles": "Puoi modificare i ruoli dei membri dalla pagina \"Gestisci Membri\""
+  },
+  "members": {
+    "accessDenied": "Accesso Limitato",
+    "roles": {
+      "admin": "Admin",
+      "user": "Utente",
+      "collaborator": "Collaboratore"
+    }
+  },
+  "admin": {
+    "accessDenied": "Accesso Negato",
+    "accessDeniedMessage": "Solo gli AppAdmin possono gestire gli utenti",
+    "roles": {
+      "executive": "Esecutivo",
+      "auditor": "Auditor",
+      "operator": "Operatore"
+    }
+  },
+  "resetPassword": {
+    "newPassword": "Nuova Password",
+    "confirmPassword": "Conferma Password"
+  },
+  "governedValue": {
+    "minimalThreshold": "Soglia Minima"
+  },
+  "notifications": {
+    "activeAlerts": "Avvisi Attivi",
+    "critical": "Critico",
+    "warnings": "Avvisi",
+    "systemHealth": "Stato Sistema"
+  },
+  "conversations": {
+    "call": "Chiama",
+    "more": "Altro"
+  },
+  "decisionLog": {
+    "hashIntegrity": "Integrità Hash Verificata",
+    "totalDecisions": "Decisioni Totali",
+    "realtime": "tempo reale",
+    "autonomyRate": "Tasso di Autonomia",
+    "autonomousExecution": "Esecuzione autonoma",
+    "activeAlerts": "Avvisi Attivi",
+    "signalsRequiringReview": "Segnali che richiedono revisione",
+    "ledgerState": "Stato Registro",
+    "synced": "Sincronizzato",
+    "verdicts": {
+      "allow": "Consenti (Sicuro)",
+      "deny": "Nega (Rischio)",
+      "modify": "Modifica (Revisione)"
+    },
+    "temporalFilter": "Filtro Temporale"
+  },
+  "ars": {
+    "complianceStandard": "Standard di conformità raggiunto",
+    "chain": "Catena",
+    "hashes": "Hash"
+  },
+  "ags": {
+    "liveAudit": "Protocollo di audit in tempo reale",
+    "velocity": "Velocità",
+    "policy": "Politica",
+    "governanceScore": "Punteggio Governance"
+  },
+  "aem": {
+    "schemaValidation": "Validazione schema attiva",
+    "totalEvents": "Eventi Totali",
+    "realtime": "tempo reale",
+    "avgDuration": "Durata Media",
+    "sync": "Sincronizzato",
+    "closed": "chiuso"
+  },
+  "aim": {
+    "activeNodes": "Nodi Attivi",
+    "stable": "Stabile",
+    "nodes": "nodi",
+    "cognitiveLoad": "Carico Cognitivo",
+    "high": "Alto",
+    "normal": "Normale",
+    "demand": "richiesta",
+    "totalDecisions": "Decisioni Totali",
+    "optimal": "Ottimale",
+    "review": "Revisione",
+    "compliance": "conformità",
+    "executiveStop": "Gli umani mantengono privilegi di \"Stop Esecutivo\" per tutti i protocolli autonomi."
+  },
+  "riskCompliance": {
+    "compliance": "Conformità",
+    "humanRisk": "Rischio Umano",
+    "residualRisk": "Rischio Residuo"
   }
 }

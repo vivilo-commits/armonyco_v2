@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 
@@ -9,6 +10,7 @@ interface TermsModalProps {
 }
 
 export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccept }) => {
+    const { t } = useTranslation();
     const handleAccept = () => {
         if (onAccept) {
             onAccept();
@@ -20,7 +22,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccep
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Terms and Conditions"
+            title={t('ui.terms.title')}
             width="lg"
             showCloseButton={true}
         >

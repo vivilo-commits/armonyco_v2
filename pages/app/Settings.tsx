@@ -16,6 +16,7 @@ import { UsageTable } from '../../components/app/UsageTable';
 import { BuyCreditsModal } from '../../components/app/BuyCreditsModal';
 import { PermissionLoader } from '../../components/common/PermissionLoader';
 import { supabase } from '../../src/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 interface SettingsViewProps {
     activeView?: string;
@@ -83,6 +84,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     // -- Security State --
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+    const [deletingAccount, setDeletingAccount] = useState(false);
     
     // DEBUG - Remove after fixing
     useEffect(() => {
@@ -848,6 +851,154 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
     };
 
+    // Delete Account Handler - Direct Supabase DELETE
+    const handleDeleteAccount = async () => {
+        try {
+            setDeletingAccount(true);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user?.id) {
+                alert('Errore: utente non trovato');
+                return;
+            }
+
+            // Get service role key from environment
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+
+            if (!supabaseUrl || !supabaseServiceKey) {
+                alert('Errore: configurazione server mancante');
+                return;
+            }
+
+            // Create Supabase admin client with service role key
+            const supabaseAdmin = createClient(
+                supabaseUrl,
+                supabaseServiceKey,
+                { auth: { autoRefreshToken: false, persistSession: false } }
+            );
+
+            console.log('[DeleteAccount] Starting deletion for user:', user.id);
+
+            // Get user's organization_id
+            const { data: userOrg, error: orgError } = await supabaseAdmin
+                .from('organization_members')
+                .select('organization_id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (orgError && orgError.code !== 'PGRST116') {
+                console.error('[DeleteAccount] Error fetching organization:', orgError);
+                alert('Errore nel recupero organizzazione');
+                return;
+            }
+
+            const userOrgId = userOrg?.organization_id;
+
+            if (!userOrgId) {
+                console.warn('[DeleteAccount] No organization found for user, proceeding with user deletion only');
+            }
+
+            // Delete in order (respecting foreign key constraints)
+            if (userOrgId) {
+                console.log('[DeleteAccount] Deleting organization data for org:', userOrgId);
+
+                // 1. DELETE organization_whatsapp_config
+                const { error: waError } = await supabaseAdmin
+                    .from('organization_whatsapp_config')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (waError) console.error('[DeleteAccount] Error deleting whatsapp_config:', waError);
+
+                // 2. DELETE organization_knowledge_base
+                const { error: kbError } = await supabaseAdmin
+                    .from('organization_knowledge_base')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (kbError) console.error('[DeleteAccount] Error deleting knowledge_base:', kbError);
+
+                // 3. DELETE organization_hotels
+                const { error: hotelsError } = await supabaseAdmin
+                    .from('organization_hotels')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (hotelsError) console.error('[DeleteAccount] Error deleting hotels:', hotelsError);
+
+                // 4. DELETE organization_pms_config
+                const { error: pmsError } = await supabaseAdmin
+                    .from('organization_pms_config')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (pmsError) console.error('[DeleteAccount] Error deleting pms_config:', pmsError);
+
+                // 5. DELETE organization_subscriptions
+                const { error: subError } = await supabaseAdmin
+                    .from('organization_subscriptions')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (subError) console.error('[DeleteAccount] Error deleting subscriptions:', subError);
+
+                // 6. DELETE organization_credits
+                const { error: creditsError } = await supabaseAdmin
+                    .from('organization_credits')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (creditsError) console.error('[DeleteAccount] Error deleting credits:', creditsError);
+
+                // 7. DELETE organization_members (all members of this organization)
+                const { error: membersError } = await supabaseAdmin
+                    .from('organization_members')
+                    .delete()
+                    .eq('organization_id', userOrgId);
+                if (membersError) console.error('[DeleteAccount] Error deleting members:', membersError);
+
+                // 8. DELETE organizations
+                const { error: orgDeleteError } = await supabaseAdmin
+                    .from('organizations')
+                    .delete()
+                    .eq('id', userOrgId);
+                if (orgDeleteError) {
+                    console.error('[DeleteAccount] Error deleting organization:', orgDeleteError);
+                    alert('Errore eliminazione organizzazione');
+                    return;
+                }
+            }
+
+            // 9. DELETE profiles
+            const { error: profileError } = await supabaseAdmin
+                .from('profiles')
+                .delete()
+                .eq('id', user.id);
+            if (profileError) {
+                console.error('[DeleteAccount] Error deleting profile:', profileError);
+                alert('Errore eliminazione profilo');
+                return;
+            }
+
+            // 10. DELETE auth.users (admin API)
+            const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+            if (authError) {
+                console.error('[DeleteAccount] Error deleting auth user:', authError);
+                alert('Errore eliminazione utente auth');
+                return;
+            }
+
+            console.log('[DeleteAccount] ✅ Account deleted successfully');
+
+            // Success - logout and redirect
+            await supabase.auth.signOut();
+            window.location.href = '/';
+
+        } catch (error: any) {
+            console.error('[DeleteAccount] Unexpected error:', error);
+            alert(`Errore eliminazione account: ${error.message || 'Errore sconosciuto'}`);
+        } finally {
+            setDeletingAccount(false);
+            setShowDeleteAccountModal(false);
+        }
+    };
+
     // Handle knowledge base file upload
     const handleKBFileUpload = async (file: File, fileType: 'policy_pdf' | 'property_csv') => {
         if (!supabase || !organization?.id) {
@@ -1300,7 +1451,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         } catch (error: any) {
             console.error('[Settings] Downgrade error:', error);
-            alert('Failed to initiate downgrade. Please try again.');
+            alert(t('settings.subscriptionCancel.failedDowngrade'));
         } finally {
             setUpgradingPlan(false);
         }
@@ -1309,14 +1460,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     // Handle subscription cancellation
     const handleCancelSubscription = async () => {
         const confirmed = window.confirm(
-            'Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.'
+            t('settings.subscriptionCancel.confirm')
         );
 
         if (!confirmed) {
             return;
         }
 
-        alert('Subscription cancellation will be implemented in the next phase.');
+        alert(t('settings.subscriptionCancel.notImplemented'));
         // TODO: Implement cancellation via Stripe API
     };
 
@@ -1354,14 +1505,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 />
                                 <FloatingInput 
                                     label={t('settings.profile.phone')} 
-                                    placeholder="+39 123 456 7890"
+                                    placeholder={t('settings.placeholders.phone')}
                                     value={localProfile.phone || ''} 
                                     onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} 
                                 />
                                 <div className="md:col-span-2">
                                     <FloatingInput 
                                         label={t('settings.profile.jobRole')} 
-                                        placeholder="Operations Manager"
+                                        placeholder={t('settings.placeholders.jobRole')}
                                         value={localProfile.jobRole || ''} 
                                         onChange={(e) => setLocalProfile({ ...localProfile, jobRole: e.target.value })} 
                                     />
@@ -1492,6 +1643,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             >
                                 {t('settings.security.changePassword')}
                             </button>
+
+                            {/* Delete Account Section */}
+                            <div className="mt-8 pt-6 border-t border-border">
+                                <button
+                                    onClick={() => setShowDeleteAccountModal(true)}
+                                    className="text-red-500 hover:text-red-400 p-0 h-auto font-normal text-sm underline"
+                                >
+                                    🗑️ Elimina account (definitivo)
+                                </button>
+                            </div>
                         </Card>
                     </div>
                 </div>
@@ -1509,23 +1670,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 
                 {/* SECTION 1: Organization Profile */}
                 <Card padding="lg">
-                    <h3 className="text-lg font-medium mb-6">Organization Profile</h3>
+                    <h3 className="text-lg font-medium mb-6">{t('settings.organization.title')}</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FloatingInput 
-                            label="Organization Name" 
+                            label={t('settings.organization.name')} 
                             value={localOrg.name} 
                             onChange={(e) => setLocalOrg({ ...localOrg, name: e.target.value })} 
                         />
                         
                         <FloatingInput 
-                            label="Corporate Email" 
+                            label={t('settings.organization.email')} 
                             value={localOrg.billingEmail} 
                             onChange={(e) => setLocalOrg({ ...localOrg, billingEmail: e.target.value })} 
                         />
                         
                         <FloatingInput 
-                            label="Company Website" 
+                            label={t('settings.organization.website')} 
                             value="https://armonyco.io" 
                             readOnly
                             className="opacity-60 cursor-not-allowed"
@@ -1533,13 +1694,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         
                         <div className="relative">
                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
-                                Legal Structure
+                                {t('settings.organization.legalStructure')}
                             </label>
                             <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black">
-                                <option className="bg-black text-white border-2 border-black">LLC / Ltd.</option>
-                                <option className="bg-black text-white border-2 border-black">S.A. / Corporation</option>
-                                <option className="bg-black text-white border-2 border-black">Inc.</option>
-                                <option className="bg-black text-white border-2 border-black">Private Individual Host</option>
+                                <option className="bg-black text-white border-2 border-black">{t('legalStructures.llc')}</option>
+                                <option className="bg-black text-white border-2 border-black">{t('legalStructures.sa')}</option>
+                                <option className="bg-black text-white border-2 border-black">{t('legalStructures.inc')}</option>
+                                <option className="bg-black text-white border-2 border-black">{t('legalStructures.private')}</option>
                             </select>
                         </div>
                     </div>
@@ -1553,20 +1714,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             isLoading={isSavingOrg}
                             disabled={isSavingOrg}
                         >
-                            {isSavingOrg ? 'Saving...' : 'Save Organization'}
+                            {isSavingOrg ? t('common.saving') : t('settings.saveOrganization')}
                         </Button>
                     </div>
                 </Card>
 
                 {/* SECTION 2: Billing Details */}
                 <Card padding="lg">
-                    <h3 className="text-lg font-medium mb-6">Billing Details</h3>
+                    <h3 className="text-lg font-medium mb-6">{t('settings.billing.title')}</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Legal Name */}
                         <div className="md:col-span-2">
                             <FloatingInput
-                                label="Legal Entity Name *"
+                                label={t('settings.billing.legalName') + ' *'}
                                 placeholder="Company S.r.l."
                                 value={localBillingDetails.legalName || ''}
                                 onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })}
@@ -1575,7 +1736,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                         {/* VAT Number */}
                         <FloatingInput
-                            label="VAT / Tax ID Number *"
+                            label={t('settings.billing.vatNumber') + ' *'}
                             placeholder="IT12345678901"
                             value={localBillingDetails.vatNumber || ''}
                             onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })}
@@ -1583,7 +1744,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                         {/* Fiscal Code */}
                         <FloatingInput
-                            label="Fiscal Code (Optional)"
+                            label={t('settings.billing.fiscalCode')}
                             placeholder="RSSMRA80A01H501U"
                             value={localBillingDetails.fiscalCode || ''}
                             onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, fiscalCode: e.target.value })}
@@ -1592,7 +1753,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {/* Address */}
                         <div className="md:col-span-2">
                             <FloatingInput
-                                label="Address *"
+                                label={t('settings.billing.address') + ' *'}
                                 placeholder="Via Roma 123"
                                 value={localBillingDetails.address || ''}
                                 onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })}
@@ -1601,15 +1762,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                         {/* City */}
                         <FloatingInput
-                            label="City *"
-                            placeholder="Roma"
+                            label={t('settings.billing.city') + ' *'}
+                            placeholder={t('settings.placeholders.city')}
                             value={localBillingDetails.city || ''}
                             onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, city: e.target.value })}
                         />
 
                         {/* ZIP */}
                         <FloatingInput
-                            label="ZIP / Postal Code *"
+                            label={t('settings.billing.zip') + ' *'}
                             placeholder="00100"
                             value={localBillingDetails.zip || ''}
                             onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, zip: e.target.value })}
@@ -1618,35 +1779,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {/* Country */}
                         <div className="relative md:col-span-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
-                                Country *
+                                {t('settings.billing.country')} *
                             </label>
                             <select
                                 className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black"
                                 value={localBillingDetails.country || ''}
                                 onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, country: e.target.value })}
                             >
-                                <option value="" className="bg-black text-white border-2 border-black">Select Country</option>
-                                <option value="IT" className="bg-black text-white border-2 border-black">Italy</option>
-                                <option value="US" className="bg-black text-white border-2 border-black">United States</option>
-                                <option value="GB" className="bg-black text-white border-2 border-black">United Kingdom</option>
-                                <option value="FR" className="bg-black text-white border-2 border-black">France</option>
-                                <option value="DE" className="bg-black text-white border-2 border-black">Germany</option>
-                                <option value="ES" className="bg-black text-white border-2 border-black">Spain</option>
-                                <option value="BR" className="bg-black text-white border-2 border-black">Brazil</option>
+                                <option value="" className="bg-black text-white border-2 border-black">{t('settings.billing.selectCountry')}</option>
+                                <option value="IT" className="bg-black text-white border-2 border-black">{t('countries.italy')}</option>
+                                <option value="US" className="bg-black text-white border-2 border-black">{t('countries.unitedStates')}</option>
+                                <option value="GB" className="bg-black text-white border-2 border-black">{t('countries.unitedKingdom')}</option>
+                                <option value="FR" className="bg-black text-white border-2 border-black">{t('countries.france')}</option>
+                                <option value="DE" className="bg-black text-white border-2 border-black">{t('countries.germany')}</option>
+                                <option value="ES" className="bg-black text-white border-2 border-black">{t('countries.spain')}</option>
+                                <option value="BR" className="bg-black text-white border-2 border-black">{t('countries.brazil')}</option>
                             </select>
                         </div>
 
                         {/* SDI Code */}
                         <FloatingInput
-                            label="SDI Code (Italy - Optional)"
-                            placeholder="ABCDEFG"
+                            label={t('settings.billing.sdiCode')}
+                            placeholder={t('settings.placeholders.sdiCode')}
                             value={localBillingDetails.sdiCode || ''}
                             onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, sdiCode: e.target.value })}
                         />
 
                         {/* PEC Email */}
                         <FloatingInput
-                            label="PEC Email (Italy - Optional)"
+                            label={t('settings.billing.pecEmail')}
                             placeholder="company@pec.it"
                             type="email"
                             value={localBillingDetails.pecEmail || ''}
@@ -1994,6 +2155,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer text-white [&>option]:border-2 [&>option]:border-black"
                                     >
                                         <option value="mews" className="bg-black text-white border-2 border-black">Mews</option>
+                                        <option value="kross" className="bg-black text-white border-2 border-black">Kross</option>
                                         <option value="opera" className="bg-black text-white border-2 border-black">Oracle Opera</option>
                                         <option value="cloudbeds" className="bg-black text-white border-2 border-black">Cloudbeds</option>
                                         <option value="little_hotelier" className="bg-black text-white border-2 border-black">Little Hotelier</option>
@@ -2400,16 +2562,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <Modal
                     isOpen={showBillingModal}
                     onClose={() => setShowBillingModal(false)}
-                    title="Edit Billing Details"
+                    title={t('settings.billingModal.title')}
                 >
                     <div className="p-6 space-y-5">
                         <div className="space-y-4">
-                            <FloatingInput label="Legal Entity Name" value={localBillingDetails.legalName} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })} />
-                            <FloatingInput label="VAT Number" value={localBillingDetails.vatNumber} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })} />
-                            <FloatingInput label="Address" value={localBillingDetails.address} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })} />
+                            <FloatingInput label={t('settings.billing.legalName')} value={localBillingDetails.legalName} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, legalName: e.target.value })} />
+                            <FloatingInput label={t('settings.billing.vatNumber')} value={localBillingDetails.vatNumber} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, vatNumber: e.target.value })} />
+                            <FloatingInput label={t('settings.billing.address')} value={localBillingDetails.address} onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, address: e.target.value })} />
                         </div>
                         <div className="flex justify-end pt-4">
-                            <Button onClick={handleSaveBillingModal}>Save Details</Button>
+                            <Button onClick={handleSaveBillingModal}>{t('settings.billingModal.saveDetails')}</Button>
                         </div>
                     </div>
                 </Modal>
@@ -2418,16 +2580,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <Modal
                     isOpen={showPlanChangeModal}
                     onClose={() => !isUpdatingPlan && setShowPlanChangeModal(false)}
-                    title="Confirm Protocol Change"
+                    title={t('settings.planChangeModal.title')}
                 >
                     <div className="p-8">
                         {pendingPlan && (
                             <div className="space-y-6">
                                 <div className="p-8 bg-black/90 rounded-2xl border border-white/10 text-center shadow-2xl">
-                                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-[var(--color-brand-accent)] mb-3 italic">New Execution Tier Protocol</div>
+                                    <div className="text-[10px] uppercase font-black tracking-[0.3em] text-[var(--color-brand-accent)] mb-3 italic">{t('settings.planChangeModal.newProtocol')}</div>
                                     <div className="text-5xl font-black text-white mb-6 uppercase tracking-tighter">{pendingPlan.name}</div>
                                     <div className="mt-6 pt-6 border-t border-white/5 text-[11px] text-zinc-400 uppercase tracking-[0.15em] leading-relaxed font-medium">
-                                        The new resource allocation matrix will be deployed at the start of the next cycle. Operational continuity remains unaffected.
+                                        {t('settings.planChangeModal.deploymentMessage')}
                                     </div>
                                 </div>
 
@@ -2438,7 +2600,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         onClick={confirmPlanChange}
                                         disabled={isUpdatingPlan}
                                     >
-                                        {isUpdatingPlan ? <RefreshCw className="animate-spin mr-2" /> : 'AUTHORIZE DEPLOYMENT'}
+                                        {isUpdatingPlan ? <RefreshCw className="animate-spin mr-2" /> : t('settings.planChangeModal.authorizeDeployment')}
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -2446,7 +2608,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         onClick={() => setShowPlanChangeModal(false)}
                                         disabled={isUpdatingPlan}
                                     >
-                                        ABORT MISSION
+                                        {t('settings.planChangeModal.abortMission')}
                                     </Button>
                                 </div>
                             </div>
@@ -2465,17 +2627,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Settings className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">System Settings</h1>
+                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">{t('settings.systemSettings')}</h1>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Configure your personal identity and organization protocols.</p>
+                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">{t('settings.systemSettingsDescription')}</p>
                 </div>
 
                 <nav className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-md">
                     {[
-                        { id: 'PROFILE', label: 'IDENTITY', icon: User },
-                        { id: 'ORG', label: 'ORGANIZATION', icon: Building },
-                        { id: 'ACTIVATION', label: 'SYSTEM ACTIVATION', icon: Zap },
-                        { id: 'SUBSCRIPTION', label: 'SUBSCRIPTION', icon: CreditCard }
+                        { id: 'PROFILE', label: t('settings.tabs.identity'), icon: User },
+                        { id: 'ORG', label: t('settings.tabs.organization'), icon: Building },
+                        { id: 'ACTIVATION', label: t('settings.tabs.systemActivation'), icon: Zap },
+                        { id: 'SUBSCRIPTION', label: t('settings.tabs.subscription'), icon: CreditCard }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -2590,30 +2752,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                     setValidationError(null);
                 }}
-                title="Change Password"
+                title={t('settings.passwordModal.title')}
             >
                 <div className="p-6 space-y-5">
                     <p className="text-sm text-zinc-400">
-                        Enter your current password and choose a new one.
+                        {t('settings.security.subtitle')}
                     </p>
 
                     <FloatingInput
-                        label="Current Password"
+                        label={t('settings.security.currentPassword')}
                         type="password"
                         value={passwordForm.currentPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                     />
 
                     <FloatingInput
-                        label="New Password"
+                        label={t('settings.security.newPassword')}
                         type="password"
-                        placeholder="At least 8 characters"
+                        placeholder={t('settings.placeholders.passwordMin')}
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                     />
 
                     <FloatingInput
-                        label="Confirm New Password"
+                        label={t('settings.security.confirmPassword')}
                         type="password"
                         value={passwordForm.confirmPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
@@ -2634,14 +2796,61 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 setValidationError(null);
                             }}
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button
                             onClick={handleChangePassword}
                             isLoading={changingPassword}
                             disabled={!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
                         >
-                            {changingPassword ? 'Changing...' : 'Change Password'}
+                            {changingPassword ? t('settings.passwordModal.changing') : t('settings.passwordModal.changePassword')}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Delete Account Modal */}
+            <Modal
+                isOpen={showDeleteAccountModal}
+                onClose={() => !deletingAccount && setShowDeleteAccountModal(false)}
+                title="Elimina Account Definitivamente"
+            >
+                <div className="p-6 space-y-5">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle size={24} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm text-zinc-300 mb-4">
+                                Questa azione <strong className="text-red-400">NON è reversibile</strong>. Verranno eliminati definitivamente:
+                            </p>
+                            <ul className="text-sm text-zinc-400 space-y-2 mb-6 list-disc list-inside">
+                                <li>Profilo utente</li>
+                                <li>Organizzazione</li>
+                                <li>Hotels</li>
+                                <li>Knowledge Base</li>
+                                <li>Subscriptions</li>
+                                <li>Credits</li>
+                                <li>Membri dell'organizzazione</li>
+                            </ul>
+                            <p className="text-sm text-red-400 font-semibold">
+                                Sei sicuro di voler continuare?
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setShowDeleteAccountModal(false)}
+                            disabled={deletingAccount}
+                        >
+                            Annulla
+                        </Button>
+                        <Button
+                            onClick={handleDeleteAccount}
+                            isLoading={deletingAccount}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {deletingAccount ? 'Eliminazione in corso...' : 'Elimina Definitivamente'}
                         </Button>
                     </div>
                 </div>

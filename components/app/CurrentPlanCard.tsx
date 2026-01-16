@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from '../ui/Card';
-import { CheckCircle, Award, Calendar, X } from '../ui/Icons';
+import { CheckCircle, Award, Calendar } from '../ui/Icons';
 import { Button } from '../ui/Button';
 
 interface SubscriptionPlan {
@@ -109,20 +109,6 @@ export const CurrentPlanCard: React.FC<CurrentPlanCardProps> = ({
                         </p>
                     </div>
                 </div>
-
-                {/* Cancel Button - Only show if active */}
-                {isActive && onCancel && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onCancel}
-                        disabled={loading}
-                        leftIcon={<X size={14} />}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20"
-                    >
-                        Cancel Subscription
-                    </Button>
-                )}
 
                 {isPastDue && (
                     <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">

@@ -128,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         id: 'core',
-        label: 'Core Constructs',
+        label: t('sidebar.coreConstructs'),
         icon: Database,
         children: [
           { id: 'aem', label: t('sidebar.aem') },
@@ -387,7 +387,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 : 'py-3 bg-transparent border border-[var(--color-brand-accent)] text-[var(--color-brand-accent)] hover:bg-[var(--color-brand-accent)] hover:text-black hover:shadow-[0_0_15px_rgba(197,165,114,0.2)]'
               }
                 `}
-            title="Logout"
+            title={t('auth.logout')}
           >
             <LogOut size={isCollapsed ? 18 : 14} strokeWidth={2.5} />
             {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('auth.logout')}</span>}
