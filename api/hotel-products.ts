@@ -7,7 +7,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -21,35 +21,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Extract path parameters from query (Vercel puts them there)
     const { organizationId, hotelId } = req.query;
 
-    console.log('[API] Received params:', { organizationId, hotelId });
-
-    if (!organizationId || !hotelId) {
+    if (!organizationId || typeof organizationId !== 'string' ||
+        !hotelId || typeof hotelId !== 'string') {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing organizationId or hotelId' 
+        error: 'Missing or invalid organizationId or hotelId query parameters' 
       });
     }
 
-    // 1. Verify hotel belongs to organization
+    // Verify hotel belongs to organization
     const { data: hotel, error: hotelError } = await supabase
       .from('organization_hotels')
       .select('id, hotel_name, organization_id')
-      .eq('id', hotelId as string)
-      .eq('organization_id', organizationId as string)
+      .eq('id', hotelId)
+      .eq('organization_id', organizationId)
       .single();
 
     if (hotelError || !hotel) {
-      console.error('[API] Hotel not found:', hotelError);
       return res.status(404).json({ 
         success: false, 
-        error: 'Hotel not found or does not belong to this organization' 
+        error: 'Hotel not found or does not belong to organization' 
       });
     }
 
-    // 2. Get active products for this hotel
+    // Get active products
     const { data: activations, error: activationsError } = await supabase
       .from('hotel_product_activations')
       .select(`
@@ -63,35 +60,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           category
         )
       `)
-      .eq('hotel_id', hotelId as string)
+      .eq('hotel_id', hotelId)
       .eq('status', 'active');
 
-    if (activationsError) {
-      console.error('[API] Activations error:', activationsError);
-      throw activationsError;
-    }
+    if (activationsError) throw activationsError;
 
-    // 3. Format response
-    const products = activations?.map((activation: any) => {
-      if (!activation.products) return null;
+    const products = activations?.map((a: any) => {
+      if (!a.products) return null;
       return {
-        id: activation.products.id,
-        code: activation.products.code,
-        name: activation.products.name,
-        description: activation.products.description || '',
-        category: activation.products.category,
-        status: activation.status,
-        activatedAt: activation.activated_at
+        id: a.products.id,
+        code: a.products.code,
+        name: a.products.name,
+        description: a.products.description || '',
+        category: a.products.category,
+        status: a.status,
+        activatedAt: a.activated_at
       };
     }).filter((p: any) => p !== null) || [];
-
-    console.log('[API] Success - returning', products.length, 'products');
 
     return res.status(200).json({
       success: true,
       data: {
-        organizationId: organizationId as string,
-        hotelId: hotelId as string,
+        organizationId,
+        hotelId,
         hotelName: hotel.hotel_name,
         productsCount: products.length,
         products
@@ -99,11 +90,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('[API] Error:', error);
+    console.error('[API hotel-products] Error:', error);
     return res.status(500).json({ 
       success: false, 
-      error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'Internal server error'
     });
   }
 }
