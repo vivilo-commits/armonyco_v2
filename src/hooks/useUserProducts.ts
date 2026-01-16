@@ -1,4 +1,9 @@
 /**
+ * @deprecated This hook uses user-based product activations.
+ * Products are now activated per hotel, not per user.
+ * This hook is kept for backward compatibility but should not be used in new code.
+ * Products should be managed at the hotel level using hotelId.
+ * 
  * Custom React Hook for User Products Management
  * 
  * Provides easy-to-use interface for managing user product activations
@@ -7,9 +12,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   getProductsWithStatus, 
-  toggleUserProduct,
+  toggleHotelProduct,
   hasActiveProduct,
-  getActiveUserProducts,
+  getActiveHotelProducts,
 } from '../services/products.service';
 import { getCurrentUser } from '../lib/supabase';
 import { ProductModule } from '../models/product.model';

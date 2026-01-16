@@ -9,22 +9,24 @@ import {
 
 /**
  * Product service - public API using Supabase backend
+ * Now hotel-based instead of user-based
  */
 export const productService = {
     /**
-     * Get all modules with user's activation status
+     * Get all modules with hotel's activation status
      */
-    getModules: async (): Promise<ProductModule[]> => {
-        return getProductsWithStatus();
+    getModules: async (hotelId?: string): Promise<ProductModule[]> => {
+        return getProductsWithStatus(hotelId);
     },
 
     /**
-     * Activate/purchase a module
+     * Activate/purchase a module for a hotel
      */
-    purchaseModule: async (id: string, _cost: number): Promise<{ success: boolean; module?: ProductModule }> => {
-        const success = await activateProduct(id);
+    purchaseModule: async (id: string, hotelId: string, _cost: number): Promise<{ success: boolean; module?: ProductModule }> => {
+        if (!hotelId) return { success: false };
+        const success = await activateProduct(id, hotelId);
         if (success) {
-            const modules = await getProductsWithStatus();
+            const modules = await getProductsWithStatus(hotelId);
             const module = modules.find(m => m.id === id);
             return { success: true, module };
         }
@@ -32,23 +34,24 @@ export const productService = {
     },
 
     /**
-     * Toggle module pause/active status
+     * Toggle module pause/active status for a hotel
      */
-    toggleModule: async (id: string): Promise<{ success: boolean; module?: ProductModule }> => {
-        const modules = await getProductsWithStatus();
+    toggleModule: async (id: string, hotelId: string): Promise<{ success: boolean; module?: ProductModule }> => {
+        if (!hotelId) return { success: false };
+        const modules = await getProductsWithStatus(hotelId);
         const module = modules.find(m => m.id === id);
 
         if (!module) return { success: false };
 
         let success: boolean;
         if (module.isPaused) {
-            success = await resumeProduct(id);
+            success = await resumeProduct(id, hotelId);
         } else {
-            success = await pauseProduct(id);
+            success = await pauseProduct(id, hotelId);
         }
 
         if (success) {
-            const updatedModules = await getProductsWithStatus();
+            const updatedModules = await getProductsWithStatus(hotelId);
             const updatedModule = updatedModules.find(m => m.id === id);
             return { success: true, module: updatedModule };
         }
@@ -56,10 +59,11 @@ export const productService = {
     },
 
     /**
-     * Deactivate a module
+     * Deactivate a module for a hotel
      */
-    deactivateModule: async (id: string): Promise<{ success: boolean }> => {
-        const success = await deactivateProduct(id);
+    deactivateModule: async (id: string, hotelId: string): Promise<{ success: boolean }> => {
+        if (!hotelId) return { success: false };
+        const success = await deactivateProduct(id, hotelId);
         return { success };
     }
 };

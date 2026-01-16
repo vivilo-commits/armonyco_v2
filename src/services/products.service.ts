@@ -15,11 +15,13 @@ export interface DBProduct {
     sort_order: number;
 }
 
-export interface UserProductActivation {
+export interface HotelProductActivation {
     id: string;
+    hotel_id: string;
     product_id: string;
     status: 'active' | 'paused' | 'inactive';
     activated_at: string;
+    updated_at: string;
 }
 
 /**
@@ -56,31 +58,34 @@ export async function getAllProducts(): Promise<ProductModule[]> {
 }
 
 /**
- * Get user's product activations
+ * Get hotel's product activations
  */
-export async function getUserActivations(): Promise<Map<string, UserProductActivation>> {
+export async function getHotelActivations(hotelId: string): Promise<Map<string, HotelProductActivation>> {
     if (!supabase) return new Map();
-
-    const user = await getCurrentUser();
-    if (!user) return new Map();
+    if (!hotelId) return new Map();
 
     const { data, error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('hotel_id', hotelId);
 
     if (error) {
-        console.error('[Products] Get activations failed:', error);
+        // Don't throw if table doesn't exist yet
+        if (error.code !== 'PGRST116' && error.code !== '42P01') {
+            console.error('[Products] Get activations failed:', error);
+        }
         return new Map();
     }
 
-    const map = new Map<string, UserProductActivation>();
+    const map = new Map<string, HotelProductActivation>();
     (data || []).forEach(a => {
         map.set(a.product_id, {
             id: a.id,
+            hotel_id: a.hotel_id,
             product_id: a.product_id,
             status: a.status,
             activated_at: a.activated_at,
+            updated_at: a.updated_at,
         });
     });
 
@@ -88,13 +93,23 @@ export async function getUserActivations(): Promise<Map<string, UserProductActiv
 }
 
 /**
- * Get products with user's activation status merged
+ * Get products with hotel's activation status merged
  */
-export async function getProductsWithStatus(): Promise<ProductModule[]> {
-    const [products, activations] = await Promise.all([
-        getAllProducts(),
-        getUserActivations(),
-    ]);
+export async function getProductsWithStatus(hotelId?: string): Promise<ProductModule[]> {
+    const products = await getAllProducts();
+    
+    if (!hotelId) {
+        // Return products without activation status if no hotel selected
+        return products.map((p): ProductModule => ({
+            ...p,
+            isPurchased: false,
+            isPaused: false,
+            isActive: false,
+            status: 'INACTIVE',
+        }));
+    }
+
+    const activations = await getHotelActivations(hotelId);
 
     return products.map((p): ProductModule => {
         const activation = activations.get(p.id);
@@ -122,27 +137,28 @@ export async function getProductsWithStatus(): Promise<ProductModule[]> {
 }
 
 /**
- * Toggle product status: active <-> inactive
+ * Toggle product status: active <-> inactive for a hotel
  */
-export async function toggleUserProduct(
-    userId: string,
+export async function toggleHotelProduct(
+    hotelId: string,
     productId: string,
     newStatus: 'active' | 'inactive'
 ): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!hotelId) throw new Error('Hotel ID is required');
 
     // Check if activation exists
     const { data: existing } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .select('id, status')
-        .eq('user_id', userId)
+        .eq('hotel_id', hotelId)
         .eq('product_id', productId)
         .maybeSingle();
 
     if (existing) {
         // UPDATE existing status
         const { error } = await supabase
-            .from('user_product_activations')
+            .from('hotel_product_activations')
             .update({
                 status: newStatus,
                 updated_at: new Date().toISOString(),
@@ -153,9 +169,9 @@ export async function toggleUserProduct(
     } else {
         // INSERT new activation
         const { error } = await supabase
-            .from('user_product_activations')
+            .from('hotel_product_activations')
             .insert({
-                user_id: userId,
+                hotel_id: hotelId,
                 product_id: productId,
                 status: newStatus,
             });
@@ -163,45 +179,47 @@ export async function toggleUserProduct(
         if (error) throw error;
     }
 
-    console.log(`[Products] Feature ${productId} set to ${newStatus} for user ${userId}`);
+    console.log(`[Products] Feature ${productId} set to ${newStatus} for hotel ${hotelId}`);
 }
 
 /**
- * Pause product temporarily
+ * Pause product temporarily for a hotel
  */
-export async function pauseUserProduct(userId: string, productId: string): Promise<void> {
+export async function pauseHotelProduct(hotelId: string, productId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!hotelId) throw new Error('Hotel ID is required');
 
     const { error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .update({
             status: 'paused',
             updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId)
+        .eq('hotel_id', hotelId)
         .eq('product_id', productId);
 
     if (error) throw error;
 }
 
 /**
- * Check if user has active product
+ * Check if hotel has active product
  */
 export async function hasActiveProduct(
-    userId: string,
+    hotelId: string,
     productId: string
 ): Promise<boolean> {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!hotelId) return false;
 
     const { data, error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .select('status')
-        .eq('user_id', userId)
+        .eq('hotel_id', hotelId)
         .eq('product_id', productId)
         .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-        console.error('[Products] Error checking user product:', error);
+    if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
+        console.error('[Products] Error checking hotel product:', error);
         throw error;
     }
 
@@ -209,41 +227,45 @@ export async function hasActiveProduct(
 }
 
 /**
- * Get only active products for user
+ * Get only active products for hotel
  */
-export async function getActiveUserProducts(userId: string): Promise<DBProduct[]> {
+export async function getActiveHotelProducts(hotelId: string): Promise<DBProduct[]> {
     if (!supabase) throw new Error('Supabase not configured');
+    if (!hotelId) return [];
 
     const { data, error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .select(`
             products (*)
         `)
-        .eq('user_id', userId)
+        .eq('hotel_id', hotelId)
         .eq('status', 'active');
 
-    if (error) throw error;
+    if (error) {
+        if (error.code !== 'PGRST116' && error.code !== '42P01') {
+            throw error;
+        }
+        return [];
+    }
 
     return (data || []).map(d => d.products as any).filter(Boolean);
 }
 
 /**
- * Activate a product for user
+ * Activate a product for hotel
  */
-export async function activateProduct(productId: string): Promise<boolean> {
+export async function activateProduct(productId: string, hotelId: string): Promise<boolean> {
     if (!supabase) return false;
-
-    const user = await getCurrentUser();
-    if (!user) return false;
+    if (!hotelId) return false;
 
     const { error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .upsert({
-            user_id: user.id,
+            hotel_id: hotelId,
             product_id: productId,
             status: 'active',
             updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,product_id' });
+        }, { onConflict: 'hotel_id,product_id' });
 
     if (error) {
         console.error('[Products] Activate failed:', error);
@@ -254,18 +276,16 @@ export async function activateProduct(productId: string): Promise<boolean> {
 }
 
 /**
- * Pause a product (keep purchased but stop running)
+ * Pause a product (keep purchased but stop running) for hotel
  */
-export async function pauseProduct(productId: string): Promise<boolean> {
+export async function pauseProduct(productId: string, hotelId: string): Promise<boolean> {
     if (!supabase) return false;
-
-    const user = await getCurrentUser();
-    if (!user) return false;
+    if (!hotelId) return false;
 
     const { error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .update({ status: 'paused', updated_at: new Date().toISOString() })
-        .eq('user_id', user.id)
+        .eq('hotel_id', hotelId)
         .eq('product_id', productId);
 
     if (error) {
@@ -277,25 +297,23 @@ export async function pauseProduct(productId: string): Promise<boolean> {
 }
 
 /**
- * Resume a paused product
+ * Resume a paused product for hotel
  */
-export async function resumeProduct(productId: string): Promise<boolean> {
-    return activateProduct(productId);
+export async function resumeProduct(productId: string, hotelId: string): Promise<boolean> {
+    return activateProduct(productId, hotelId);
 }
 
 /**
- * Deactivate a product
+ * Deactivate a product for hotel
  */
-export async function deactivateProduct(productId: string): Promise<boolean> {
+export async function deactivateProduct(productId: string, hotelId: string): Promise<boolean> {
     if (!supabase) return false;
-
-    const user = await getCurrentUser();
-    if (!user) return false;
+    if (!hotelId) return false;
 
     const { error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('user_id', user.id)
+        .eq('hotel_id', hotelId)
         .eq('product_id', productId);
 
     if (error) {
@@ -307,27 +325,26 @@ export async function deactivateProduct(productId: string): Promise<boolean> {
 }
 
 /**
- * Activate all products for user
+ * Activate all products for hotel
  */
-export async function activateAllProducts(): Promise<boolean> {
+export async function activateAllProducts(hotelId: string): Promise<boolean> {
+    if (!hotelId) return false;
     const products = await getAllProducts();
-    const results = await Promise.all(products.map(p => activateProduct(p.id)));
+    const results = await Promise.all(products.map(p => activateProduct(p.id, hotelId)));
     return results.every(r => r);
 }
 
 /**
- * Deactivate all products for user
+ * Deactivate all products for hotel
  */
-export async function deactivateAllProducts(): Promise<boolean> {
+export async function deactivateAllProducts(hotelId: string): Promise<boolean> {
     if (!supabase) return false;
-
-    const user = await getCurrentUser();
-    if (!user) return false;
+    if (!hotelId) return false;
 
     const { error } = await supabase
-        .from('user_product_activations')
+        .from('hotel_product_activations')
         .update({ status: 'inactive', updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
+        .eq('hotel_id', hotelId);
 
     if (error) {
         console.error('[Products] Deactivate all failed:', error);
@@ -339,7 +356,7 @@ export async function deactivateAllProducts(): Promise<boolean> {
 
 export const productsService = {
     getAllProducts,
-    getUserActivations,
+    getHotelActivations,
     getProductsWithStatus,
     activateProduct,
     pauseProduct,
@@ -347,8 +364,8 @@ export const productsService = {
     deactivateProduct,
     activateAllProducts,
     deactivateAllProducts,
-    toggleUserProduct,
-    pauseUserProduct,
+    toggleHotelProduct,
+    pauseHotelProduct,
     hasActiveProduct,
-    getActiveUserProducts,
+    getActiveHotelProducts,
 };

@@ -1,5 +1,10 @@
+/**
+ * @deprecated This component uses user-based product activations.
+ * Products are now activated per hotel, not per user.
+ * Use ProductManagement.tsx instead, which supports hotel-based activations.
+ */
 import { useEffect, useState } from 'react';
-import { getProductsWithStatus, toggleUserProduct } from '../services/products.service';
+import { getProductsWithStatus, toggleHotelProduct } from '../services/products.service';
 import { getCurrentUser } from '../lib/supabase';
 import { ProductModule } from '../models/product.model';
 import './ProductsList.css';

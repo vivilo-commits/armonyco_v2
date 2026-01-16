@@ -2,15 +2,15 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * API Endpoint: Check if user has active product
+ * API Endpoint: Check if hotel has active product
  * 
- * GET /api/user/has-product?userId=xxx&productId=yyy
+ * GET /api/user/has-product?hotelId=xxx&productId=yyy
  * 
  * Response:
  * {
  *   "hasFeature": boolean,
  *   "status": "active" | "paused" | "inactive" | "not_activated",
- *   "userId": string,
+ *   "hotelId": string,
  *   "productId": string
  * }
  */
@@ -61,24 +61,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, productId } = req.query;
+  const { hotelId, productId } = req.query;
 
-  if (!userId || !productId) {
+  if (!hotelId || !productId) {
     return res.status(400).json({ 
-      error: 'Missing required parameters: userId and productId' 
+      error: 'Missing required parameters: hotelId and productId' 
     });
   }
 
   try {
     const { data, error } = await supabase
-      .from('user_product_activations')
+      .from('hotel_product_activations')
       .select('status')
-      .eq('user_id', userId as string)
+      .eq('hotel_id', hotelId as string)
       .eq('product_id', productId as string)
       .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('[API] Error checking user product:', error);
+    if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
+      console.error('[API] Error checking hotel product:', error);
       throw error;
     }
 
@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ 
       hasFeature,
       status,
-      userId,
+      hotelId,
       productId,
       timestamp: new Date().toISOString(),
     });

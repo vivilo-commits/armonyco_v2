@@ -12,15 +12,15 @@ export const useProducts = () => {
     useEffect(() => {
         if (!supabase) return;
 
-        // Subscribe to both products and user_product_activations
+        // Subscribe to both products and hotel_product_activations
         const channel = supabase
             .channel('products_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
                 console.log('[Realtime] Products updated');
                 setTrigger(prev => prev + 1);
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'user_product_activations' }, () => {
-                console.log('[Realtime] Product activations updated');
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'hotel_product_activations' }, () => {
+                console.log('[Realtime] Hotel product activations updated');
                 setTrigger(prev => prev + 1);
             })
             .subscribe();

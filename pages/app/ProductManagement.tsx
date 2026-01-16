@@ -1,24 +1,25 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity, Loader } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { useProducts } from '../../src/hooks/useProducts';
 import { useUserProfile } from '../../src/hooks/useAuth';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { UnauthorizedView } from '../../src/components/app/UnauthorizedView';
 import { units, unitGroups, Unit, UnitGroup } from '../../data/portfolio';
 import { ProductModule } from '../../src/types';
-import { productService } from '../../src/services/product.service';
-import { activateProduct, deactivateProduct } from '../../src/services/products.service';
 import { supabase } from '../../src/lib/supabase';
 
 export const ProductManagement: React.FC = () => {
-    const { data: modules, status: modulesStatus } = useProducts();
     const { data: userProfile } = useUserProfile();
     
     // Check permissions - only Admin can manage products
     const { canEditOrganization, loading: permissionsLoading } = usePermissions();
+    
+    // Hotel selection state
+    const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
+    const [hotels, setHotels] = useState<any[]>([]);
+    const [loadingHotels, setLoadingHotels] = useState(true);
     
     // Governance Perimeter Sync Trigger
     const [portfolioLevel, setPortfolioLevel] = useState<'GLOBAL' | 'GROUP' | 'UNIT'>('GLOBAL');
@@ -30,56 +31,211 @@ export const ProductManagement: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [localModules, setLocalModules] = useState<ProductModule[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
 
-    // Update local modules when data changes
-    React.useEffect(() => {
-        if (modules) {
-            setLocalModules(modules);
-        }
-    }, [modules]);
+    // Fetch hotels for current organization
+    useEffect(() => {
+        const fetchHotels = async () => {
+            if (!userProfile?.id || !supabase) return;
+            
+            setLoadingHotels(true);
+            try {
+                // Get user's organization
+                const { data: orgData, error: orgError } = await supabase
+                    .from('organization_members')
+                    .select('organization_id')
+                    .eq('user_id', userProfile.id)
+                    .single();
+                
+                if (orgError || !orgData) {
+                    console.error('Error fetching organization:', orgError);
+                    return;
+                }
+                
+                // Fetch hotels for organization
+                const { data: hotelsData, error: hotelsError } = await supabase
+                    .from('organization_hotels')
+                    .select('*')
+                    .eq('organization_id', orgData.organization_id)
+                    .eq('is_active', true)
+                    .order('hotel_name', { ascending: true });
+                
+                if (hotelsError) {
+                    // Don't show error if table doesn't exist yet
+                    if (hotelsError.code !== '42P01' && hotelsError.code !== 'PGRST116') {
+                        console.error('Error fetching hotels:', hotelsError);
+                    }
+                    return;
+                }
+                
+                setHotels(hotelsData || []);
+                
+                // Auto-select first hotel
+                if (hotelsData && hotelsData.length > 0) {
+                    setSelectedHotelId(hotelsData[0].id);
+                }
+            } catch (error) {
+                console.error('Error fetching hotels:', error);
+            } finally {
+                setLoadingHotels(false);
+            }
+        };
+        
+        fetchHotels();
+    }, [userProfile?.id]);
+
+    // Fetch products with activation status for selected hotel
+    useEffect(() => {
+        const fetchProductsForHotel = async () => {
+            if (!selectedHotelId || !supabase) {
+                setLocalModules([]);
+                return;
+            }
+            
+            setLoadingProducts(true);
+            try {
+                // Fetch all products
+                const { data: productsData, error: productsError } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('sort_order', { ascending: true });
+                
+                if (productsError) throw productsError;
+                
+                // Fetch activations for this hotel
+                const { data: activationsData, error: activationsError } = await supabase
+                    .from('hotel_product_activations')
+                    .select('*')
+                    .eq('hotel_id', selectedHotelId);
+                
+                if (activationsError && activationsError.code !== 'PGRST116' && activationsError.code !== '42P01') {
+                    throw activationsError;
+                }
+                
+                // Map products with activation status
+                const productsWithStatus: ProductModule[] = productsData?.map(product => {
+                    const activation = activationsData?.find(a => a.product_id === product.id);
+                    const status: 'ACTIVE' | 'PAUSED' | 'INACTIVE' = 
+                        activation?.status === 'active' ? 'ACTIVE' 
+                        : activation?.status === 'paused' ? 'PAUSED' 
+                        : 'INACTIVE';
+                    
+                    return {
+                        id: product.id,
+                        code: product.code,
+                        name: product.name,
+                        description: product.description,
+                        category: product.category,
+                        creditCost: product.credit_cost,
+                        laborReduction: product.labor_reduction,
+                        valueGenerated: product.value_generated,
+                        requiresExternal: product.requires_external,
+                        isActive: activation?.status === 'active',
+                        isPurchased: !!activation,
+                        isPaused: activation?.status === 'paused',
+                        status,
+                    };
+                }) || [];
+                
+                setLocalModules(productsWithStatus);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            } finally {
+                setLoadingProducts(false);
+            }
+        };
+        
+        fetchProductsForHotel();
+    }, [selectedHotelId]);
 
     // Reload products after changes
     const reloadProducts = useCallback(() => {
-        window.location.reload(); // Simple reload for now
-    }, []);
+        // Trigger re-fetch by updating selectedHotelId
+        if (selectedHotelId) {
+            setSelectedHotelId(null);
+            setTimeout(() => setSelectedHotelId(selectedHotelId), 100);
+        }
+    }, [selectedHotelId]);
 
     const handleActivateProduct = async () => {
-        if (!selectedModule) return;
+        if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
-            await productService.purchaseModule(selectedModule.id, selectedModule.creditCost || 0);
+            const { error } = await supabase
+                .from('hotel_product_activations')
+                .upsert({
+                    hotel_id: selectedHotelId,
+                    product_id: selectedModule.id,
+                    status: 'active',
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'hotel_id,product_id'
+                });
+            
+            if (error) throw error;
+            
             setShowActivationModal(false);
             reloadProducts();
+            showSuccessToast(`${selectedModule.name} activated successfully for this hotel`);
         } catch (error) {
             console.error('Failed to activate:', error);
+            alert('Failed to activate product. Please try again.');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handlePauseResume = async () => {
-        if (!selectedModule) return;
+        if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
-            await productService.toggleModule(selectedModule.id);
+            const newStatus = selectedModule.isPaused ? 'active' : 'paused';
+            const { error } = await supabase
+                .from('hotel_product_activations')
+                .upsert({
+                    hotel_id: selectedHotelId,
+                    product_id: selectedModule.id,
+                    status: newStatus,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'hotel_id,product_id'
+                });
+            
+            if (error) throw error;
+            
             setShowActivationModal(false);
             reloadProducts();
+            showSuccessToast(`${selectedModule.name} ${newStatus === 'active' ? 'resumed' : 'paused'} successfully`);
         } catch (error) {
             console.error('Failed to toggle:', error);
+            alert('Failed to toggle product status. Please try again.');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDeactivate = async () => {
-        if (!selectedModule) return;
+        if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
-            await productService.deactivateModule(selectedModule.id);
+            const { error } = await supabase
+                .from('hotel_product_activations')
+                .update({ 
+                    status: 'inactive',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('hotel_id', selectedHotelId)
+                .eq('product_id', selectedModule.id);
+            
+            if (error) throw error;
+            
             setShowActivationModal(false);
             reloadProducts();
+            showSuccessToast(`${selectedModule.name} deactivated successfully`);
         } catch (error) {
             console.error('Failed to deactivate:', error);
+            alert('Failed to deactivate product. Please try again.');
         } finally {
             setIsSaving(false);
         }
@@ -100,10 +256,13 @@ export const ProductManagement: React.FC = () => {
 
     // Handle toggle switch for activate/deactivate products
     const handleToggle = async (productId: string, currentlyActive: boolean, productName: string) => {
-        // Get current user
-        const { data: { user } } = await supabase?.auth.getUser() || { data: { user: null } };
-        if (!user) {
-            alert('Please login to manage products');
+        if (!selectedHotelId) {
+            alert('Please select a hotel first');
+            return;
+        }
+
+        if (!supabase) {
+            alert('Database connection not available');
             return;
         }
 
@@ -112,7 +271,7 @@ export const ProductManagement: React.FC = () => {
         // Confirmation before deactivating
         if (currentlyActive) {
             const confirmed = window.confirm(
-                `Are you sure you want to disable "${productName}"?\n\nThis feature will no longer be available.`
+                `Are you sure you want to disable "${productName}"?\n\nThis feature will no longer be available for this hotel.`
             );
             if (!confirmed) return;
         }
@@ -127,36 +286,63 @@ export const ProductManagement: React.FC = () => {
             // Show loading state
             setTogglingId(productId);
 
-            // Call the appropriate service function
-            const success = currentlyActive
-                ? await deactivateProduct(productId)
-                : await activateProduct(productId);
-
-            if (!success) {
-                throw new Error('Failed to toggle product');
+            // Check if activation exists
+            const { data: existing, error: checkError } = await supabase
+                .from('hotel_product_activations')
+                .select('*')
+                .eq('hotel_id', selectedHotelId)
+                .eq('product_id', productId)
+                .maybeSingle();
+            
+            if (checkError && checkError.code !== 'PGRST116' && checkError.code !== '42P01') {
+                throw checkError;
             }
 
-            console.log(`[Products] ✅ Updated product ${productId} to ${newStatus}`);
+            if (existing) {
+                // Update existing activation
+                const { error } = await supabase
+                    .from('hotel_product_activations')
+                    .update({ 
+                        status: newStatus,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', existing.id);
+                
+                if (error) throw error;
+            } else {
+                // Create new activation
+                const { error } = await supabase
+                    .from('hotel_product_activations')
+                    .insert({
+                        hotel_id: selectedHotelId,
+                        product_id: productId,
+                        status: newStatus,
+                    });
+                
+                if (error) throw error;
+            }
+
+            console.log(`[Products] ✅ Updated product ${productId} to ${newStatus} for hotel ${selectedHotelId}`);
 
             // Update UI locally immediately (optimistic update)
             setLocalModules(prevModules =>
                 prevModules.map(p =>
                     p.id === productId
                         ? {
-                            ...p,
-                            status: newStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
-                            isActive: newStatus === 'active',
-                            isPurchased: newStatus === 'active' ? true : p.isPurchased,
-                            isPaused: false,
-                        }
+                                ...p,
+                                status: newStatus === 'active' ? 'ACTIVE' : 'INACTIVE',
+                                isActive: newStatus === 'active',
+                                isPurchased: newStatus === 'active' ? true : p.isPurchased,
+                                isPaused: false,
+                            }
                         : p
                 )
             );
 
             // Show success feedback
-            showSuccessToast(`${productName} ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+            showSuccessToast(`${productName} ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully for this hotel`);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('[Products] ❌ Error toggling product:', error);
             alert(`Failed to ${newStatus === 'active' ? 'activate' : 'deactivate'} ${productName}. Please try again.`);
         } finally {
@@ -222,7 +408,60 @@ export const ProductManagement: React.FC = () => {
                 </div>
             </header>
 
+            {/* Hotel Selector */}
+            <Card variant="dark" padding="lg" className="mb-8 border-white/5">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold text-white mb-1">Select Hotel</h3>
+                        <p className="text-xs text-zinc-500">
+                            Manage services for a specific property
+                        </p>
+                    </div>
+                    
+                    <div className="w-80">
+                        {loadingHotels ? (
+                            <div className="flex items-center gap-2 text-zinc-500">
+                                <Loader size={16} className="animate-spin" />
+                                <span className="text-sm">Loading hotels...</span>
+                            </div>
+                        ) : hotels.length === 0 ? (
+                            <div className="text-sm text-amber-500">
+                                No hotels configured. Please add hotels in Settings.
+                            </div>
+                        ) : (
+                            <select
+                                value={selectedHotelId || ''}
+                                onChange={(e) => setSelectedHotelId(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black"
+                            >
+                                <option value="" className="bg-black text-white border-2 border-black">
+                                    Select a hotel
+                                </option>
+                                {hotels.map((hotel) => (
+                                    <option 
+                                        key={hotel.id} 
+                                        value={hotel.id}
+                                        className="bg-black text-white border-2 border-black"
+                                    >
+                                        {hotel.hotel_name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+                </div>
+            </Card>
+
+            {/* Show message if no hotel selected */}
+            {!selectedHotelId && hotels.length > 0 && (
+                <Card variant="dark" padding="lg" className="text-center mb-8">
+                    <Home size={48} className="mx-auto text-zinc-600 mb-4" />
+                    <p className="text-zinc-400">Please select a hotel to manage services</p>
+                </Card>
+            )}
+
             {/* Filters & Search */}
+            {selectedHotelId && (
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
@@ -247,8 +486,10 @@ export const ProductManagement: React.FC = () => {
                     ))}
                 </div>
             </div>
+            )}
 
             {/* Products Table */}
+            {selectedHotelId ? (
             <Card variant="dark" padding="none" className="flex-1 overflow-hidden border-white/5 flex flex-col">
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide">
                     <table className="w-full text-left border-collapse">
@@ -389,6 +630,11 @@ export const ProductManagement: React.FC = () => {
                     </table>
                 </div>
             </Card>
+            ) : hotels.length === 0 ? null : (
+                <Card variant="dark" padding="lg" className="text-center">
+                    <p className="text-zinc-400">Select a hotel to view and manage services</p>
+                </Card>
+            )}
 
             {/* ACTIVATION MODAL */}
             <Modal
