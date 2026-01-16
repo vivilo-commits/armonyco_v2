@@ -1,43 +1,31 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+const supabaseUrl = process.env.VITE_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  // Verify environment variables
-  if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('[API] Missing environment variables');
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Server configuration error: Missing environment variables' 
-    });
-  }
-
-  // Create Supabase client
-  const supabase = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
   try {
+    // Extract path parameters from query (Vercel puts them there)
     const { organizationId, hotelId } = req.query;
 
-    // Validate parameters
+    console.log('[API] Received params:', { organizationId, hotelId });
+
     if (!organizationId || !hotelId) {
       return res.status(400).json({ 
         success: false, 
@@ -54,12 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (hotelError || !hotel) {
-      if (hotelError?.code === 'PGRST116') {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'Hotel not found' 
-        });
-      }
+      console.error('[API] Hotel not found:', hotelError);
       return res.status(404).json({ 
         success: false, 
         error: 'Hotel not found or does not belong to this organization' 
@@ -84,36 +67,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('status', 'active');
 
     if (activationsError) {
-      // Don't throw if table doesn't exist yet
-      if (activationsError.code === 'PGRST116' || activationsError.code === '42P01') {
-        return res.status(200).json({
-          success: true,
-          data: {
-            organizationId: organizationId as string,
-            hotelId: hotelId as string,
-            hotelName: hotel.hotel_name,
-            products: []
-          }
-        });
-      }
+      console.error('[API] Activations error:', activationsError);
       throw activationsError;
     }
 
     // 3. Format response
     const products = activations?.map((activation: any) => {
-      const product = activation.products;
-      if (!product) return null;
-      
+      if (!activation.products) return null;
       return {
-        id: product.id,
-        code: product.code,
-        name: product.name,
-        description: product.description || '',
-        category: product.category,
+        id: activation.products.id,
+        code: activation.products.code,
+        name: activation.products.name,
+        description: activation.products.description || '',
+        category: activation.products.category,
         status: activation.status,
         activatedAt: activation.activated_at
       };
     }).filter((p: any) => p !== null) || [];
+
+    console.log('[API] Success - returning', products.length, 'products');
 
     return res.status(200).json({
       success: true,
@@ -121,12 +93,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         organizationId: organizationId as string,
         hotelId: hotelId as string,
         hotelName: hotel.hotel_name,
+        productsCount: products.length,
         products
       }
     });
 
   } catch (error: any) {
-    console.error('[API] Error in get hotel products:', error);
+    console.error('[API] Error:', error);
     return res.status(500).json({ 
       success: false, 
       error: 'Internal server error',

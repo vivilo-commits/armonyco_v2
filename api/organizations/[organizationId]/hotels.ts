@@ -1,44 +1,32 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+const supabaseUrl = process.env.VITE_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  // Verify environment variables
-  if (!process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('[API] Missing environment variables');
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Server configuration error: Missing environment variables' 
-    });
-  }
-
-  // Create Supabase client
-  const supabase = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
   try {
+    // Extract path parameter
     const { organizationId } = req.query;
     const activeOnly = req.query.activeOnly !== 'false'; // Default true
 
-    // Validate parameters
+    console.log('[API] Received organizationId:', organizationId);
+
     if (!organizationId) {
       return res.status(400).json({ 
         success: false, 
@@ -54,12 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (orgError || !organization) {
-      if (orgError?.code === 'PGRST116') {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'Organization not found' 
-        });
-      }
+      console.error('[API] Organization not found:', orgError);
       return res.status(404).json({ 
         success: false, 
         error: 'Organization not found' 
@@ -84,7 +67,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('organization_id', organizationId as string)
       .order('hotel_name', { ascending: true });
 
-    // Filter active only if requested
     if (activeOnly) {
       query = query.eq('is_active', true);
     }
@@ -92,18 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: hotels, error: hotelsError } = await query;
 
     if (hotelsError) {
-      // Don't throw if table doesn't exist yet
-      if (hotelsError.code === 'PGRST116' || hotelsError.code === '42P01') {
-        return res.status(200).json({
-          success: true,
-          data: {
-            organizationId: organizationId as string,
-            organizationName: organization.name,
-            totalHotels: 0,
-            hotels: []
-          }
-        });
-      }
+      console.error('[API] Hotels error:', hotelsError);
       throw hotelsError;
     }
 
@@ -112,14 +83,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: hotel.id,
       hotelName: hotel.hotel_name,
       hotelIdInPms: hotel.hotel_id_in_pms,
-      propertyCode: hotel.property_code || null,
-      city: hotel.city || null,
-      country: hotel.country || null,
+      propertyCode: hotel.property_code,
+      city: hotel.city,
+      country: hotel.country,
       isActive: hotel.is_active,
-      syncEnabled: hotel.sync_enabled || false,
-      lastSyncAt: hotel.last_sync_at || null,
+      syncEnabled: hotel.sync_enabled,
+      lastSyncAt: hotel.last_sync_at,
       createdAt: hotel.created_at
     })) || [];
+
+    console.log('[API] Success - returning', formattedHotels.length, 'hotels');
 
     return res.status(200).json({
       success: true,
@@ -132,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('[API] Error in get organization hotels:', error);
+    console.error('[API] Error:', error);
     return res.status(500).json({ 
       success: false, 
       error: 'Internal server error',
