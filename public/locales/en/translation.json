@@ -106,11 +106,19 @@
     },
     "preferences": {
       "title": "Regional Preferences",
-      "subtitle": "Language",
+      "subtitle": "Language and AI communication style",
       "language": "Language",
+      "aiTone": "AI Communication Tone",
       "timezone": "Timezone",
       "english": "English",
-      "italian": "Italiano"
+      "italian": "Italiano",
+      "tones": {
+        "professional": "Professional - Balanced and courteous",
+        "friendly": "Friendly - Warm and welcoming",
+        "formal": "Formal - Distinguished and elegant",
+        "casual": "Casual - Relaxed and informal",
+        "concise": "Concise - Brief and to the point"
+      }
     },
     "security": {
       "title": "Security",

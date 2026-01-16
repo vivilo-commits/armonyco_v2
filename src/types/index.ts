@@ -12,6 +12,8 @@ export interface UserProfile {
     jobRole?: string;
     role: string; // Relaxed for plumbing compatibility
     credits: number;
+    language?: string;
+    tone?: string;
 }
 
 export interface Organization {

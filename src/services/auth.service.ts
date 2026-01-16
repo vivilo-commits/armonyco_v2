@@ -36,6 +36,8 @@ export async function getProfileFromDB(userId: string): Promise<UserProfile | nu
         jobRole: data.job_role || '',
         role: data.role || 'AppUser',
         credits: data.credits || 0,
+        language: data.language,
+        tone: data.tone,
     };
 }
 
@@ -66,6 +68,16 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
         updateData.job_role = profile.jobRole;
     }
 
+    // Add language if provided
+    if (profile.language !== undefined) {
+        updateData.language = profile.language;
+    }
+
+    // Add tone if provided
+    if (profile.tone !== undefined) {
+        updateData.tone = profile.tone;
+    }
+
     const { data, error } = await supabase
         .from('profiles')
         .upsert(updateData, { onConflict: 'id' })
@@ -87,6 +99,8 @@ export async function updateProfileInDB(userId: string, profile: Partial<UserPro
         jobRole: data.job_role || '',
         role: data.role || 'AppUser',
         credits: data.credits || 0,
+        language: data.language,
+        tone: data.tone,
     };
 }
 

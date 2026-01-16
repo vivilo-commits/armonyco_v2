@@ -106,11 +106,19 @@
     },
     "preferences": {
       "title": "Preferenze Regionali",
-      "subtitle": "Lingua",
+      "subtitle": "Lingua e stile di comunicazione AI",
       "language": "Lingua",
+      "aiTone": "Tono Comunicazione AI",
       "timezone": "Fuso Orario",
       "english": "English",
-      "italian": "Italiano"
+      "italian": "Italiano",
+      "tones": {
+        "professional": "Professionale - Equilibrato e cortese",
+        "friendly": "Amichevole - Caloroso e accogliente",
+        "formal": "Formale - Distinto ed elegante",
+        "casual": "Casual - Rilassato e informale",
+        "concise": "Conciso - Breve e diretto"
+      }
     },
     "security": {
       "title": "Sicurezza",

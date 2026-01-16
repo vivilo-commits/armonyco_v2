@@ -14,6 +14,8 @@ export interface UserProfile {
     jobRole?: string;
     role: UserRole;
     credits: number; // ArmoCredits balance
+    language?: string;
+    tone?: string;
 }
 
 export interface Organization {

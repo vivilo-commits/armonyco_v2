@@ -1387,6 +1387,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <option value="it" className="bg-black text-white border-2 border-black">{t('settings.preferences.italian')}</option>
                                     </select>
                                 </div>
+
+                                {/* AI Tone Selector */}
+                                <div className="relative">
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">{t('settings.preferences.aiTone')}</label>
+                                    <select 
+                                        value={localProfile.tone || 'professional'}
+                                        onChange={(e) => setLocalProfile({ ...localProfile, tone: e.target.value })}
+                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black"
+                                    >
+                                        <option value="professional" className="bg-black text-white border-2 border-black">
+                                            {t('settings.preferences.tones.professional')}
+                                        </option>
+                                        <option value="friendly" className="bg-black text-white border-2 border-black">
+                                            {t('settings.preferences.tones.friendly')}
+                                        </option>
+                                        <option value="formal" className="bg-black text-white border-2 border-black">
+                                            {t('settings.preferences.tones.formal')}
+                                        </option>
+                                        <option value="casual" className="bg-black text-white border-2 border-black">
+                                            {t('settings.preferences.tones.casual')}
+                                        </option>
+                                        <option value="concise" className="bg-black text-white border-2 border-black">
+                                            {t('settings.preferences.tones.concise')}
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
                         </Card>
                     </div>
