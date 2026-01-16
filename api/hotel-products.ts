@@ -31,11 +31,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Verify hotel belongs to organization
+    // Verify hotel belongs to organization - ✅ Usa property_id INTEGER come PK
+    const propertyIdInt = parseInt(hotelId as string);  // Converti a INTEGER
     const { data: hotel, error: hotelError } = await supabase
       .from('organization_hotels')
-      .select('id, hotel_name, organization_id')
-      .eq('id', hotelId)
+      .select('property_id, property_code, nome_marketing, organization_id')
+      .eq('property_id', propertyIdInt)  // ← USA property_id INTEGER
       .eq('organization_id', organizationId)
       .single();
 
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Get active products
+    // Get active products - usa hotel_id (FK in questa tabella)
     const { data: activations, error: activationsError } = await supabase
       .from('hotel_product_activations')
       .select(`
@@ -60,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           category
         )
       `)
-      .eq('hotel_id', hotelId)
+      .eq('hotel_id', propertyIdInt)  // ← Usa hotel_id (FK in questa tabella)
       .eq('status', 'active');
 
     if (activationsError) throw activationsError;
@@ -83,7 +84,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: {
         organizationId,
         hotelId,
-        hotelName: hotel.hotel_name,
+        hotelName: hotel.property_code || 'Unnamed',  // ✅ DB: property_code → API: hotelName
+        hotelDisplayName: hotel.nome_marketing,      // Nome commerciale
         productsCount: products.length,
         products
       }

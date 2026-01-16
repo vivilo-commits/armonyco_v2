@@ -413,23 +413,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
 
         try {
+            // ✅ Schema reale: property_code = nome hotel, property_id = INTEGER PK
+            // ✅ FILTRO CRITICO: organization_id per multi-tenancy
             const { data, error } = await supabase
                 .from('organization_hotels')
-                .select('*')
-                .eq('organization_id', organization.id)
-                .order('created_at', { ascending: false });
+                .select(`
+                    property_id,
+                    property_code,
+                    nome_marketing,
+                    organization_id,
+                    is_active,
+                    citta,
+                    indirizzo,
+                    created_at,
+                    updated_at
+                `)
+                .eq('organization_id', organization.id)  // ← FILTRO CRITICO per multi-tenancy
+                .order('property_code', { ascending: true });  // ← Ordina per nome hotel
             
             if (error) throw error;
             
-            setHotels(data.map(h => ({
-                id: h.id,
-                hotelName: h.hotel_name,
-                hotelIdInPms: h.hotel_id_in_pms,
-                propertyCode: h.property_code,
-                isActive: h.is_active
-            })));
+            // ✅ Mappa colonne DB → Frontend (property_id INTEGER → string)
+            const mappedHotels = data?.map(h => ({
+                id: h.property_id.toString(),              // INTEGER → STRING
+                hotelName: h.property_code || 'Unnamed',   // property_code = nome hotel
+                hotelDisplayName: h.nome_marketing,        // Nome commerciale
+                organizationId: h.organization_id,
+                isActive: h.is_active ?? true,
+                city: h.citta,
+                address: h.indirizzo
+            })) || [];
+            
+            setHotels(mappedHotels);
 
-            console.log('[Settings] Hotels loaded:', data.length);
+            console.log('[Settings] Hotels loaded:', mappedHotels.length);
         } catch (error: any) {
             console.error('[Settings] Error fetching hotels:', error);
             // Don't show error to user if table doesn't exist yet
@@ -1277,91 +1294,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }
     };
 
-    // Save Hotel
-    const handleSaveHotel = async () => {
-        try {
-            if (!editingHotel?.hotelName || !editingHotel?.hotelIdInPms) {
-                setValidationError('Hotel Name and Hotel ID are required');
-                return;
-            }
-            
-            // Get PMS config ID first
-            const { data: pmsConfigData } = await supabase
-                .from('organization_pms_config')
-                .select('id')
-                .eq('organization_id', organization.id)
-                .maybeSingle();
-            
-            if (!pmsConfigData) {
-                setValidationError('Please save PMS configuration first');
-                return;
-            }
-            
-            if (editingHotel.id) {
-                // Update existing hotel
-                const { error } = await supabase
-                    .from('organization_hotels')
-                    .update({
-                        hotel_name: editingHotel.hotelName,
-                        hotel_id_in_pms: editingHotel.hotelIdInPms,
-                        property_code: editingHotel.propertyCode || null,
-                        is_active: editingHotel.isActive,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', editingHotel.id);
-                
-                if (error) throw error;
-            } else {
-                // Insert new hotel
-                const { error } = await supabase
-                    .from('organization_hotels')
-                    .insert({
-                        organization_id: organization.id,
-                        pms_config_id: pmsConfigData.id,
-                        hotel_name: editingHotel.hotelName,
-                        hotel_id_in_pms: editingHotel.hotelIdInPms,
-                        property_code: editingHotel.propertyCode || null,
-                        is_active: editingHotel.isActive ?? true
-                    });
-                
-                if (error) throw error;
-            }
-            
-            // Refresh hotels list
-            await fetchHotels();
-            setShowAddHotelModal(false);
-            setEditingHotel(null);
-            setSaveSuccess('Hotel saved successfully! ✓');
-            setTimeout(() => setSaveSuccess(null), 3000);
-            
-        } catch (error: any) {
-            console.error('[Settings] Error saving hotel:', error);
-            setValidationError(`Failed to save hotel: ${error.message}`);
-        }
-    };
-
-    // Delete Hotel
-    const handleDeleteHotel = async (hotelId: string | undefined) => {
-        if (!hotelId) return;
-        
-        if (!confirm('Are you sure you want to delete this hotel?')) return;
-        
-        try {
-            const { error } = await supabase
-                .from('organization_hotels')
-                .delete()
-                .eq('id', hotelId);
-            
-            if (error) throw error;
-            
-            await fetchHotels();
-            setSaveSuccess('Hotel deleted successfully');
-            setTimeout(() => setSaveSuccess(null), 3000);
-        } catch (error: any) {
-            console.error('[Settings] Error deleting hotel:', error);
-            setValidationError(`Failed to delete: ${error.message}`);
-        }
-    };
+    // ❌ REMOVED: handleSaveHotel and handleDeleteHotel
+    // Hotels are automatically synced from Kross Booking PMS (READ-ONLY)
+    // Changes must be made in the PMS system, not in this interface
 
 
     // Handle subscription upgrade
@@ -2298,63 +2233,52 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         Hotels / Properties
                                     </h4>
                                     <p className="text-[10px] text-white/30 mt-1">
-                                        Add all hotels that use this PMS configuration
+                                        Hotels are automatically synced from your PMS (Kross Booking)
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={() => {
-                                        setEditingHotel({ hotelName: '', hotelIdInPms: '', propertyCode: '', isActive: true });
-                                        setShowAddHotelModal(true);
-                                    }}
-                                    variant="secondary"
-                                    size="sm"
-                                    leftIcon={<Plus size={14} />}
-                                >
-                                    Add Hotel
-                                </Button>
+                            </div>
+                            
+                            {/* Info Message */}
+                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <p className="text-xs text-blue-400">
+                                    ℹ️ Hotels are automatically synced from your PMS (Kross Booking).
+                                    Changes must be made in your PMS system.
+                                </p>
                             </div>
 
-                            {/* Hotels List */}
+                            {/* Hotels List - READ-ONLY (Synced from PMS) */}
                             {hotels.length === 0 ? (
                                 <div className="p-8 bg-white/[0.02] border border-dashed border-white/10 rounded-xl text-center">
                                     <Database size={32} className="mx-auto text-white/20 mb-3" />
-                                    <p className="text-sm text-white/40">No hotels added yet</p>
-                                    <p className="text-xs text-white/30 mt-1">Add your first hotel to start syncing data</p>
+                                    <p className="text-sm text-white/40">No hotels synced yet</p>
+                                    <p className="text-xs text-white/30 mt-1">
+                                        Hotels will appear here after PMS synchronization
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     {hotels.map((hotel, idx) => (
                                         <div
                                             key={hotel.id || idx}
-                                            className="p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/8 transition-all"
+                                            className="p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/8 transition-colors"
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${hotel.isActive ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                                                    <div className={`w-2 h-2 rounded-full ${hotel.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                                                     <div>
                                                         <p className="text-sm font-bold text-white">{hotel.hotelName}</p>
-                                                        <p className="text-xs text-white/40">ID: {hotel.hotelIdInPms}</p>
-                                                        {hotel.propertyCode && (
-                                                            <p className="text-xs text-white/30">Code: {hotel.propertyCode}</p>
+                                                        {hotel.hotelDisplayName && (
+                                                            <p className="text-xs text-white/60 mt-1">{hotel.hotelDisplayName}</p>
+                                                        )}
+                                                        {hotel.city && (
+                                                            <p className="text-xs text-white/40 mt-1">
+                                                                📍 {hotel.city} {hotel.address && `· ${hotel.address}`}
+                                                            </p>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingHotel(hotel);
-                                                            setShowAddHotelModal(true);
-                                                        }}
-                                                        className="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg transition-all"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteHotel(hotel.id)}
-                                                        className="px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
-                                                    >
-                                                        Delete
-                                                    </button>
+                                                <div className="text-xs text-white/40">
+                                                    ID: {hotel.id}
                                                 </div>
                                             </div>
                                         </div>
@@ -2682,66 +2606,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClose={() => setIsContactOpen(false)}
             />
 
-            {/* Add/Edit Hotel Modal */}
-            <Modal
-                isOpen={showAddHotelModal}
-                onClose={() => {
-                    setShowAddHotelModal(false);
-                    setEditingHotel(null);
-                }}
-                title={editingHotel?.id ? 'Edit Hotel' : 'Add New Hotel'}
-            >
-                <div className="p-6 space-y-5">
-                    <FloatingInput
-                        label="Hotel Name *"
-                        placeholder="Hotel Roma Centro"
-                        value={editingHotel?.hotelName || ''}
-                        onChange={(e) => setEditingHotel({ ...editingHotel, hotelName: e.target.value })}
-                        className="text-black"
-                    />
-                    
-                    <FloatingInput
-                        label="Hotel ID in PMS *"
-                        placeholder="HTL_001"
-                        value={editingHotel?.hotelIdInPms || ''}
-                        onChange={(e) => setEditingHotel({ ...editingHotel, hotelIdInPms: e.target.value })}
-                        className="text-black"
-                    />
-                    
-                    <FloatingInput
-                        label="Property Code (Optional)"
-                        placeholder="ROMA001"
-                        value={editingHotel?.propertyCode || ''}
-                        onChange={(e) => setEditingHotel({ ...editingHotel, propertyCode: e.target.value })}
-                        className="text-black"
-                    />
-
-                    <div className="flex items-center gap-3 pt-2">
-                        <input
-                            type="checkbox"
-                            checked={editingHotel?.isActive ?? true}
-                            onChange={(e) => setEditingHotel({ ...editingHotel, isActive: e.target.checked })}
-                            className="w-4 h-4 bg-white/5 border border-white/10 rounded cursor-pointer"
-                        />
-                        <label className="text-sm text-black/80">Active (enable sync)</label>
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                                setShowAddHotelModal(false);
-                                setEditingHotel(null);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveHotel}>
-                            {editingHotel?.id ? 'Update Hotel' : 'Add Hotel'}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
+            {/* ❌ REMOVED: Add/Edit Hotel Modal - Hotels are READ-ONLY (synced from Kross Booking) */}
 
             {/* Change Password Modal - Root Level */}
             <Modal

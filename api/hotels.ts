@@ -45,12 +45,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Get hotels
+    // Get hotels - ✅ Schema reale: property_code = nome hotel, property_id = INTEGER PK
+    // ✅ FILTRO CRITICO: organization_id per multi-tenancy
     let query = supabase
       .from('organization_hotels')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .order('hotel_name', { ascending: true });
+      .select(`
+        property_id,
+        property_code,
+        nome_marketing,
+        organization_id,
+        is_active,
+        citta,
+        indirizzo,
+        created_at,
+        updated_at
+      `)
+      .eq('organization_id', organizationId)  // ← FILTRO CRITICO per multi-tenancy
+      .order('property_code', { ascending: true });  // ← Ordina per nome hotel
 
     if (activeOnly) {
       query = query.eq('is_active', true);
@@ -60,16 +71,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (hotelsError) throw hotelsError;
 
+    // ✅ Mappa colonne DB → formato API (property_id INTEGER → string)
     const formattedHotels = hotels?.map(h => ({
-      id: h.id,
-      hotelName: h.hotel_name,
-      hotelIdInPms: h.hotel_id_in_pms,
-      propertyCode: h.property_code,
-      city: h.city,
-      country: h.country,
-      isActive: h.is_active,
-      syncEnabled: h.sync_enabled,
-      lastSyncAt: h.last_sync_at,
+      id: h.property_id.toString(),              // INTEGER → STRING
+      hotelName: h.property_code || 'Unnamed',   // property_code = nome hotel
+      hotelDisplayName: h.nome_marketing,        // Nome commerciale
+      hotelIdInPms: null,                        // Non esiste più
+      propertyCode: h.property_code,             // property_code
+      city: h.citta,                             // citta
+      country: null,                             // Non disponibile
+      isActive: h.is_active ?? true,
+      syncEnabled: false,                        // Non disponibile
+      lastSyncAt: null,                          // Non disponibile
       createdAt: h.created_at
     })) || [];
 

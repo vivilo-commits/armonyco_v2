@@ -79,13 +79,24 @@ export const ProductManagement: React.FC = () => {
                     return;
                 }
                 
-                // Fetch hotels for organization
+                // ✅ Fetch hotels - Schema reale: property_code = nome hotel, property_id = INTEGER PK
+                // ✅ FILTRO CRITICO: organization_id per multi-tenancy
                 const { data: hotelsData, error: hotelsError } = await supabase
                     .from('organization_hotels')
-                    .select('*')
-                    .eq('organization_id', orgData.organization_id)
-                    .eq('is_active', true)
-                    .order('hotel_name', { ascending: true });
+                    .select(`
+                        property_id,
+                        property_code,
+                        nome_marketing,
+                        organization_id,
+                        is_active,
+                        citta,
+                        indirizzo,
+                        created_at,
+                        updated_at
+                    `)
+                    .eq('organization_id', orgData.organization_id)  // ← FILTRO CRITICO per multi-tenancy
+                    .eq('is_active', true)  // ← Opzionale: solo hotel attivi
+                    .order('property_code', { ascending: true });  // ← Ordina per nome hotel
                 
                 if (hotelsError) {
                     // Don't show error if table doesn't exist yet
@@ -95,11 +106,27 @@ export const ProductManagement: React.FC = () => {
                     return;
                 }
                 
-                setHotels(hotelsData || []);
+                // ✅ Mappa colonne DB → Frontend (property_id INTEGER → string)
+                const mappedHotels = hotelsData?.map(hotel => ({
+                    id: hotel.property_id.toString(),              // INTEGER → STRING per compatibilità
+                    hotelName: hotel.property_code || 'Unnamed',   // property_code = nome hotel principale
+                    hotelDisplayName: hotel.nome_marketing,        // Nome commerciale (opzionale)
+                    organizationId: hotel.organization_id,
+                    isActive: hotel.is_active ?? true,
+                    city: hotel.citta,
+                    address: hotel.indirizzo,
+                    createdAt: hotel.created_at,
+                    updatedAt: hotel.updated_at
+                })) || [];
+                
+                setHotels(mappedHotels);
                 
                 // Auto-select first hotel
-                if (hotelsData && hotelsData.length > 0) {
-                    setSelectedHotelId(hotelsData[0].id);
+                if (mappedHotels && mappedHotels.length > 0) {
+                    setSelectedHotelId(mappedHotels[0].id);
+                } else {
+                    // ✅ Se non ci sono hotel, mostra messaggio informativo
+                    console.warn('No hotels found for organization:', orgData.organization_id);
                 }
             } catch (error) {
                 console.error('Error fetching hotels:', error);
@@ -148,15 +175,16 @@ export const ProductManagement: React.FC = () => {
         }
     };
 
-    // ✅ Fetch Custom Product Activations for selected hotel
+    // ✅ Fetch Custom Product Activations for selected hotel - usa property_id INTEGER
     const fetchCustomProductActivations = async (hotelId: string) => {
         if (!supabase) return;
         
         try {
+            const hotelIdInt = parseInt(hotelId);  // Converti a INTEGER
             const { data, error } = await supabase
                 .from('hotel_custom_product_activations')
                 .select('custom_product_id, is_active')
-                .eq('hotel_id', hotelId);
+                .eq('hotel_id', hotelIdInt);  // ← Usa hotel_id (FK in questa tabella)
 
             if (error) {
                 // Don't show error if table doesn't exist yet
@@ -195,11 +223,12 @@ export const ProductManagement: React.FC = () => {
                 
                 if (productsError) throw productsError;
                 
-                // Fetch activations for this hotel
+                // Fetch activations for this hotel - usa hotel_id (FK in questa tabella)
+                const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
                 const { data: activationsData, error: activationsError } = await supabase
                     .from('hotel_product_activations')
                     .select('*')
-                    .eq('hotel_id', selectedHotelId);
+                    .eq('hotel_id', hotelIdInt);  // ← Usa hotel_id (FK in questa tabella)
                 
                 if (activationsError && activationsError.code !== 'PGRST116' && activationsError.code !== '42P01') {
                     throw activationsError;
@@ -268,15 +297,16 @@ export const ProductManagement: React.FC = () => {
         if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
+            const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
             const { error } = await supabase
                 .from('hotel_product_activations')
                 .upsert({
-                    hotel_id: selectedHotelId,
+                    hotel_id: hotelIdInt,  // ← Usa hotel_id (FK in questa tabella)
                     product_id: selectedModule.id,
                     status: 'active',
                     updated_at: new Date().toISOString()
                 }, {
-                    onConflict: 'hotel_id,product_id'
+                    onConflict: 'hotel_id,product_id'  // ← Constraint corretto
                 });
             
             if (error) throw error;
@@ -296,16 +326,17 @@ export const ProductManagement: React.FC = () => {
         if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
+            const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
             const newStatus = selectedModule.isPaused ? 'active' : 'paused';
             const { error } = await supabase
                 .from('hotel_product_activations')
                 .upsert({
-                    hotel_id: selectedHotelId,
+                    hotel_id: hotelIdInt,  // ← Usa hotel_id (FK in questa tabella)
                     product_id: selectedModule.id,
                     status: newStatus,
                     updated_at: new Date().toISOString()
                 }, {
-                    onConflict: 'hotel_id,product_id'
+                    onConflict: 'hotel_id,product_id'  // ← Constraint corretto
                 });
             
             if (error) throw error;
@@ -325,13 +356,14 @@ export const ProductManagement: React.FC = () => {
         if (!selectedModule || !selectedHotelId || !supabase) return;
         setIsSaving(true);
         try {
+            const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
             const { error } = await supabase
                 .from('hotel_product_activations')
                 .update({ 
                     status: 'inactive',
                     updated_at: new Date().toISOString()
                 })
-                .eq('hotel_id', selectedHotelId)
+                .eq('hotel_id', hotelIdInt)  // ← Usa hotel_id (FK in questa tabella)
                 .eq('product_id', selectedModule.id);
             
             if (error) throw error;
@@ -482,7 +514,7 @@ export const ProductManagement: React.FC = () => {
         }
     };
 
-    // ✅ Toggle Custom Product Activation for Hotel
+    // ✅ Toggle Custom Product Activation for Hotel - usa property_id INTEGER
     const handleToggleCustomProduct = async (customProductId: string, currentlyActive: boolean) => {
         if (!selectedHotelId) {
             showErrorToast('Please select a hotel first');
@@ -495,12 +527,14 @@ export const ProductManagement: React.FC = () => {
         }
 
         try {
+            const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
+            
             if (currentlyActive) {
                 // Deactivate
                 const { error } = await supabase
                     .from('hotel_custom_product_activations')
                     .update({ is_active: false, updated_at: new Date().toISOString() })
-                    .eq('hotel_id', selectedHotelId)
+                    .eq('hotel_id', hotelIdInt)  // ← Usa hotel_id (FK in questa tabella)
                     .eq('custom_product_id', customProductId);
 
                 if (error) {
@@ -516,12 +550,12 @@ export const ProductManagement: React.FC = () => {
                     .from('hotel_custom_product_activations')
                     .upsert(
                         {
-                            hotel_id: selectedHotelId,
+                            hotel_id: hotelIdInt,  // ← Usa hotel_id (FK in questa tabella)
                             custom_product_id: customProductId,
                             is_active: true,
                             activated_at: new Date().toISOString()
                         },
-                        { onConflict: 'hotel_id,custom_product_id' }
+                        { onConflict: 'hotel_id,custom_product_id' }  // ← Constraint corretto
                     );
 
                 if (error) {
@@ -617,11 +651,13 @@ export const ProductManagement: React.FC = () => {
             // Show loading state
             setTogglingId(productId);
 
+            const hotelIdInt = parseInt(selectedHotelId);  // Converti a INTEGER
+            
             // Check if activation exists
             const { data: existing, error: checkError } = await supabase
                 .from('hotel_product_activations')
                 .select('*')
-                .eq('hotel_id', selectedHotelId)
+                .eq('hotel_id', hotelIdInt)  // ← Usa hotel_id (FK in questa tabella)
                 .eq('product_id', productId)
                 .maybeSingle();
             
@@ -645,7 +681,7 @@ export const ProductManagement: React.FC = () => {
                 const { error } = await supabase
                     .from('hotel_product_activations')
                     .insert({
-                        hotel_id: selectedHotelId,
+                        hotel_id: hotelIdInt,  // ← Usa hotel_id (FK in questa tabella)
                         product_id: productId,
                         status: newStatus,
                     });
@@ -756,8 +792,12 @@ export const ProductManagement: React.FC = () => {
                                 <span className="text-sm">{t('products.loadingHotels')}</span>
                             </div>
                         ) : hotels.length === 0 ? (
-                            <div className="text-sm text-amber-500">
-                                {t('products.noHotels')}
+                            <div className="p-6 bg-white/5 border border-dashed border-white/10 rounded-xl text-center">
+                                <Database size={32} className="mx-auto text-white/20 mb-3" />
+                                <p className="text-sm text-white/60 font-bold mb-1">No hotels found</p>
+                                <p className="text-xs text-white/40">
+                                    Please sync your hotels from your PMS system or contact support.
+                                </p>
                             </div>
                         ) : (
                             <select
@@ -774,7 +814,9 @@ export const ProductManagement: React.FC = () => {
                                         value={hotel.id}
                                         className="bg-black text-white border-2 border-black"
                                     >
-                                        {hotel.hotel_name}
+                                        {hotel.hotelName}
+                                        {hotel.hotelDisplayName && ` - ${hotel.hotelDisplayName}`}
+                                        {hotel.city && ` (${hotel.city})`}
                                     </option>
                                 ))}
                             </select>
