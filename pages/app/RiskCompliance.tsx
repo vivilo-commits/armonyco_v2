@@ -18,12 +18,12 @@ const FilterBar = ({ title }: { title: string }) => (
     <Card padding="md" className="mb-8 flex flex-wrap gap-4 items-center flex-shrink-0 w-full bg-white/[0.02] border-white/5">
         <div className="flex items-center gap-3 px-5 py-3 bg-white/[0.03] border border-white/10 rounded-2xl w-auto h-[56px] group hover:bg-white/[0.05] transition-all">
             <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">Range_Matrix</span>
-            <select className="bg-transparent border-none outline-none text-xs text-white/80 appearance-none cursor-pointer pr-8 font-black uppercase tracking-wider">
-                <option>24H</option>
-                <option>7D</option>
-                <option>30D</option>
-                <option>90D</option>
-                <option>YTD</option>
+            <select className="bg-transparent border-none outline-none text-xs text-white/80 appearance-none cursor-pointer pr-8 font-black uppercase tracking-wider text-white [&>option]:border-2 [&>option]:border-black">
+                <option className="bg-black text-white border-2 border-black">24H</option>
+                <option className="bg-black text-white border-2 border-black">7D</option>
+                <option className="bg-black text-white border-2 border-black">30D</option>
+                <option className="bg-black text-white border-2 border-black">90D</option>
+                <option className="bg-black text-white border-2 border-black">YTD</option>
             </select>
             <ChevronDown size={14} className="text-white/20 -ml-6 pointer-events-none" />
         </div>

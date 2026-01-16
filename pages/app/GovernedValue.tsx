@@ -61,8 +61,8 @@ export const GovernedValueView: React.FC = () => {
             <Card padding="md" className="mb-8 flex flex-wrap gap-4 items-center flex-shrink-0 bg-black/20 border-white/5 shadow-xl hover:border-white/10 transition-all rounded-2xl">
                 <div className="flex items-center gap-3 px-4 bg-white/[0.03] border border-white/5 rounded-xl w-auto h-[50px] group hover:bg-white/[0.05] transition-colors">
                     <span className="text-white/30 text-[9px] font-black uppercase tracking-widest">Identity</span>
-                    <select className="bg-transparent border-none outline-none text-xs text-white appearance-none cursor-pointer pr-8 font-bold uppercase tracking-tight min-w-[170px]">
-                        <option>ARMONYCO CREDITS (€)</option>
+                    <select className="bg-transparent border-none outline-none text-xs text-white appearance-none cursor-pointer pr-8 font-bold uppercase tracking-tight min-w-[170px] [&>option]:border-2 [&>option]:border-black">
+                        <option className="bg-black text-white border-2 border-black">ARMONYCO CREDITS (€)</option>
                     </select>
                 </div>
 

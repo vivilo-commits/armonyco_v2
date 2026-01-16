@@ -48,6 +48,7 @@ export const Select: React.FC<SelectProps> = ({
           transition-all duration-200 
           focus:outline-none focus:ring-0
           peer
+          text-white [&>option]:border-2 [&>option]:border-black
           ${error
                         ? 'border-[var(--color-error)] focus:border-[var(--color-error)]'
                         : 'border-[var(--color-border)] focus:border-[var(--color-brand-accent)]'
@@ -57,9 +58,9 @@ export const Select: React.FC<SelectProps> = ({
         `}
                 {...props}
             >
-                <option value="" disabled selected hidden></option>
+                <option value="" disabled selected hidden className="bg-black text-white border-2 border-black"></option>
                 {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-black text-white border-2 border-black">
                         {opt.label}
                     </option>
                 ))}

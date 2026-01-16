@@ -1381,10 +1381,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <select 
                                         value={selectedLanguage}
                                         onChange={(e) => handleLanguageChange(e.target.value)}
-                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
+                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black"
                                     >
-                                        <option value="en" className="bg-black text-white !border !border-black">{t('settings.preferences.english')}</option>
-                                        <option value="it" className="bg-black text-white !border !border-black">{t('settings.preferences.italian')}</option>
+                                        <option value="en" className="bg-black text-white border-2 border-black">{t('settings.preferences.english')}</option>
+                                        <option value="it" className="bg-black text-white border-2 border-black">{t('settings.preferences.italian')}</option>
                                     </select>
                                 </div>
                             </div>
@@ -1509,11 +1509,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
                                 Legal Structure
                             </label>
-                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                <option>LLC / Ltd.</option>
-                                <option>S.A. / Corporation</option>
-                                <option>Inc.</option>
-                                <option>Private Individual Host</option>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black">
+                                <option className="bg-black text-white border-2 border-black">LLC / Ltd.</option>
+                                <option className="bg-black text-white border-2 border-black">S.A. / Corporation</option>
+                                <option className="bg-black text-white border-2 border-black">Inc.</option>
+                                <option className="bg-black text-white border-2 border-black">Private Individual Host</option>
                             </select>
                         </div>
                     </div>
@@ -1595,18 +1595,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 Country *
                             </label>
                             <select
-                                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
+                                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black"
                                 value={localBillingDetails.country || ''}
                                 onChange={(e) => setLocalBillingDetails({ ...localBillingDetails, country: e.target.value })}
                             >
-                                <option value="">Select Country</option>
-                                <option value="IT">Italy</option>
-                                <option value="US">United States</option>
-                                <option value="GB">United Kingdom</option>
-                                <option value="FR">France</option>
-                                <option value="DE">Germany</option>
-                                <option value="ES">Spain</option>
-                                <option value="BR">Brazil</option>
+                                <option value="" className="bg-black text-white border-2 border-black">Select Country</option>
+                                <option value="IT" className="bg-black text-white border-2 border-black">Italy</option>
+                                <option value="US" className="bg-black text-white border-2 border-black">United States</option>
+                                <option value="GB" className="bg-black text-white border-2 border-black">United Kingdom</option>
+                                <option value="FR" className="bg-black text-white border-2 border-black">France</option>
+                                <option value="DE" className="bg-black text-white border-2 border-black">Germany</option>
+                                <option value="ES" className="bg-black text-white border-2 border-black">Spain</option>
+                                <option value="BR" className="bg-black text-white border-2 border-black">Brazil</option>
                             </select>
                         </div>
 
@@ -1632,12 +1632,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">
                                 Settlement Currency
                             </label>
-                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                <option>USD - United States Dollar</option>
-                                <option>EUR - Euro</option>
-                                <option>GBP - British Pound</option>
-                                <option>BRL - Brazilian Real</option>
-                                <option>MXN - Mexican Peso</option>
+                            <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none text-white [&>option]:border-2 [&>option]:border-black">
+                                <option className="bg-black text-white border-2 border-black">USD - United States Dollar</option>
+                                <option className="bg-black text-white border-2 border-black">EUR - Euro</option>
+                                <option className="bg-black text-white border-2 border-black">GBP - British Pound</option>
+                                <option className="bg-black text-white border-2 border-black">BRL - Brazilian Real</option>
+                                <option className="bg-black text-white border-2 border-black">MXN - Mexican Peso</option>
                             </select>
                         </div>
                     </div>
@@ -1965,15 +1965,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <select
                                         value={pmsConfig.pmsProvider}
                                         onChange={(e) => setPmsConfig({ ...pmsConfig, pmsProvider: e.target.value })}
-                                        className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-sm font-bold text-white/80 outline-none appearance-none cursor-pointer text-white [&>option]:border-2 [&>option]:border-black"
                                     >
-                                        <option value="mews">Mews</option>
-                                        <option value="opera">Oracle Opera</option>
-                                        <option value="cloudbeds">Cloudbeds</option>
-                                        <option value="little_hotelier">Little Hotelier</option>
-                                        <option value="protel">Protel</option>
-                                        <option value="rms">RMS / Booking Automation</option>
-                                        <option value="custom">Custom / Other</option>
+                                        <option value="mews" className="bg-black text-white border-2 border-black">Mews</option>
+                                        <option value="opera" className="bg-black text-white border-2 border-black">Oracle Opera</option>
+                                        <option value="cloudbeds" className="bg-black text-white border-2 border-black">Cloudbeds</option>
+                                        <option value="little_hotelier" className="bg-black text-white border-2 border-black">Little Hotelier</option>
+                                        <option value="protel" className="bg-black text-white border-2 border-black">Protel</option>
+                                        <option value="rms" className="bg-black text-white border-2 border-black">RMS / Booking Automation</option>
+                                        <option value="custom" className="bg-black text-white border-2 border-black">Custom / Other</option>
                                     </select>
                                 </div>
 
