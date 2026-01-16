@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import { ArrowRight } from '../ui/Icons';
 import { FloatingInput } from '../ui/FloatingInput';
@@ -14,6 +15,7 @@ interface SignInModalProps {
 }
 
 export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLogin, onForgotPassword }) => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +24,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
 
     const handleEmailSignIn = async () => {
         if (!email || !password) {
-            setError('Please enter email and password');
+            setError(t('auth.enterEmailAndPassword'));
             return;
         }
 
@@ -34,7 +36,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
             onClose();
         } catch (err: any) {
             console.error('Login failed', err);
-            setError(err.message || 'Failed to sign in. Please check your credentials.');
+            setError(err.message || t('auth.failedToSignIn'));
         } finally {
             setIsLoading(false);
         }
@@ -50,7 +52,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Sign In"
+            title={t('auth.signIn')}
             width="sm"
         >
             <div className="p-8 space-y-6">
@@ -65,7 +67,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                 )}
 
                 <FloatingInput
-                    label="Email"
+                    label={t('auth.email')}
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -73,7 +75,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                     bgClass="bg-[var(--color-surface)]"
                 />
                 <FloatingInput
-                    label="Password"
+                    label={t('auth.password')}
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -84,7 +86,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors cursor-pointer focus:outline-none"
-                            aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                            aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                             tabIndex={-1}
                         >
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -94,13 +96,13 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                 <div className="flex justify-between items-center text-xs">
                     <label className="flex items-center gap-2 text-[var(--color-text-muted)] cursor-pointer">
                         <input type="checkbox" className="rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-0 cursor-pointer" />
-                        Remember me
+                        {t('auth.rememberMe')}
                     </label>
                     <button 
                         onClick={onForgotPassword}
                         className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
                     >
-                        Password dimenticata?
+                        {t('auth.forgotPassword')}
                     </button>
                 </div>
 
@@ -112,7 +114,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose, onLog
                         isLoading={isLoading}
                         className="w-full justify-center"
                     >
-                        Sign In
+                        {t('auth.signIn')}
                     </Button>
                 </div>
             </div>

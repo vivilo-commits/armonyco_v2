@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
+import './src/i18n'; // Initialize i18n
 import { ErrorBoundary } from './src/components/ui/ErrorBoundary';
 import { AuthProvider } from './src/context/AuthContext';
 

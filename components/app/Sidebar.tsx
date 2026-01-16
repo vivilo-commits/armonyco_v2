@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../src/i18n';
 import {
   LayoutDashboard,
   Shield,
@@ -69,6 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   organization,
   activePlanId = 1
 }) => {
+  const { t } = useTranslation();
   const [expandedMenu, setExpandedMenu] = useState<string | null>('governance');
   
   // Get permissions for dynamic menu
@@ -93,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return [
         {
           id: 'administration',
-          label: 'Administration',
+          label: t('sidebar.administration'),
           icon: Shield,
           children: [],
           action: () => setView('dashboard') // SuperAdmin uses dashboard as administration
@@ -106,21 +109,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const baseMenu: MenuItem[] = [
       {
         id: 'dashboard',
-        label: 'Operations Center',
+        label: t('sidebar.dashboard'),
         icon: LayoutDashboard,
         children: [],
         action: () => setView('dashboard')
       },
       {
         id: 'governance',
-        label: 'Control Tower',
+        label: t('sidebar.controlTower'),
         icon: Shield,
         children: [
-          { id: 'value', label: 'Governed Cashflow™' },
-          { id: 'log', label: 'Decision Log' },
-          { id: 'compliance', label: 'Compliance Rate™' },
-          { id: 'human-risk', label: 'Human Risk' },
-          { id: 'residual-risk', label: 'Residual Risk' },
+          { id: 'value', label: t('sidebar.governedCashflow') },
+          { id: 'log', label: t('sidebar.decisionLog') },
+          { id: 'compliance', label: t('sidebar.complianceRate') },
+          { id: 'human-risk', label: t('sidebar.humanRisk') },
+          { id: 'residual-risk', label: t('sidebar.residualRisk') },
         ]
       },
       {
@@ -128,11 +131,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         label: 'Core Constructs',
         icon: Database,
         children: [
-          { id: 'aem', label: 'AEM - Armonyco Event Model™' },
-          { id: 'aos', label: 'AOS - Armonyco Operating System™' },
-          { id: 'aim', label: 'AIM - Armonyco Intelligence Matrix™' },
-          { id: 'ars', label: 'ARS - Armonyco Reliability System™' },
-          { id: 'ags', label: 'AGS - Armonyco Governance Scorecard™' },
+          { id: 'aem', label: t('sidebar.aem') },
+          { id: 'aos', label: t('sidebar.aos') },
+          { id: 'aim', label: t('sidebar.aim') },
+          { id: 'ars', label: t('sidebar.ars') },
+          { id: 'ags', label: t('sidebar.ags') },
         ]
       },
       // Settings - Only show for SuperAdmin or Org Admin (NOT Collaborators)
@@ -140,14 +143,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         console.log('[Sidebar] ✅ Settings menu VISIBLE - canAccessSettings:', canAccessSettings);
         return [{
           id: 'settings',
-          label: 'Settings',
+          label: t('sidebar.settings'),
           icon: Settings,
           children: [
-            { id: 'settings-profile', label: 'Profile' },
-            { id: 'settings-company', label: 'Organization' },
-            { id: 'settings-activation', label: 'System Activation' },
-            { id: 'settings-billing', label: 'Subscription' },
-            ...(canManageMembers ? [{ id: 'invite-member', label: 'Invite Collaborator' }] : [])
+            { id: 'settings-profile', label: t('sidebar.profile') },
+            { id: 'settings-company', label: t('sidebar.organization') },
+            { id: 'settings-activation', label: t('sidebar.systemActivation') },
+            { id: 'settings-billing', label: t('sidebar.subscription') },
+            ...(canManageMembers ? [{ id: 'invite-member', label: t('sidebar.inviteCollaborator') }] : [])
           ],
           action: () => setView('settings-profile') // Go to Settings Profile when clicking main item
         }];
@@ -161,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (canEditOrganization) {
       baseMenu.push({
         id: 'services',
-        label: 'My Services',
+        label: t('sidebar.myServices'),
         icon: Package,
         children: [],
         action: () => setView('products')
@@ -169,7 +172,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     return baseMenu;
-  }, [setView, canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, permissionsLoading]);
+  }, [setView, canManageMembers, canEditOrganization, canAccessSettings, isAppAdmin, permissionsLoading, t, i18n.language]);
 
   const handleItemClick = (item: MenuItem) => {
     // Logic: 
@@ -201,11 +204,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const getPlanName = (id: number) => {
     switch (id) {
-      case 1: return 'Starter Tier';
-      case 2: return 'Pro Tier';
-      case 3: return 'Elite Tier';
-      case 4: return 'VIP Tier';
-      default: return 'Institutional Tier';
+      case 1: return t('sidebar.starterTier');
+      case 2: return t('sidebar.proTier');
+      case 3: return t('sidebar.eliteTier');
+      case 4: return t('sidebar.vipTier');
+      default: return t('sidebar.institutionalTier');
     }
   };
 
@@ -251,15 +254,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-3xl">👑</span>
               <div className="flex-1">
                 <p className="text-sm font-black text-white uppercase tracking-wider">
-                  Super Admin
+                  {t('sidebar.superAdmin')}
                 </p>
                 <p className="text-xs text-purple-100 font-medium">
-                  Accesso completo al sistema
+                  {t('sidebar.superAdminAccess')}
                 </p>
               </div>
             </div>
             <div className="text-[10px] text-purple-200 bg-black/10 rounded-lg px-2 py-1.5 font-mono">
-              🛡️ Modalità Amministrazione Globale
+              {t('sidebar.adminMode')}
             </div>
           </div>
         )}
@@ -360,7 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {userProfile?.firstName} {userProfile?.lastName}
                 </div>
                 <div className="text-[9px] text-[var(--color-brand-accent)] font-black uppercase tracking-[0.2em] mt-0.5 truncate">
-                  {isAppAdmin ? '👑 SUPER ADMIN' : getPlanName(activePlanId)}
+                  {isAppAdmin ? `👑 ${t('sidebar.superAdmin').toUpperCase()}` : getPlanName(activePlanId)}
                 </div>
               </div>
             </button>
@@ -387,7 +390,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title="Logout"
           >
             <LogOut size={isCollapsed ? 18 : 14} strokeWidth={2.5} />
-            {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.3em]">Logout</span>}
+            {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('auth.logout')}</span>}
           </button>
         </div>
 

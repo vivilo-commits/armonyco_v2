@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, CreditCard, Lock, Sparkles } from 'lucide-react';
 import { CREDIT_PACKS, getTotalCredits } from '../../src/config/creditPacks';
 
@@ -9,6 +10,7 @@ interface BuyCreditsModalProps {
 }
 
 export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsModalProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [selectedPackId, setSelectedPackId] = useState<number | null>(null);
 
@@ -58,7 +60,7 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-3xl font-bold text-white">Buy ArmoCredits®</h2>
+          <h2 className="text-3xl font-bold text-white">{t('modals.buyCredits.title')}</h2>
           <button 
             className="p-2 hover:bg-gray-900 rounded-lg transition-all text-gray-500 hover:text-white"
             onClick={onClose}
@@ -69,7 +71,7 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
 
         {/* Subtitle */}
         <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-          Choose a credit pack to recharge your balance. Credits are available immediately after payment.
+          {t('modals.buyCredits.subtitle')}
         </p>
 
         {/* Credit Packs Grid */}
@@ -96,7 +98,7 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
                 {/* Popular Badge */}
                 {isPopular && (
                   <div className="absolute -top-3 right-3 bg-gradient-to-r from-yellow-500 to-yellow-300 text-black text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-yellow-500/40">
-                    POPULAR
+                    {t('modals.buyCredits.popular')}
                   </div>
                 )}
 
@@ -142,7 +144,7 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
                 {/* Total Credits */}
                 <div className="w-full pt-4 border-t border-gray-800 mb-4">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-                    TOTAL
+                    {t('modals.buyCredits.total')}
                   </div>
                   <div className="text-3xl font-bold text-white my-1">
                     {(totalCredits / 1000).toFixed(1)}K
@@ -169,11 +171,11 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
                   disabled={loading}
                 >
                   {isProcessing ? (
-                    <span>Processing...</span>
+                    <span>{t('common.processing')}</span>
                   ) : (
                     <>
                       <CreditCard size={18} />
-                      <span>BUY NOW</span>
+                      <span>{t('modals.buyCredits.buyNow')}</span>
                     </>
                   )}
                 </button>
@@ -190,10 +192,10 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
             </div>
             <div className="flex-1">
               <p className="text-white font-semibold text-sm mb-1">
-                Secure payment powered by Stripe
+                {t('modals.buyCredits.securePayment')}
               </p>
               <p className="text-gray-400 text-xs leading-relaxed">
-                Credits are added instantly after successful payment. All transactions are encrypted and secure. VAT included in all prices.
+                {t('modals.buyCredits.securePaymentMessage')}
               </p>
             </div>
           </div>
@@ -205,7 +207,7 @@ export function BuyCreditsModal({ isOpen, onClose, organizationId }: BuyCreditsM
             className="px-4 py-2 text-gray-500 hover:text-white hover:bg-gray-900 rounded-lg text-sm font-medium transition-all"
             onClick={onClose}
           >
-            Close
+            {t('modals.buyCredits.close')}
           </button>
         </div>
       </div>

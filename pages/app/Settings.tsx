@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, Bell, Layers, Database, Smartphone, Key, User, Building, CreditCard, BookOpen, HelpCircle, CheckCircle, ChevronRight, AlertTriangle, Calendar, Plus, RefreshCw, X, ArrowRight, Activity, FileText, Camera, LogOut, Moon, Sun, Monitor, Laptop, Shield, Lock, Clock, UploadCloud, Download, AlertCircle, Copy, Check, XCircle, Save, Link, IconSizes, Zap } from '../../components/ui/Icons';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { Button } from '../../components/ui/Button';
@@ -53,8 +54,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     // ========================================
     // ALL HOOKS FIRST - ALWAYS CALLED
     // ========================================
+    const { t, i18n } = useTranslation();
     const [activeTab, setActiveTab] = useState<SettingsTab>('PROFILE');
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'en');
     
     // Check permissions for organization settings and Settings access
     const { canEditOrganization, canAccessSettings, isOrgAdmin, isAppAdmin, loading: permissionsLoading } = usePermissions();
@@ -451,6 +454,53 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     useEffect(() => setLocalOrg(organization), [organization]);
     useEffect(() => setLocalBillingDetails(billingDetails), [billingDetails]);
 
+    // Load user language preference on mount
+    useEffect(() => {
+        const loadUserLanguage = async () => {
+            if (!supabase || !userProfile?.id) return;
+            
+            try {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('language')
+                    .eq('id', userProfile.id)
+                    .maybeSingle();
+                
+                if (data?.language && (data.language === 'en' || data.language === 'it')) {
+                    setSelectedLanguage(data.language);
+                    i18n.changeLanguage(data.language);
+                }
+            } catch (error) {
+                console.error('[Settings] Error loading language preference:', error);
+            }
+        };
+        
+        loadUserLanguage();
+    }, [userProfile?.id, i18n]);
+
+    // Handle language change
+    const handleLanguageChange = async (lang: string) => {
+        if (!supabase || !userProfile?.id) return;
+        
+        try {
+            await i18n.changeLanguage(lang);
+            setSelectedLanguage(lang);
+            localStorage.setItem('language', lang);
+            
+            // Save to user profile
+            const { error } = await supabase
+                .from('profiles')
+                .update({ language: lang })
+                .eq('id', userProfile.id);
+            
+            if (error) {
+                console.error('[Settings] Error saving language preference:', error);
+            }
+        } catch (error) {
+            console.error('[Settings] Error changing language:', error);
+        }
+    };
+
     // Handle credit purchase redirect (success/cancel)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -523,13 +573,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <Shield size={40} className="text-amber-500" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-3">Limited Access</h2>
+                        <h2 className="text-2xl font-bold text-white mb-3">{t('settings.accessDenied.title')}</h2>
                         <p className="text-zinc-400 leading-relaxed">
-                            The Settings section is only available to Organization Administrators.
+                            {t('settings.accessDenied.message')}
                         </p>
                         <p className="text-zinc-500 text-sm mt-4">
-                            As a Collaborator, you have read-only access to the main platform features. 
-                            Contact your organization administrator if you need to change settings.
+                            {t('settings.accessDenied.collaboratorMessage')}
                         </p>
                         {process.env.NODE_ENV === 'development' && (
                             <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-left">
@@ -546,7 +595,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             onClick={() => onNavigate?.('dashboard')} 
                             className="px-6 py-3 bg-[var(--color-brand-accent)] text-black rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-white transition-all"
                         >
-                            Torna alla Dashboard
+                            {t('settings.accessDenied.backToDashboard')}
                         </button>
                     </div>
                 </div>
@@ -566,7 +615,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setIsSavingProfile(true);
         try {
             await onUpdateProfile(localProfile);
-            setSaveSuccess('Profile saved!');
+            setSaveSuccess(t('settings.saveProfile'));
             setTimeout(() => setSaveSuccess(null), 2000);
         } catch (error) {
             console.error('Failed to save profile:', error);
@@ -579,7 +628,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setIsSavingOrg(true);
         try {
             await onUpdateOrganization(localOrg);
-            setSaveSuccess('Organization saved!');
+            setSaveSuccess(t('settings.organization.saved'));
             setTimeout(() => setSaveSuccess(null), 2000);
         } catch (error) {
             console.error('Failed to save organization:', error);
@@ -1282,36 +1331,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <Card padding="lg">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h3 className="text-lg font-medium text-[var(--color-text-main)]">Personal Information</h3>
-                                    <p className="text-sm text-[var(--color-text-muted)]">Manage your identity and contact details.</p>
+                                    <h3 className="text-lg font-medium text-[var(--color-text-main)]">{t('settings.profile.title')}</h3>
+                                    <p className="text-sm text-[var(--color-text-muted)]">{t('settings.profile.subtitle')}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FloatingInput 
-                                    label="First Name" 
+                                    label={t('settings.profile.firstName')} 
                                     value={localProfile.firstName || ''} 
                                     onChange={(e) => setLocalProfile({ ...localProfile, firstName: e.target.value })} 
                                 />
                                 <FloatingInput 
-                                    label="Last Name" 
+                                    label={t('settings.profile.lastName')} 
                                     value={localProfile.lastName || ''} 
                                     onChange={(e) => setLocalProfile({ ...localProfile, lastName: e.target.value })} 
                                 />
                                 <FloatingInput 
-                                    label="Email Address" 
+                                    label={t('settings.profile.email')} 
                                     value={localProfile.email} 
                                     disabled
                                     className="opacity-60 cursor-not-allowed"
                                 />
                                 <FloatingInput 
-                                    label="Phone Number" 
+                                    label={t('settings.profile.phone')} 
                                     placeholder="+39 123 456 7890"
                                     value={localProfile.phone || ''} 
                                     onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })} 
                                 />
                                 <div className="md:col-span-2">
                                     <FloatingInput 
-                                        label="Job Role / Title" 
+                                        label={t('settings.profile.jobRole')} 
                                         placeholder="Operations Manager"
                                         value={localProfile.jobRole || ''} 
                                         onChange={(e) => setLocalProfile({ ...localProfile, jobRole: e.target.value })} 
@@ -1323,26 +1372,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {/* Preferences */}
                         <Card padding="lg">
                             <div className="mb-6">
-                                <h3 className="text-lg font-medium text-[var(--color-text-main)]">Regional Preferences</h3>
-                                <p className="text-sm text-[var(--color-text-muted)]">Language, timezone, and data formatting.</p>
+                                <h3 className="text-lg font-medium text-[var(--color-text-main)]">{t('settings.preferences.title')}</h3>
+                                <p className="text-sm text-[var(--color-text-muted)]">{t('settings.preferences.subtitle')}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="relative">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Language</label>
-                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                        <option>English (US) - Primary</option>
-                                        <option>Português (Brasil)</option>
-                                        <option>Español (LatAm)</option>
-                                        <option>Italian</option>
-                                    </select>
-                                </div>
-                                <div className="relative">
-                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">Timezone</label>
-                                    <select className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none">
-                                        <option>UTC (Coordinated Universal Time)</option>
-                                        <option>EST (Eastern Standard Time)</option>
-                                        <option>CET (Central European Time)</option>
-                                        <option>BRT (Brasilia Time)</option>
+                                    <label className="text-[10px] uppercase font-black tracking-widest text-[var(--color-text-muted)] absolute top-2 left-3">{t('settings.preferences.language')}</label>
+                                    <select 
+                                        value={selectedLanguage}
+                                        onChange={(e) => handleLanguageChange(e.target.value)}
+                                        className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 pt-6 pb-2 text-sm focus:border-[var(--color-brand-accent)] outline-none appearance-none"
+                                    >
+                                        <option value="en" className="bg-black text-white !border !border-black">{t('settings.preferences.english')}</option>
+                                        <option value="it" className="bg-black text-white !border !border-black">{t('settings.preferences.italian')}</option>
                                     </select>
                                 </div>
                             </div>
@@ -1384,10 +1426,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
 
-                            <h4 className="text-white font-bold tracking-tight">Profile Avatar</h4>
-                            <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mt-1">Institutional Identity</p>
+                            <h4 className="text-white font-bold tracking-tight">{t('settings.profile.avatar.title')}</h4>
+                            <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mt-1">{t('settings.profile.avatar.subtitle')}</p>
                             <p className="text-[10px] text-zinc-600 mt-4 px-4 italic leading-relaxed">
-                                Recommended size: 500x500px. JPG or PNG allowed.
+                                {t('settings.profile.avatar.uploadHint')}
                             </p>
                             
                             {localProfile.photo && (
@@ -1398,7 +1440,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     }}
                                     className="mt-4 text-xs text-red-400 hover:text-red-300 underline"
                                 >
-                                    Remove Avatar
+                                    {t('settings.profile.avatar.remove')}
                                 </button>
                             )}
                         </Card>
@@ -1406,11 +1448,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         {/* Security Card */}
                         <Card variant="dark" padding="lg">
                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">
-                                Security
+                                {t('settings.security.title')}
                             </h4>
                             
                             <p className="text-[10px] text-zinc-500 mb-6 leading-relaxed">
-                                Manage your account security and authentication settings.
+                                {t('settings.security.subtitle')}
                             </p>
                             
                             <button
@@ -1422,14 +1464,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 }}
                                 className="w-full py-3 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 rounded-xl hover:bg-white/5 transition-all"
                             >
-                                Change Password
+                                {t('settings.security.changePassword')}
                             </button>
                         </Card>
                     </div>
                 </div>
 
                 <div className="flex justify-end pt-4 border-t border-white/5 mt-10">
-                    <Button size="lg" leftIcon={<Save size={18} />} onClick={handleSaveProfile} isLoading={isSavingProfile}>{isSavingProfile ? 'Saving...' : 'Save Changes'}</Button>
+                    <Button size="lg" leftIcon={<Save size={18} />} onClick={handleSaveProfile} isLoading={isSavingProfile}>{isSavingProfile ? t('common.saving') : t('settings.saveChanges')}</Button>
                 </div>
             </div>
         );

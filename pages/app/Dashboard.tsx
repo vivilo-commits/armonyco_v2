@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard,
     TrendingUp,
@@ -34,6 +35,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+    const { t } = useTranslation();
     const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
     const [modules, setModules] = React.useState<ProductModule[]>([]);
     
@@ -106,10 +108,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         });
 
         const iconMap: Record<string, { icon: any; color: string; label: string }> = {
-            'AMELIA': { icon: Users, color: 'text-white', label: 'Guest Communication' },
-            'JAMES': { icon: Shield, color: 'text-emerald-500', label: 'Reservation Lookup' },
-            'ELON': { icon: TrendingUp, color: 'text-[var(--color-brand-accent)]', label: 'Revenue Optimization' },
-            'LARA': { icon: Activity, color: 'text-blue-500', label: 'Operations' },
+            'AMELIA': { icon: Users, color: 'text-white', label: t('dashboard.guestCommunication') },
+            'JAMES': { icon: Shield, color: 'text-emerald-500', label: t('dashboard.reservationLookup') },
+            'ELON': { icon: TrendingUp, color: 'text-[var(--color-brand-accent)]', label: t('dashboard.revenueOptimization') },
+            'LARA': { icon: Activity, color: 'text-blue-500', label: t('dashboard.operations') },
         };
 
         return Object.entries(agentMap).map(([name, data]) => ({
@@ -142,7 +144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-                <p className="ml-4 text-zinc-400">Loading permissions...</p>
+                <p className="ml-4 text-zinc-400">{t('dashboard.loadingPermissions')}</p>
             </div>
         );
     }
@@ -155,9 +157,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="w-24 h-24 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mb-6">
                     <AlertTriangle size={48} className="text-amber-500" />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-3">Nessuna Organizzazione</h1>
+                <h1 className="text-2xl font-bold text-white mb-3">{t('dashboard.noOrganization')}</h1>
                 <p className="text-zinc-400 text-center max-w-md">
-                    Non appartieni ancora a nessuna organizzazione. Contatta l'amministratore per essere aggiunto.
+                    {t('dashboard.noOrganizationMessage')}
                 </p>
             </div>
         );
@@ -172,39 +174,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 <div className="mb-6 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
                     <AlertTriangle size={24} className="text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-amber-400 font-bold text-sm mb-1">⚠️ Read-Only Mode</p>
+                        <p className="text-amber-400 font-bold text-sm mb-1">{t('dashboard.readOnlyMode')}</p>
                         <p className="text-amber-300/80 text-sm">
-                            You have read-only access as a <strong>Collaborator</strong>. You can view data but not modify it.
+                            {t('dashboard.readOnlyMessage')}
                         </p>
                     </div>
                 </div>
             )}
 
             <header className="mb-10 border-b border-white/5 pb-8 flex justify-between items-center shrink-0">
-                <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                        <LayoutDashboard className="text-[var(--color-brand-accent)] w-6 h-6" />
-                        <h1 className="text-2xl text-white font-light uppercase tracking-tight">Control Tower™ <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ institutional truth</span></h1>
-                        
-                        {/* Role Badge */}
-                        {currentOrgRole && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                currentOrgRole === 'Admin' 
-                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                    : currentOrgRole === 'User'
-                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            }`}>
-                                {currentOrgRole}
-                            </span>
-                        )}
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                            <LayoutDashboard className="text-[var(--color-brand-accent)] w-6 h-6" />
+                            <h1 className="text-2xl text-white font-light uppercase tracking-tight">{t('dashboard.title')} <span className="text-white/20 text-sm font-normal lowercase italic tracking-normal ml-2">/ {t('dashboard.subtitle')}</span></h1>
+                            
+                            {/* Role Badge */}
+                            {currentOrgRole && (
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                    currentOrgRole === 'Admin' 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                        : currentOrgRole === 'User'
+                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                }`}>
+                                    {currentOrgRole}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">{t('dashboard.description')}</p>
                     </div>
-                    <p className="text-[var(--color-text-muted)] text-sm italic opacity-70">Consolidated overview of operational events and governed decision protocols.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">Live</span>
-                </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[9px] text-emerald-500 font-black uppercase tracking-widest">{t('dashboard.live')}</span>
+                    </div>
             </header>
             
             {/* Read-Only Alert for Collaborators */}
@@ -213,9 +215,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                     <div className="flex items-start gap-3">
                         <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-amber-400 font-semibold mb-1">👀 Read-Only Mode</p>
+                            <p className="text-amber-400 font-semibold mb-1">{t('dashboard.readOnlyMode')}</p>
                             <p className="text-amber-200/70 text-sm">
-                                You have read-only access as a Collaborator. You can view all data but not modify it.
+                                {t('dashboard.readOnlyMessage')}
                             </p>
                         </div>
                     </div>
@@ -226,7 +228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 items-stretch">
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('value')}>
                     <StatCard
-                        label="Governed Cashflow™"
+                        label={t('dashboard.governedCashflow')}
                         value={`${(userProfile?.credits || 0).toLocaleString('de-DE')} €`}
                         icon={TrendingUp}
                         trend={{ value: "↑ 2.4%", isPositive: true, label: "24h velocity" }}
@@ -240,17 +242,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('log')}>
                     <StatCard
-                        label="Decision Log"
+                        label={t('dashboard.decisionLog')}
                         value={totalExecutions.toLocaleString()}
                         icon={Zap}
                         iconColor="text-white"
-                        subtext={<span className="text-[var(--color-text-muted)] opacity-60">Truth Ledger: Decisions Registered</span>}
+                        subtext={<span className="text-[var(--color-text-muted)] opacity-60">{t('dashboard.truthLedger')}</span>}
                     />
                 </div>
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('compliance')}>
                     <StatCard
-                        label="Compliance Rate™"
+                        label={t('dashboard.complianceRate')}
                         value={`${complianceRate}%`}
                         icon={Shield}
                         iconColor="text-emerald-500"
@@ -263,21 +265,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('human-risk')}>
                     <StatCard
-                        label="Human Risk"
+                        label={t('dashboard.humanRisk')}
                         value={`${humanRisk}%`}
                         icon={AlertTriangle}
                         iconColor={parseFloat(humanRisk) > 3 ? "text-red-500" : "text-emerald-500"}
-                        subtext={<span className={`${parseFloat(humanRisk) < 3 ? 'text-emerald-500' : 'text-red-500'} font-black uppercase tracking-widest text-[9px] italic`}>Target: {'<'} 3%</span>}
+                        subtext={<span className={`${parseFloat(humanRisk) < 3 ? 'text-emerald-500' : 'text-red-500'} font-black uppercase tracking-widest text-[9px] italic`}>{t('dashboard.targetLessThan')} 3%</span>}
                     />
                 </div>
 
                 <div className="cursor-pointer h-full" onClick={() => onNavigate?.('residual-risk')}>
                     <StatCard
-                        label="Residual Risk"
+                        label={t('dashboard.residualRisk')}
                         value={`${residualRisk}%`}
                         icon={Activity}
                         iconColor={parseFloat(residualRisk) > 1 ? "text-amber-500" : "text-emerald-500"}
-                        subtext={<span className={`${parseFloat(residualRisk) < 1 ? 'text-emerald-500' : 'text-amber-500'} font-black uppercase tracking-widest text-[9px] italic`}>Target: {'<'} 1%</span>}
+                        subtext={<span className={`${parseFloat(residualRisk) < 1 ? 'text-emerald-500' : 'text-amber-500'} font-black uppercase tracking-widest text-[9px] italic`}>{t('dashboard.targetLessThan')} 1%</span>}
                     />
                 </div>
             </div>
@@ -288,14 +290,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {/* Main Chart Area */}
                 <Card padding="lg" className="lg:col-span-2 min-h-[400px]">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-[var(--color-text-main)] font-medium">Execution Velocity</h3>
+                        <h3 className="text-[var(--color-text-main)] font-medium">{t('dashboard.executionVelocity')}</h3>
                         <div className="flex gap-2">
-                            <span className="px-2 py-1 bg-white/5 text-[var(--color-text-muted)] rounded text-[10px] uppercase font-bold tracking-widest border border-white/10">Today</span>
+                            <span className="px-2 py-1 bg-white/5 text-[var(--color-text-muted)] rounded text-[10px] uppercase font-bold tracking-widest border border-white/10">{t('dashboard.today')}</span>
                         </div>
                     </div>
                     <div className="h-80 w-full">
                         {loading ? (
-                            <div className="h-full flex items-center justify-center text-white/40">Loading...</div>
+                            <div className="h-full flex items-center justify-center text-white/40">{t('common.loading')}</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={valueVelocity}>
@@ -343,12 +345,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 {/* Product Domain Performance */}
                 <Card padding="md" className="flex flex-col min-h-[400px]">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[var(--color-text-main)] font-medium text-sm">Agent Performance</h3>
+                        <h3 className="text-[var(--color-text-main)] font-medium text-sm">{t('dashboard.agentPerformance')}</h3>
                         <Package size={20} className="text-[var(--color-text-muted)]" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between gap-3">
                         {performance.length === 0 && !loading && (
-                            <div className="text-center text-white/40 py-8">No agent data yet</div>
+                            <div className="text-center text-white/40 py-8">{t('dashboard.noAgentData')}</div>
                         )}
                         {performance.map((product) => (
                             <div

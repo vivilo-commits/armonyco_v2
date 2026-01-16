@@ -12,6 +12,7 @@ import {
     checkSubscriptionStatus, 
     type SubscriptionCheckResult 
 } from '../middleware/subscription-check';
+import i18n from '../i18n';
 
 interface AuthContextType {
     user: User | null;
@@ -94,6 +95,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
             console.log('[AuthContext] 📋 Profile data:', JSON.stringify(data, null, 2));
             console.log('[AuthContext] 🔑 Profile role:', data?.role);
             console.log('[AuthContext] 👤 Profile user:', data?.id);
+            
+            // Load user language preference
+            if (data?.language && (data.language === 'en' || data.language === 'it')) {
+                try {
+                    await i18n.changeLanguage(data.language);
+                    localStorage.setItem('language', data.language);
+                    console.log('[AuthContext] 🌐 Language set to:', data.language);
+                } catch (err) {
+                    console.error('[AuthContext] Error changing language:', err);
+                }
+            }
+            
             setProfile(data);
             return data;
         } catch (err) {
