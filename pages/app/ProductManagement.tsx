@@ -1,15 +1,29 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity, Loader } from '../../components/ui/Icons';
+import { Package, Search, Filter, CheckCircle, XCircle, Pause, Play, ChevronRight, Building, Home, Zap, Shield, Activity, Loader, Plus, Database } from '../../components/ui/Icons';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { FloatingInput } from '../../components/ui/FloatingInput';
 import { useUserProfile } from '../../src/hooks/useAuth';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { UnauthorizedView } from '../../src/components/app/UnauthorizedView';
 import { units, unitGroups, Unit, UnitGroup } from '../../data/portfolio';
 import { ProductModule } from '../../src/types';
 import { supabase } from '../../src/lib/supabase';
+
+// Type definition for Custom Product
+interface CustomProduct {
+    id: string;
+    organization_id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    category: string | null;
+    credit_cost: number;
+    is_active: boolean;
+    created_at: string;
+}
 
 export const ProductManagement: React.FC = () => {
     const { t } = useTranslation();
@@ -34,6 +48,17 @@ export const ProductManagement: React.FC = () => {
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [localModules, setLocalModules] = useState<ProductModule[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
+
+    // ✅ NEW STATE per Custom Products
+    const [productType, setProductType] = useState<'standard' | 'custom'>('standard');
+    const [customProducts, setCustomProducts] = useState<CustomProduct[]>([]);
+    const [customProductActivations, setCustomProductActivations] = useState<Record<string, boolean>>({});
+    const [showCreateCustomModal, setShowCreateCustomModal] = useState(false);
+    const [newCustomProduct, setNewCustomProduct] = useState({
+        name: '',
+        description: ''
+        // code, category, creditCost gestiti automaticamente
+    });
 
     // Fetch hotels for current organization
     useEffect(() => {
@@ -85,6 +110,71 @@ export const ProductManagement: React.FC = () => {
         
         fetchHotels();
     }, [userProfile?.id]);
+
+    // ✅ Fetch Custom Products (organization-scoped)
+    const fetchCustomProducts = async () => {
+        if (!supabase || !userProfile?.id) return;
+        
+        try {
+            const { data: orgData, error: orgError } = await supabase
+                .from('organization_members')
+                .select('organization_id')
+                .eq('user_id', userProfile.id)
+                .single();
+
+            if (orgError || !orgData?.organization_id) {
+                console.error('Error fetching organization:', orgError);
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('custom_products')
+                .select('*')
+                .eq('organization_id', orgData.organization_id)
+                .eq('is_active', true)
+                .order('sort_order', { ascending: true });
+
+            if (error) {
+                // Don't show error if table doesn't exist yet
+                if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                    throw error;
+                }
+                return;
+            }
+            
+            setCustomProducts(data || []);
+        } catch (error) {
+            console.error('Error fetching custom products:', error);
+        }
+    };
+
+    // ✅ Fetch Custom Product Activations for selected hotel
+    const fetchCustomProductActivations = async (hotelId: string) => {
+        if (!supabase) return;
+        
+        try {
+            const { data, error } = await supabase
+                .from('hotel_custom_product_activations')
+                .select('custom_product_id, is_active')
+                .eq('hotel_id', hotelId);
+
+            if (error) {
+                // Don't show error if table doesn't exist yet
+                if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                    throw error;
+                }
+                return;
+            }
+
+            const activationsMap: Record<string, boolean> = {};
+            data?.forEach((activation) => {
+                activationsMap[activation.custom_product_id] = activation.is_active;
+            });
+            setCustomProductActivations(activationsMap);
+        } catch (error) {
+            console.error('Error fetching custom product activations:', error);
+        }
+    };
 
     // Fetch products with activation status for selected hotel
     useEffect(() => {
@@ -149,6 +239,20 @@ export const ProductManagement: React.FC = () => {
         };
         
         fetchProductsForHotel();
+    }, [selectedHotelId]);
+
+    // ✅ Load custom products on mount
+    useEffect(() => {
+        fetchCustomProducts();
+    }, [userProfile?.id]);
+
+    // ✅ Load custom product activations when hotel changes
+    useEffect(() => {
+        if (selectedHotelId) {
+            fetchCustomProductActivations(selectedHotelId);
+        } else {
+            setCustomProductActivations({});
+        }
     }, [selectedHotelId]);
 
     // Reload products after changes
@@ -254,6 +358,231 @@ export const ProductManagement: React.FC = () => {
             toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 300);
         }, 2000);
+    };
+
+    const showErrorToast = (message: string) => {
+        const toast = document.createElement('div');
+        toast.className = 'error-toast';
+        toast.textContent = message;
+        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 12px 20px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
+
+    // ✅ Funzione per generare codice univoco
+    const generateUniqueCode = async (orgId: string): Promise<string> => {
+        if (!supabase) return `CUSTOM-${Date.now().toString().slice(-6)}`;
+        
+        let code = '';
+        let isUnique = false;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (!isUnique && attempts < maxAttempts) {
+            // Genera codice formato: CUSTOM-001, CUSTOM-002, ecc.
+            // Prendi il conteggio attuale + 1
+            const { count, error: countError } = await supabase
+                .from('custom_products')
+                .select('id', { count: 'exact', head: true })
+                .eq('organization_id', orgId);
+
+            if (countError && countError.code !== 'PGRST116' && countError.code !== '42P01') {
+                // Fallback se errore
+                return `CUSTOM-${Date.now().toString().slice(-6)}`;
+            }
+
+            const nextNumber = (count || 0) + 1;
+            code = `CUSTOM-${String(nextNumber).padStart(3, '0')}`; // CUSTOM-001, CUSTOM-002
+
+            // Verifica se esiste già
+            const { data: existing, error: checkError } = await supabase
+                .from('custom_products')
+                .select('id')
+                .eq('organization_id', orgId)
+                .eq('code', code)
+                .maybeSingle();
+
+            if (checkError && checkError.code !== 'PGRST116' && checkError.code !== '42P01') {
+                // Fallback se errore
+                return `CUSTOM-${Date.now().toString().slice(-6)}`;
+            }
+
+            if (!existing) {
+                isUnique = true;
+            } else {
+                attempts++;
+                // Se esiste, prova con timestamp (fallback)
+                code = `CUSTOM-${Date.now().toString().slice(-6)}`;
+                isUnique = true; // Usa timestamp come fallback
+            }
+        }
+
+        return code;
+    };
+
+    // ✅ Create Custom Product
+    const handleCreateCustomProduct = async () => {
+        if (!supabase || !userProfile?.id) return;
+        
+        try {
+            // Validation - SOLO nome richiesto
+            if (!newCustomProduct.name.trim()) {
+                showErrorToast('Product name is required');
+                return;
+            }
+
+            const { data: orgData, error: orgError } = await supabase
+                .from('organization_members')
+                .select('organization_id')
+                .eq('user_id', userProfile.id)
+                .single();
+
+            if (orgError || !orgData?.organization_id) {
+                showErrorToast('Organization not found');
+                return;
+            }
+
+            // ✅ AUTO-GENERATE code univoco
+            const autoCode = await generateUniqueCode(orgData.organization_id);
+
+            // ✅ INSERT con valori auto-assegnati
+            const { error } = await supabase
+                .from('custom_products')
+                .insert({
+                    organization_id: orgData.organization_id,
+                    code: autoCode,                           // ← AUTO-GENERATO
+                    name: newCustomProduct.name.trim(),
+                    description: newCustomProduct.description.trim() || null,
+                    category: 'CUSTOM',                       // ← FISSO
+                    credit_cost: 50,                           // ← FISSO 50 CREDITI
+                    created_by_user_id: userProfile.id
+                });
+
+            if (error) {
+                // Don't show error if table doesn't exist yet
+                if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                    throw error;
+                }
+                showErrorToast('Custom products table not yet created. Please create the database tables first.');
+                return;
+            }
+
+            showSuccessToast(`Custom product created! (Code: ${autoCode})`);
+            setShowCreateCustomModal(false);
+            setNewCustomProduct({ name: '', description: '' }); // ← Reset solo 2 campi
+            fetchCustomProducts();
+        } catch (error: any) {
+            console.error('Error creating custom product:', error);
+            showErrorToast(error.message || 'Failed to create custom product');
+        }
+    };
+
+    // ✅ Toggle Custom Product Activation for Hotel
+    const handleToggleCustomProduct = async (customProductId: string, currentlyActive: boolean) => {
+        if (!selectedHotelId) {
+            showErrorToast('Please select a hotel first');
+            return;
+        }
+
+        if (!supabase) {
+            showErrorToast('Database connection not available');
+            return;
+        }
+
+        try {
+            if (currentlyActive) {
+                // Deactivate
+                const { error } = await supabase
+                    .from('hotel_custom_product_activations')
+                    .update({ is_active: false, updated_at: new Date().toISOString() })
+                    .eq('hotel_id', selectedHotelId)
+                    .eq('custom_product_id', customProductId);
+
+                if (error) {
+                    if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                        throw error;
+                    }
+                    showErrorToast('Custom product activations table not yet created. Please create the database tables first.');
+                    return;
+                }
+            } else {
+                // Activate (upsert)
+                const { error } = await supabase
+                    .from('hotel_custom_product_activations')
+                    .upsert(
+                        {
+                            hotel_id: selectedHotelId,
+                            custom_product_id: customProductId,
+                            is_active: true,
+                            activated_at: new Date().toISOString()
+                        },
+                        { onConflict: 'hotel_id,custom_product_id' }
+                    );
+
+                if (error) {
+                    if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                        throw error;
+                    }
+                    showErrorToast('Custom product activations table not yet created. Please create the database tables first.');
+                    return;
+                }
+            }
+
+            await fetchCustomProductActivations(selectedHotelId);
+            showSuccessToast(currentlyActive ? 'Product deactivated' : 'Product activated');
+        } catch (error: any) {
+            console.error('Error toggling custom product:', error);
+            showErrorToast(error.message || 'Failed to toggle product');
+        }
+    };
+
+    // ✅ Delete Custom Product
+    const handleDeleteCustomProduct = async (customProductId: string) => {
+        if (!supabase) return;
+        
+        try {
+            // Check if product is used in any hotel
+            const { data: activations, error: checkError } = await supabase
+                .from('hotel_custom_product_activations')
+                .select('id')
+                .eq('custom_product_id', customProductId)
+                .eq('is_active', true);
+
+            if (checkError && checkError.code !== 'PGRST116' && checkError.code !== '42P01') {
+                throw checkError;
+            }
+
+            if (activations && activations.length > 0) {
+                showErrorToast('Cannot delete: product is active in one or more hotels');
+                return;
+            }
+
+            if (!window.confirm('Are you sure you want to delete this custom product?')) return;
+
+            const { error } = await supabase
+                .from('custom_products')
+                .delete()
+                .eq('id', customProductId);
+
+            if (error) {
+                if (error.code !== 'PGRST116' && error.code !== '42P01') {
+                    throw error;
+                }
+                showErrorToast('Custom products table not yet created.');
+                return;
+            }
+
+            showSuccessToast('Custom product deleted successfully');
+            fetchCustomProducts();
+        } catch (error: any) {
+            console.error('Error deleting custom product:', error);
+            showErrorToast(error.message || 'Failed to delete custom product');
+        }
     };
 
     // Handle toggle switch for activate/deactivate products
@@ -462,8 +791,34 @@ export const ProductManagement: React.FC = () => {
                 </Card>
             )}
 
-            {/* Filters & Search */}
+            {/* Tab Switcher: Standard | Custom Products */}
             {selectedHotelId && (
+                <div className="flex gap-3 mb-6">
+                    <button
+                        onClick={() => setProductType('standard')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all ${
+                            productType === 'standard'
+                                ? 'bg-[var(--color-brand-accent)] text-black'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                        }`}
+                    >
+                        Standard Products
+                    </button>
+                    <button
+                        onClick={() => setProductType('custom')}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all ${
+                            productType === 'custom'
+                                ? 'bg-[var(--color-brand-accent)] text-black'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                        }`}
+                    >
+                        Custom Products
+                    </button>
+                </div>
+            )}
+
+            {/* Filters & Search */}
+            {selectedHotelId && productType === 'standard' && (
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
@@ -490,148 +845,251 @@ export const ProductManagement: React.FC = () => {
             </div>
             )}
 
-            {/* Products Table */}
+            {/* Products Table - Conditional Rendering */}
             {selectedHotelId ? (
-            <Card variant="dark" padding="none" className="flex-1 overflow-hidden border-white/5 flex flex-col">
-                <div className="overflow-x-auto overflow-y-auto scrollbar-hide">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-white/5 bg-white/[0.02] sticky top-0 z-20 backdrop-blur-md">
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Service Routine</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Category</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Governance</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Productivity</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Human Time</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Runtime</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {filteredModules.map((module) => (
-                                <tr key={module.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-white tracking-tight group-hover:text-[var(--color-brand-accent)] transition-colors">
-                                                {module.name}
-                                            </span>
-                                            <span className="text-[10px] font-mono text-zinc-600 uppercase mt-0.5">{module.code}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-[10px] px-2 py-1 bg-white/5 rounded border border-white/10 text-zinc-400 uppercase font-bold tracking-widest">
-                                            {module.category}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black text-emerald-500 tracking-tighter italic">
-                                                {module.laborReduction || "0%"}
-                                            </span>
-                                            <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Labor Redux</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black text-white tracking-tighter italic">
-                                                {module.valueGenerated || "0€/mo"}
-                                            </span>
-                                            <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Value Growth</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black text-rose-500 tracking-tighter italic">
-                                                -{module.laborReduction || "20%"}
-                                            </span>
-                                            <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Saved/Unit/Mo</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs font-mono text-[var(--color-brand-accent)] font-bold">
-                                                {module.creditCost?.toLocaleString('de-DE')}
-                                            </span>
-                                            <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Credits/Mo</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="status-container flex items-center gap-2">
-                                            {/* Dynamic Icon */}
-                                            {module.isActive ? (
-                                                <span className="status-icon active text-emerald-500">⚡</span>
-                                            ) : module.isPaused ? (
-                                                <span className="status-icon paused text-amber-500">⏸</span>
-                                            ) : (
-                                                <span className="status-icon idle text-zinc-600">○</span>
-                                            )}
+                productType === 'standard' ? (
+                    // ✅ Tabella Standard Products (codice ESISTENTE)
+                    <Card variant="dark" padding="none" className="flex-1 overflow-hidden border-white/5 flex flex-col">
+                        <div className="overflow-x-auto overflow-y-auto scrollbar-hide">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/5 bg-white/[0.02] sticky top-0 z-20 backdrop-blur-md">
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Service Routine</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Category</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Governance</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Productivity</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Human Time</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Runtime</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Status</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {filteredModules.map((module) => (
+                                        <tr key={module.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-white tracking-tight group-hover:text-[var(--color-brand-accent)] transition-colors">
+                                                        {module.name}
+                                                    </span>
+                                                    <span className="text-[10px] font-mono text-zinc-600 uppercase mt-0.5">{module.code}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <span className="text-[10px] px-2 py-1 bg-white/5 rounded border border-white/10 text-zinc-400 uppercase font-bold tracking-widest">
+                                                    {module.category}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-emerald-500 tracking-tighter italic">
+                                                        {module.laborReduction || "0%"}
+                                                    </span>
+                                                    <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Labor Redux</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-white tracking-tighter italic">
+                                                        {module.valueGenerated || "0€/mo"}
+                                                    </span>
+                                                    <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Value Growth</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-rose-500 tracking-tighter italic">
+                                                        -{module.laborReduction || "20%"}
+                                                    </span>
+                                                    <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Saved/Unit/Mo</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-mono text-[var(--color-brand-accent)] font-bold">
+                                                        {module.creditCost?.toLocaleString('de-DE')}
+                                                    </span>
+                                                    <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">Credits/Mo</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="status-container flex items-center gap-2">
+                                                    {/* Dynamic Icon */}
+                                                    {module.isActive ? (
+                                                        <span className="status-icon active text-emerald-500">⚡</span>
+                                                    ) : module.isPaused ? (
+                                                        <span className="status-icon paused text-amber-500">⏸</span>
+                                                    ) : (
+                                                        <span className="status-icon idle text-zinc-600">○</span>
+                                                    )}
 
-                                            {/* Status Badge */}
-                                            <span className={`status-badge px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                                                module.isActive
-                                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-                                                    : module.isPaused
-                                                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                                                    : 'bg-zinc-600/10 text-zinc-600 border-zinc-600/30'
-                                            }`}>
-                                                {module.isActive ? 'Active' : module.isPaused ? 'Paused' : 'Inactive'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <div className="toggle-container flex items-center gap-3 justify-end">
-                                            {/* Toggle Switch */}
-                                            <label className="toggle-switch relative inline-block w-12 h-6 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={module.isActive || false}
-                                                    disabled={module.isPaused || togglingId === module.id}
-                                                    onChange={() => handleToggle(module.id, module.isActive || false, module.name)}
-                                                    className="opacity-0 w-0 h-0"
-                                                />
-                                                <span className={`slider absolute top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
-                                                    module.isActive
-                                                        ? 'bg-emerald-500'
-                                                        : module.isPaused || togglingId === module.id
-                                                        ? 'bg-zinc-700 opacity-50 cursor-not-allowed'
-                                                        : 'bg-zinc-700'
-                                                } before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:rounded-full before:transition-transform before:duration-300 ${
-                                                    module.isActive ? 'before:translate-x-6' : ''
-                                                }`}></span>
-                                            </label>
+                                                    {/* Status Badge */}
+                                                    <span className={`status-badge px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                                        module.isActive
+                                                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                                                            : module.isPaused
+                                                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                                                            : 'bg-zinc-600/10 text-zinc-600 border-zinc-600/30'
+                                                    }`}>
+                                                        {module.isActive ? 'Active' : module.isPaused ? 'Paused' : 'Inactive'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 text-right">
+                                                <div className="toggle-container flex items-center gap-3 justify-end">
+                                                    {/* Toggle Switch */}
+                                                    <label className="toggle-switch relative inline-block w-12 h-6 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={module.isActive || false}
+                                                            disabled={module.isPaused || togglingId === module.id}
+                                                            onChange={() => handleToggle(module.id, module.isActive || false, module.name)}
+                                                            className="opacity-0 w-0 h-0"
+                                                        />
+                                                        <span className={`slider absolute top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
+                                                            module.isActive
+                                                                ? 'bg-emerald-500'
+                                                                : module.isPaused || togglingId === module.id
+                                                                ? 'bg-zinc-700 opacity-50 cursor-not-allowed'
+                                                                : 'bg-zinc-700'
+                                                        } before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:rounded-full before:transition-transform before:duration-300 ${
+                                                            module.isActive ? 'before:translate-x-6' : ''
+                                                        }`}></span>
+                                                    </label>
 
-                                            {/* Toggle Label */}
-                                            <span className={`toggle-label text-xs font-bold min-w-[60px] ${
-                                                module.isActive ? 'text-emerald-500' : 'text-zinc-500'
-                                            }`}>
-                                                {togglingId === module.id ? (
-                                                    <span className="loading-spinner inline-block animate-pulse text-blue-500">●</span>
-                                                ) : module.isPaused ? (
-                                                    'Paused'
-                                                ) : module.isActive ? (
-                                                    'Active'
-                                                ) : (
-                                                    'Inactive'
-                                                )}
-                                            </span>
+                                                    {/* Toggle Label */}
+                                                    <span className={`toggle-label text-xs font-bold min-w-[60px] ${
+                                                        module.isActive ? 'text-emerald-500' : 'text-zinc-500'
+                                                    }`}>
+                                                        {togglingId === module.id ? (
+                                                            <span className="loading-spinner inline-block animate-pulse text-blue-500">●</span>
+                                                        ) : module.isPaused ? (
+                                                            'Paused'
+                                                        ) : module.isActive ? (
+                                                            'Active'
+                                                        ) : (
+                                                            'Inactive'
+                                                        )}
+                                                    </span>
 
-                                            {/* Optional: Keep configure button for additional settings */}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-[9px] font-black uppercase tracking-widest hover:text-white opacity-0 group-hover:opacity-100 transition-opacity ml-2"
-                                                onClick={() => handleManageActivation(module)}
-                                            >
-                                                <Shield size={12} />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
+                                                    {/* Optional: Keep configure button for additional settings */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-[9px] font-black uppercase tracking-widest hover:text-white opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                                                        onClick={() => handleManageActivation(module)}
+                                                    >
+                                                        <Shield size={12} />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                ) : (
+                    // ✅ NEW: Custom Products Section
+                    <div className="space-y-6">
+                        {/* Create Custom Product Button */}
+                        <div className="flex justify-end">
+                            <Button
+                                onClick={() => setShowCreateCustomModal(true)}
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<Plus size={16} />}
+                            >
+                                Create Custom Product
+                            </Button>
+                        </div>
+
+                        {/* Custom Products Table */}
+                        {customProducts.length === 0 ? (
+                            <Card variant="dark" padding="lg" className="text-center">
+                                <Database size={48} className="mx-auto text-white/20 mb-4" />
+                                <p className="text-white/60 text-sm font-bold mb-2">No custom products yet</p>
+                                <p className="text-white/40 text-xs">Create your first custom product to get started</p>
+                            </Card>
+                        ) : (
+                            <Card variant="dark" padding="none" className="overflow-hidden border-white/5">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-white/5 bg-white/[0.02]">
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Product</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Code</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Category</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-center">Credits</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-center">Status</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {customProducts.map((product) => {
+                                                const isActive = customProductActivations[product.id] || false;
+                                                return (
+                                                    <tr key={product.id} className="hover:bg-white/[0.03] transition-all duration-200 group">
+                                                        <td className="px-6 py-5">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-bold text-white tracking-tight group-hover:text-[var(--color-brand-accent)] transition-colors">
+                                                                    {product.name}
+                                                                </span>
+                                                                {product.description && (
+                                                                    <span className="text-[10px] text-zinc-600 mt-0.5">{product.description}</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            {/* Mostra codice auto-generato */}
+                                                            <span className="text-xs font-mono text-white/60 bg-white/5 px-2 py-1 rounded">
+                                                                {product.code}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            {/* Category sempre "CUSTOM" */}
+                                                            <span className="text-[10px] px-2 py-1 rounded uppercase font-bold tracking-widest bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                                                CUSTOM
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-center">
+                                                            {/* Sempre 50 crediti */}
+                                                            <span className="text-sm font-bold">50</span>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-center">
+                                                            <label className="toggle-switch relative inline-block w-12 h-6 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isActive}
+                                                                    disabled={!selectedHotelId}
+                                                                    onChange={() => handleToggleCustomProduct(product.id, isActive)}
+                                                                    className="opacity-0 w-0 h-0"
+                                                                />
+                                                                <span className={`slider absolute top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
+                                                                    isActive ? 'bg-emerald-500' : 'bg-zinc-700'
+                                                                } ${!selectedHotelId ? 'opacity-50 cursor-not-allowed' : ''} before:absolute before:content-[''] before:h-4 before:w-4 before:left-1 before:bottom-1 before:bg-white before:rounded-full before:transition-transform before:duration-300 ${
+                                                                    isActive ? 'before:translate-x-6' : ''
+                                                                }`}></span>
+                                                            </label>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-center">
+                                                            <button
+                                                                onClick={() => handleDeleteCustomProduct(product.id)}
+                                                                className="px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        )}
+                    </div>
+                )
             ) : hotels.length === 0 ? null : (
                 <Card variant="dark" padding="lg" className="text-center">
                     <p className="text-zinc-400">Select a hotel to view and manage services</p>
@@ -752,6 +1210,57 @@ export const ProductManagement: React.FC = () => {
                     <div className="mt-10 pt-6 border-t border-white/5 flex gap-3">
                         <Button variant="ghost" fullWidth onClick={() => setShowActivationModal(false)}>Cancel</Button>
                         <Button variant="primary" fullWidth onClick={() => setShowActivationModal(false)}>Save Perimeter Settings</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Create Custom Product Modal - VERSIONE SEMPLIFICATA */}
+            <Modal
+                isOpen={showCreateCustomModal}
+                onClose={() => {
+                    setShowCreateCustomModal(false);
+                    setNewCustomProduct({ name: '', description: '' }); // ← Solo 2 campi
+                }}
+                title="Create Custom Product"
+                width="lg"
+            >
+                <div className="p-6 space-y-5">
+                    {/* Campo 1: Nome (obbligatorio) */}
+                    <FloatingInput
+                        label="Product Name *"
+                        placeholder="e.g., Late Checkout, Pet Service, Airport Shuttle"
+                        value={newCustomProduct.name}
+                        onChange={(e) => setNewCustomProduct({ ...newCustomProduct, name: e.target.value })}
+                    />
+                    
+                    {/* Campo 2: Descrizione (opzionale) */}
+                    <FloatingInput
+                        label="Description (optional)"
+                        placeholder="Brief description of the custom service"
+                        value={newCustomProduct.description}
+                        onChange={(e) => setNewCustomProduct({ ...newCustomProduct, description: e.target.value })}
+                    />
+
+                    {/* Info automatica per l'utente */}
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <p className="text-xs text-blue-400">
+                            ℹ️ Auto-assigned: <strong>50 credits</strong> · Code will be generated automatically
+                        </p>
+                    </div>
+                    
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setShowCreateCustomModal(false);
+                                setNewCustomProduct({ name: '', description: '' });
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={handleCreateCustomProduct}>
+                            Create Product
+                        </Button>
                     </div>
                 </div>
             </Modal>
